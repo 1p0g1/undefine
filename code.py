@@ -1,4 +1,5 @@
 import requests
+import random
 import streamlit as st
 from datetime import datetime
 
@@ -13,11 +14,15 @@ st.title("Daily Define")
 # Instructions
 st.write("Guess the word based on its definition! A new word is available every day.")
 
-# Function to fetch a random word
-def get_daily_word():
-    # A simple word list for demonstration
-    words = ["serendipity", "ephemeral", "lucid", "tenacity", "euphoria"]
-    return words[datetime.now().day % len(words)]  # Rotate through words daily
+# Function to fetch a random word from a word list or external API
+def get_random_word():
+    # Example word list (could be a much larger list or fetched from an API)
+    words = [
+        "serendipity", "ephemeral", "lucid", "tenacity", "euphoria",
+        "iridescent", "sonder", "obfuscate", "melancholy", "panacea",
+        "epiphany", "quixotic", "sonder", "ascetic", "solitude"
+    ]
+    return random.choice(words)  # Selects a random word from the list
 
 # Function to fetch definition using Oxford API
 def get_definition(word):
@@ -42,12 +47,13 @@ def get_definition(word):
     else:
         st.error(f"API Request Failed with Status Code: {response.status_code}")
         st.write("Response Content:", response.text)
+        return f"Could not find a definition for the word '{word}'. Please try another word."
     
     return None
 
-# Fetch the daily word and definition
+# Fetch a random word and definition
 if "daily_word" not in st.session_state:
-    st.session_state.daily_word = get_daily_word()
+    st.session_state.daily_word = get_random_word()  # Get a random word each day
     st.session_state.definition = get_definition(st.session_state.daily_word)
 
 # Display the definition
