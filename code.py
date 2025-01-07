@@ -14,13 +14,11 @@ st.title("Daily Define")
 # Instructions
 st.write("Guess the word based on its definition! A new word is available every day.")
 
-# Function to fetch a random word from a word list or external API
+# Function to fetch a random word from a simple word list
 def get_random_word():
-    # Example word list (could be a much larger list or fetched from an API)
+    # Simplified word list (common and easy-to-find words)
     words = [
-        "serendipity", "ephemeral", "lucid", "tenacity", "euphoria",
-        "iridescent", "sonder", "obfuscate", "melancholy", "panacea",
-        "epiphany", "quixotic", "sonder", "ascetic", "solitude"
+        "cat", "dog", "house", "book", "apple", "tree", "car", "chair", "pen", "table"
     ]
     return random.choice(words)  # Selects a random word from the list
 
