@@ -39,6 +39,7 @@ def get_definition(word):
         try:
             senses = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"]
             if senses:
+                # Extract the definition from the senses
                 return senses[0]["definitions"][0]
         except KeyError as e:
             st.error(f"Error parsing API response: {e}")
