@@ -24,38 +24,30 @@ def get_random_word():
 
 # Function to fetch definition using Oxford API
 def get_definition(word):
-    # Try fetching with both 'en-gb' and 'en' language filters
-    url_en_gb = f"{BASE_URL}/entries/en-gb/{word.lower()}"
-    url_en = f"{BASE_URL}/entries/en/{word.lower()}"
+    # Use 'en' language filter for broader dictionary access
+    url = f"{BASE_URL}/entries/en/{word.lower()}"
     headers = {
         "app_id": APP_ID,
         "app_key": APP_KEY
     }
-
-    # First, try fetching with the 'en-gb' filter
-    response = requests.get(url_en_gb, headers=headers)
-    if response.status_code == 200:
-        data = response.json()
-        return extract_definition(data)
+    response = requests.get(url, headers=headers)
     
-    # If 'en-gb' fails, try fetching with 'en' filter
-    response = requests.get(url_en, headers=headers)
+    # Debugging: Print response details
+    st.write(f"Debug: API Status Code: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
-        return extract_definition(data)
-
-    # If both requests fail, return None
-    return None
-
-# Function to extract the definition from the API response
-def extract_definition(data):
-    try:
-        senses = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"]
-        if senses:
-            # Extract the definition from the senses
-            return senses[0]["definitions"][0]
-    except (KeyError, IndexError):
-        st.error("Error parsing API response.")
+        st.write("Debug: API Response JSON:", data)  # Debugging
+        try:
+            senses = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"]
+            if senses:
+                return senses[0]["definitions"][0]
+        except KeyError as e:
+            st.error(f"Error parsing API response: {e}")
+    else:
+        st.error(f"API Request Failed with Status Code: {response.status_code}")
+        st.write("Response Content:", response.text)
+        return f"Could not find a definition for the word '{word}'. Please try another word."
+    
     return None
 
 # Fetch a random word and definition
