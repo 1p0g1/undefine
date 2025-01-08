@@ -18,7 +18,7 @@ st.write("Guess the word based on its definition! A new word is available every 
 def get_random_word():
     # Simplified word list (common and easy-to-find words)
     words = [
-        "apple", "grapefruit"
+        "apple"
     ]
     return random.choice(words)  # Selects a random word from the list
 
