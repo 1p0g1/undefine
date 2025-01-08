@@ -18,7 +18,7 @@ st.write("Guess the word based on its definition! A new word is available every 
 def get_random_word():
     # Simplified word list (common and easy-to-find words)
     words = [
-        "apple"
+        "cat", "dog", "house", "book", "apple", "tree", "car", "chair", "pen", "table"
     ]
     return random.choice(words)  # Selects a random word from the list
 
@@ -76,15 +76,15 @@ else:
     st.write("The word for today was:", st.session_state.daily_word)
     st.stop()
 
-# Input field for the user's guess
-guess = st.text_input("What is your guess?")
+# Input field for the user's guess (normalized to lowercase)
+guess = st.text_input("What is your guess?").lower()  # Convert input to lowercase
 
 # Feedback logic
 if "outcome" not in st.session_state:
     st.session_state.outcome = None
 
 if st.button("Submit Guess"):
-    if guess.lower() == st.session_state.daily_word.lower():
+    if guess == st.session_state.daily_word.lower():  # Compare lowercase for case-insensitive match
         st.session_state.outcome = "correct"
         st.success("🎉 Correct! Well done!")
     else:
