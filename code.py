@@ -24,7 +24,6 @@ def get_random_word():
 
 # Function to fetch definition using Oxford API
 def get_definition(word):
-    # Use 'en' language filter for broader dictionary access
     url = f"{BASE_URL}/entries/en/{word.lower()}"
     headers = {
         "app_id": APP_ID,
@@ -37,23 +36,22 @@ def get_definition(word):
     if response.status_code == 200:
         data = response.json()
         st.write("Debug: API Response JSON:", data)  # Debugging
+
         try:
+            # Extracting the definition from the API response
             senses = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"]
             if senses:
-                return senses[0]["definitions"][0]
+                # Picking the first definition (if available)
+                definition = senses[0]["definitions"][0]
+                return definition
         except KeyError as e:
             st.error(f"Error parsing API response: {e}")
     else:
         st.error(f"API Request Failed with Status Code: {response.status_code}")
-        st.write("Response Content:", response.text)
+        st.write("Response Content:", response.text)  # Full response content
         return f"Could not find a definition for the word '{word}'. Please try another word."
     
     return None
-
-# Function to reload a new word
-def reload_word():
-    st.session_state.daily_word = get_random_word()  # Get a random word each time
-    st.session_state.definition = get_definition(st.session_state.daily_word)
 
 # Fetch a random word and definition (initially)
 if "daily_word" not in st.session_state:
@@ -62,7 +60,8 @@ if "daily_word" not in st.session_state:
 
 # Reload word button
 if st.button("Reload Word"):
-    reload_word()
+    st.session_state.daily_word = get_random_word()  # Get a random word each time
+    st.session_state.definition = get_definition(st.session_state.daily_word)
 
 # Display the definition
 if st.session_state.definition:
