@@ -24,7 +24,8 @@ def get_random_word():
 
 # Function to fetch definition using Oxford API
 def get_definition(word):
-    url = f"{BASE_URL}/entries/en/{word.lower()}"
+    # Try using a different language format, e.g., en-us instead of en-gb.
+    url = f"{BASE_URL}/entries/en-us/{word.lower()}"
     headers = {
         "app_id": APP_ID,
         "app_key": APP_KEY
@@ -33,6 +34,7 @@ def get_definition(word):
     
     # Debugging: Print response details
     st.write(f"Debug: API Status Code: {response.status_code}")
+    
     if response.status_code == 200:
         data = response.json()
         st.write("Debug: API Response JSON:", data)  # Debugging
