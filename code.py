@@ -50,10 +50,19 @@ def get_definition(word):
     
     return None
 
-# Fetch a random word and definition
+# Function to reload a new word
+def reload_word():
+    st.session_state.daily_word = get_random_word()  # Get a random word each time
+    st.session_state.definition = get_definition(st.session_state.daily_word)
+
+# Fetch a random word and definition (initially)
 if "daily_word" not in st.session_state:
     st.session_state.daily_word = get_random_word()  # Get a random word each day
     st.session_state.definition = get_definition(st.session_state.daily_word)
+
+# Reload word button
+if st.button("Reload Word"):
+    reload_word()
 
 # Display the definition
 if st.session_state.definition:
