@@ -24,20 +24,21 @@ def get_random_word():
 
 # Function to fetch definition using Oxford API
 def get_definition(word):
-    # Try using a different language format, e.g., en-us instead of en-gb.
-    url = f"{BASE_URL}/entries/en-us/{word.lower()}"
+    # Ensure the word is in lowercase, as Oxford may require lowercase for proper matching
+    url = f"{BASE_URL}/entries/en-gb/{word.lower()}"
     headers = {
         "app_id": APP_ID,
         "app_key": APP_KEY
     }
     response = requests.get(url, headers=headers)
     
-    # Debugging: Print response details
+    # Debugging: Print the status code and content of the API response for further insight
     st.write(f"Debug: API Status Code: {response.status_code}")
-    
+    st.write(f"Debug: Request URL: {url}")  # Checking the URL being called
+
     if response.status_code == 200:
         data = response.json()
-        st.write("Debug: API Response JSON:", data)  # Debugging
+        st.write("Debug: API Response JSON:", data)  # Print the full JSON response for inspection
 
         try:
             # Extracting the definition from the API response
@@ -46,14 +47,16 @@ def get_definition(word):
                 # Picking the first definition (if available)
                 definition = senses[0]["definitions"][0]
                 return definition
+            else:
+                return "No definition found in the response."
         except KeyError as e:
             st.error(f"Error parsing API response: {e}")
+            st.write("Full API response for debugging:", data)
+            return None
     else:
         st.error(f"API Request Failed with Status Code: {response.status_code}")
-        st.write("Response Content:", response.text)  # Full response content
-        return f"Could not find a definition for the word '{word}'. Please try another word."
-    
-    return None
+        st.write("Response Content:", response.text)  # Full response content for detailed debugging
+        return None
 
 # Fetch a random word and definition (initially)
 if "daily_word" not in st.session_state:
