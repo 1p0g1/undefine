@@ -1,0 +1,377 @@
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+:root {
+  --primary-blue: #1a237e;
+  --accent-blue: #3949ab;
+  --text-dark: #2c3e50;
+  --text-light: #546e7a;
+  --border-color: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --paper-color: #fcfcfc;
+  --paper-shadow: rgba(0, 0, 0, 0.05);
+}
+
+body {
+  background-color: #f0f2f5;
+  color: var(--text-dark);
+  font-family: 'Crimson Text', 'Goudy Old Style', serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 3rem;
+  text-align: center;
+  background: var(--paper-color);
+  border-radius: 2px;
+  box-shadow: 
+    0 1px 3px var(--shadow-color),
+    0 6px 12px var(--paper-shadow),
+    0 0 0 1px var(--paper-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Paper texture overlay */
+.app-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+/* Subtle page edge effect */
+.app-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 30px;
+  background: linear-gradient(to left, 
+    var(--paper-shadow) 0%,
+    transparent 100%);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.title-container {
+  margin-bottom: 4rem;
+  position: relative;
+  padding: 1.5rem;
+}
+
+.title-container h1 {
+  font-family: 'Goudy Old Style', 'Crimson Text', serif;
+  font-size: 4.5rem;
+  color: var(--primary-blue);
+  text-transform: lowercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.book-icon {
+  font-size: 3.5rem;
+  margin-right: 1.5rem;
+  color: var(--accent-blue);
+}
+
+.game-container {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  padding: 3rem 2rem;
+  box-shadow: none;
+}
+
+.definition-box {
+  background: rgba(248, 249, 250, 0.7);
+  padding: 2.5rem;
+  margin: 2rem 0;
+  border-radius: 2px;
+  border: none;
+  position: relative;
+}
+
+.definition-box::before {
+  display: none;
+}
+
+.definition-box h2 {
+  color: var(--primary-blue);
+  font-family: 'Goudy Old Style', 'Crimson Text', serif;
+  font-size: 2.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.definition-box p {
+  font-size: 1.6rem;
+  line-height: 1.8;
+  color: var(--text-dark);
+}
+
+.guess-form {
+  margin: 2rem 0;
+}
+
+.guess-form input {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-dark);
+  padding: 0.8rem 1.5rem;
+  font-size: 1.2rem;
+  border-radius: 2px;
+  margin-right: 1rem;
+  font-family: 'Crimson Text', serif;
+  width: 60%;
+  max-width: 300px;
+  transition: all 0.3s ease;
+}
+
+.guess-form input:focus {
+  outline: none;
+  border-bottom-color: var(--accent-blue);
+  background: white;
+}
+
+.guess-form input::placeholder {
+  color: #9e9e9e;
+}
+
+button {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Crimson Text', serif;
+  transition: all 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-blue);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  background: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.hints-container {
+  margin: 3rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.hint-button {
+  background: transparent;
+  border: 2px solid var(--primary-blue);
+  color: var(--primary-blue);
+  width: 90%;
+  max-width: 400px;
+  font-size: 1.3rem;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.hint-button::before {
+  font-size: 1.5rem;
+}
+
+/* Add emojis to hint buttons */
+.hint-button[data-hint-type="partOfSpeech"]::before {
+  content: '💭';
+}
+
+.hint-button[data-hint-type="alternateDefinition"]::before {
+  content: '👥';
+}
+
+.hint-button[data-hint-type="synonyms"]::before {
+  content: '👀';
+}
+
+.hint-button:hover:not(:disabled) {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.hint-content {
+  background: rgba(248, 249, 250, 0.7);
+  padding: 1.5rem;
+  border-radius: 2px;
+  margin-top: 0.8rem;
+  font-style: italic;
+  width: 90%;
+  max-width: 400px;
+  border: none;
+  position: relative;
+  font-size: 1.4rem;
+  line-height: 1.6;
+  box-shadow: 0 2px 8px var(--paper-shadow);
+}
+
+.guess-history {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(248, 249, 250, 0.7);
+  border-radius: 2px;
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.guess-history h3 {
+  color: var(--primary-blue);
+  font-family: 'Goudy Old Style', 'Crimson Text', serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.guess-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.guess-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.guess-item:hover {
+  transform: translateX(4px);
+  background: white;
+}
+
+.guess-word {
+  font-size: 1.2rem;
+  color: var(--text-dark);
+}
+
+.fuzzy-alert {
+  font-size: 0.9rem;
+  color: var(--accent-blue);
+  margin-left: 1rem;
+  font-style: italic;
+}
+
+.message {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 6px;
+  font-size: 1.2rem;
+}
+
+.message.correct {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.message.incorrect {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.timer, .guesses-remaining {
+  font-family: 'Courier New', monospace;
+  font-size: 1.8rem;
+  color: var(--primary-blue);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+
+.timer {
+  background: rgba(248, 249, 250, 0.9);
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  box-shadow: 
+    inset 0 2px 4px var(--shadow-color),
+    0 2px 4px var(--paper-shadow);
+  display: inline-block;
+  min-width: 120px;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid var(--primary-blue);
+}
+
+.guesses-remaining::before {
+  content: '🎯';
+  font-size: 1.8rem;
+}
+
+/* Remove the old texture overlay */
+.app-container::before {
+  background-image: none;
+}
