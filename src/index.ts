@@ -330,8 +330,8 @@ app.get('/api/auth/validate', authenticateAdmin, (req, res) => {
   res.json({ valid: true });
 });
 
-// Get all words - protected route
-app.get('/api/admin/words', authenticateAdmin, (req, res) => {
+// Get all words - no auth required for now
+app.get('/api/admin/words', (req, res) => {
   try {
     res.json({ words });
   } catch (error) {
@@ -340,8 +340,8 @@ app.get('/api/admin/words', authenticateAdmin, (req, res) => {
   }
 });
 
-// Add a new word - protected route
-app.post('/api/admin/words', authenticateAdmin, (req, res) => {
+// Add a new word - no auth required for now
+app.post('/api/admin/words', (req, res) => {
   try {
     const newWord: WordEntry = req.body;
     
@@ -369,8 +369,8 @@ app.post('/api/admin/words', authenticateAdmin, (req, res) => {
   }
 });
 
-// Update an existing word - protected route
-app.put('/api/admin/words/:word', authenticateAdmin, (req, res) => {
+// Update an existing word - no auth required for now
+app.put('/api/admin/words/:word', (req, res) => {
   try {
     const wordToUpdate = req.params.word;
     const updatedWord: WordEntry = req.body;
@@ -399,8 +399,8 @@ app.put('/api/admin/words/:word', authenticateAdmin, (req, res) => {
   }
 });
 
-// Delete a word - protected route
-app.delete('/api/admin/words/:word', authenticateAdmin, (req, res) => {
+// Delete a word - no auth required for now
+app.delete('/api/admin/words/:word', (req, res) => {
   try {
     const wordToDelete = req.params.word;
     

@@ -84,6 +84,14 @@
   background: #f57c00;
 }
 
+.admin-panel .back-button {
+  background: #2196F3;
+}
+
+.admin-panel .back-button:hover {
+  background: #1976D2;
+}
+
 .error-message {
   background-color: #ffebee;
   color: #c62828;
