@@ -230,7 +230,8 @@ const AdminPanel: React.FC = () => {
 
   // Delete a word
   const handleDelete = async (word: WordEntry) => {
-    if (!window.confirm(`Are you sure you want to delete "${word.word}"?`)) {
+    // Enhanced confirmation dialog
+    if (!window.confirm(`⚠️ Delete Confirmation\n\nAre you sure you want to delete "${word.word}"?\n\nThis action cannot be undone.`)) {
       return;
     }
 
@@ -246,7 +247,7 @@ const AdminPanel: React.FC = () => {
 
       // Remove the word from the list
       setWords(words.filter(w => w.word !== word.word));
-      setSuccessMessage('Word deleted successfully!');
+      setSuccessMessage(`"${word.word}" was deleted successfully!`);
     } catch (error) {
       console.error('Error deleting word:', error);
       setError(error instanceof Error ? error.message : 'Failed to delete word. Please try again.');
@@ -344,7 +345,12 @@ const AdminPanel: React.FC = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="dateAdded">Daily Word Date (DD/MM/YY):</label>
+            <label htmlFor="dateAdded">
+              Daily Word Date (DD/MM/YY):
+              <span className="field-note">
+                * Currently for planning purposes only - not yet used in production
+              </span>
+            </label>
             <input
               type="text"
               id="dateAdded"
@@ -375,7 +381,10 @@ const AdminPanel: React.FC = () => {
                 <th>Part of Speech</th>
                 <th>Definition</th>
                 <th>Alt. Definition</th>
-                <th>Daily Word Date</th>
+                <th>
+                  Daily Word Date
+                  <div className="column-note">For planning only</div>
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -388,9 +397,21 @@ const AdminPanel: React.FC = () => {
                   <td>{word.definition}</td>
                   <td>{word.alternateDefinition || '—'}</td>
                   <td>{word.dateAdded || formatDate(new Date())}</td>
-                  <td>
-                    <button onClick={() => handleEdit(word)} className="edit-button">Edit</button>
-                    <button onClick={() => handleDelete(word)} className="delete-button">Delete</button>
+                  <td className="action-buttons">
+                    <button 
+                      onClick={() => handleEdit(word)} 
+                      className="edit-button" 
+                      title="Edit this word"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(word)} 
+                      className="delete-button"
+                      title="Delete this word"
+                    >
+                      🗑️ Delete
+                    </button>
                   </td>
                 </tr>
               ))}

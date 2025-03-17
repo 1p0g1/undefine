@@ -52,6 +52,18 @@
   cursor: not-allowed;
 }
 
+.admin-panel .edit-button,
+.admin-panel .delete-button {
+  width: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
 .admin-panel .edit-button {
   background: #4caf50;
 }
@@ -217,6 +229,7 @@
 .words-list td:nth-child(7) {
   width: 14%;
   text-align: center;
+  vertical-align: middle;
 }
 
 .words-list tr:nth-child(even) {
@@ -240,4 +253,28 @@
   min-height: 300px;
   font-size: 1.2rem;
   color: var(--primary-blue);
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.field-note {
+  display: block;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #666;
+  margin-top: 0.25rem;
+  font-weight: normal;
+}
+
+.column-note {
+  font-size: 0.7rem;
+  font-style: italic;
+  color: #666;
+  font-weight: normal;
 } 
