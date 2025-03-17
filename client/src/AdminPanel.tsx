@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 import './AdminPanel.css';
 
 interface WordEntry {
@@ -24,6 +26,8 @@ const AdminPanel: React.FC = () => {
     synonyms: []
   });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { token, logout } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch all words
   useEffect(() => {
@@ -31,7 +35,11 @@ const AdminPanel: React.FC = () => {
       try {
         console.log('Fetching words from API...');
         setLoading(true);
-        const response = await fetch('/api/admin/words');
+        const response = await fetch('/api/admin/words', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         console.log('API response status:', response.status);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -48,7 +56,7 @@ const AdminPanel: React.FC = () => {
     };
 
     fetchWords();
-  }, []);
+  }, [token]);
 
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -114,6 +122,7 @@ const AdminPanel: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(formData),
         });
@@ -123,6 +132,7 @@ const AdminPanel: React.FC = () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(formData),
         });
@@ -153,7 +163,11 @@ const AdminPanel: React.FC = () => {
       setSelectedWord(null);
       
       // Refresh the word list
-      const refreshResponse = await fetch('/api/admin/words');
+      const refreshResponse = await fetch('/api/admin/words', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (refreshResponse.ok) {
         const refreshData = await refreshResponse.json();
         setWords(refreshData.words);
@@ -173,6 +187,9 @@ const AdminPanel: React.FC = () => {
     try {
       const response = await fetch(`/api/admin/words/${word.word}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
@@ -189,6 +206,12 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   // Render loading state
   if (loading) {
     return <div className="admin-panel loading">Loading words...</div>;
@@ -196,7 +219,10 @@ const AdminPanel: React.FC = () => {
 
   return (
     <div className="admin-panel">
-      <h1>Word Management</h1>
+      <div className="admin-header">
+        <h1>Word Management</h1>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
+      </div>
       
       {error && <div className="error-message">{error}</div>}
       {successMessage && <div className="success-message">{successMessage}</div>}

@@ -5,10 +5,17 @@
   font-family: 'Crimson Text', serif;
 }
 
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
 .admin-panel h1 {
   color: var(--primary-blue);
-  margin-bottom: 2rem;
-  text-align: center;
+  margin-bottom: 0;
+  text-align: left;
 }
 
 .admin-panel h2 {
@@ -67,6 +74,14 @@
 
 .admin-panel .cancel-button:hover {
   background: #757575;
+}
+
+.admin-panel .logout-button {
+  background: #ff9800;
+}
+
+.admin-panel .logout-button:hover {
+  background: #f57c00;
 }
 
 .error-message {

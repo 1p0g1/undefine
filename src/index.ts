@@ -3,6 +3,12 @@ import cors from 'cors';
 import { getRandomWord, words, WordEntry } from './data/words';
 import fs from 'fs';
 import path from 'path';
+import { authenticateAdmin } from './auth/authMiddleware';
+import { login } from './auth/authController';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Debug logging
 console.log('Starting server initialization...');
@@ -316,8 +322,16 @@ app.get('/test', (req, res) => {
   });
 });
 
-// Get all words
-app.get('/api/admin/words', (req, res) => {
+// Authentication routes
+app.post('/api/auth/login', login);
+
+// Validate token endpoint
+app.get('/api/auth/validate', authenticateAdmin, (req, res) => {
+  res.json({ valid: true });
+});
+
+// Get all words - protected route
+app.get('/api/admin/words', authenticateAdmin, (req, res) => {
   try {
     res.json({ words });
   } catch (error) {
@@ -326,8 +340,8 @@ app.get('/api/admin/words', (req, res) => {
   }
 });
 
-// Add a new word
-app.post('/api/admin/words', (req, res) => {
+// Add a new word - protected route
+app.post('/api/admin/words', authenticateAdmin, (req, res) => {
   try {
     const newWord: WordEntry = req.body;
     
@@ -355,8 +369,8 @@ app.post('/api/admin/words', (req, res) => {
   }
 });
 
-// Update an existing word
-app.put('/api/admin/words/:word', (req, res) => {
+// Update an existing word - protected route
+app.put('/api/admin/words/:word', authenticateAdmin, (req, res) => {
   try {
     const wordToUpdate = req.params.word;
     const updatedWord: WordEntry = req.body;
@@ -385,8 +399,8 @@ app.put('/api/admin/words/:word', (req, res) => {
   }
 });
 
-// Delete a word
-app.delete('/api/admin/words/:word', (req, res) => {
+// Delete a word - protected route
+app.delete('/api/admin/words/:word', authenticateAdmin, (req, res) => {
   try {
     const wordToDelete = req.params.word;
     
