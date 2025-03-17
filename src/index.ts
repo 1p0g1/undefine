@@ -333,7 +333,55 @@ app.get('/api/auth/validate', authenticateAdmin, (req, res) => {
 // Get all words - no auth required for now
 app.get('/api/admin/words', (req, res) => {
   try {
-    res.json({ words });
+    // Support pagination with default values
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const search = (req.query.search as string) || '';
+    
+    // Filter words if search parameter is provided
+    let filteredWords = words;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredWords = words.filter(word => 
+        word.word.toLowerCase().includes(searchLower) || 
+        word.definition.toLowerCase().includes(searchLower) ||
+        (word.alternateDefinition && word.alternateDefinition.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    // Calculate pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    
+    // Prepare pagination metadata
+    const pagination: any = {
+      total: filteredWords.length,
+      page,
+      limit,
+      pages: Math.ceil(filteredWords.length / limit)
+    };
+    
+    // Add next/prev page info if available
+    if (endIndex < filteredWords.length) {
+      pagination.next = { page: page + 1, limit };
+    }
+    
+    if (startIndex > 0) {
+      pagination.prev = { page: page - 1, limit };
+    }
+    
+    // Send paginated results if pagination is requested
+    if (req.query.page || req.query.limit) {
+      const paginatedWords = filteredWords.slice(startIndex, endIndex);
+      return res.json({ 
+        words: paginatedWords,
+        pagination 
+      });
+    }
+    
+    // Otherwise send all results (for backward compatibility)
+    res.json({ words: filteredWords });
+    
   } catch (error) {
     console.error('Error in /api/admin/words:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -353,7 +401,9 @@ app.post('/api/admin/words', (req, res) => {
     // Check if word already exists
     const wordExists = words.some(w => w.word.toLowerCase() === newWord.word.toLowerCase());
     if (wordExists) {
-      return res.status(400).json({ error: 'Word already exists' });
+      return res.status(400).json({ 
+        error: `"${newWord.word}" already exists in the database. Please choose a different word.` 
+      });
     }
     
     // Add the new word to the array
@@ -384,6 +434,17 @@ app.put('/api/admin/words/:word', (req, res) => {
     const index = words.findIndex(w => w.word.toLowerCase() === wordToUpdate.toLowerCase());
     if (index === -1) {
       return res.status(404).json({ error: 'Word not found' });
+    }
+    
+    // If the word value is being changed, check if the new word already exists
+    if (wordToUpdate.toLowerCase() !== updatedWord.word.toLowerCase()) {
+      const wordExists = words.some(w => w.word.toLowerCase() === updatedWord.word.toLowerCase() && 
+                                   w.word.toLowerCase() !== wordToUpdate.toLowerCase());
+      if (wordExists) {
+        return res.status(400).json({ 
+          error: `"${updatedWord.word}" already exists in the database. Please choose a different word.` 
+        });
+      }
     }
     
     // Update the word
@@ -445,9 +506,39 @@ export function getRandomWord(): WordEntry {
   return words[randomIndex];
 }`;
     
-    // Write the content to the file
-    fs.writeFileSync(wordsFilePath, fileContent);
-    console.log('Words file updated successfully');
+    // Create a temp file and then rename to avoid file corruption if process is interrupted
+    const tempFilePath = `${wordsFilePath}.temp`;
+    
+    // Write to a temp file first
+    fs.writeFileSync(tempFilePath, fileContent);
+    
+    // Then rename the temp file to the target file (atomic operation)
+    fs.renameSync(tempFilePath, wordsFilePath);
+    
+    console.log(`Words file updated successfully (${words.length} words)`);
+    
+    // Optional: if the words array gets very large, consider implementing a backup system
+    if (words.length > 100) {
+      const backupDir = path.join(__dirname, 'data', 'backups');
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupPath = path.join(backupDir, `words-backup-${timestamp}.json`);
+      fs.writeFileSync(backupPath, JSON.stringify(words, null, 2));
+      
+      // Keep only the latest 10 backups
+      const backups = fs.readdirSync(backupDir)
+        .filter(file => file.startsWith('words-backup-'))
+        .sort((a, b) => b.localeCompare(a));
+      
+      if (backups.length > 10) {
+        backups.slice(10).forEach(oldBackup => {
+          fs.unlinkSync(path.join(backupDir, oldBackup));
+        });
+      }
+    }
   } catch (error) {
     console.error('Error saving words to file:', error);
     throw error;

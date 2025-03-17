@@ -11,6 +11,15 @@ interface WordEntry {
   dateAdded?: string; // This will now represent the daily word date
 }
 
+interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  next?: { page: number; limit: number };
+  prev?: { page: number; limit: number };
+}
+
 const AdminPanel: React.FC = () => {
   const [words, setWords] = useState<WordEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -27,6 +36,10 @@ const AdminPanel: React.FC = () => {
     dateAdded: formatDate(new Date()) // Default to today's date
   });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [wordsPerPage, setWordsPerPage] = useState<number>(10);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const navigate = useNavigate();
 
   // Format date to DD/MM/YY
@@ -66,37 +79,51 @@ const AdminPanel: React.FC = () => {
     return dateString === `${day}/${month}/${year}`;
   }
 
-  // Fetch all words
-  useEffect(() => {
-    const fetchWords = async () => {
-      try {
-        console.log('Fetching words from API...');
-        setLoading(true);
-        const response = await fetch('/api/admin/words');
-        console.log('API response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('API response data:', data);
-        
-        // Ensure each word has a dateAdded field, default to today for existing words that don't have it
-        const wordsWithDates = data.words.map((word: WordEntry) => ({
-          ...word,
-          dateAdded: word.dateAdded || formatDate(new Date())
-        }));
-        
-        setWords(wordsWithDates);
-      } catch (error) {
-        console.error('Error fetching words:', error);
-        setError('Failed to load words. Please try again.');
-      } finally {
-        setLoading(false);
+  // Fetch words with optional pagination and search
+  const fetchWords = async (page = 1, limit = 10, search = '') => {
+    try {
+      setLoading(true);
+      
+      let url = `/api/admin/words?page=${page}&limit=${limit}`;
+      if (search) {
+        url += `&search=${encodeURIComponent(search)}`;
       }
-    };
+      
+      console.log('Fetching words from API:', url);
+      const response = await fetch(url);
+      
+      console.log('API response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('API response data:', data);
+      
+      // Ensure each word has a dateAdded field, default to today for existing words that don't have it
+      const wordsWithDates = data.words.map((word: WordEntry) => ({
+        ...word,
+        dateAdded: word.dateAdded || formatDate(new Date())
+      }));
+      
+      setWords(wordsWithDates);
+      
+      // Set pagination info if available
+      if (data.pagination) {
+        setPagination(data.pagination);
+      }
+    } catch (error) {
+      console.error('Error fetching words:', error);
+      setError('Failed to load words. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchWords();
-  }, []);
+  // Initial fetch
+  useEffect(() => {
+    fetchWords(currentPage, wordsPerPage, searchTerm);
+  }, [currentPage, wordsPerPage, searchTerm]);
 
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -150,6 +177,23 @@ const AdminPanel: React.FC = () => {
     setSuccessMessage(null);
   };
 
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Handle search input
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page on new search
+  };
+
+  // Handle rows per page change
+  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setWordsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page on limit change
+  };
+
   // Save a new or updated word
   const handleSave = async () => {
     try {
@@ -192,36 +236,23 @@ const AdminPanel: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        // Display the specific error message from the server
+        setError(errorData.error || `HTTP error! status: ${response.status}`);
+        return;
       }
 
       const data = await response.json();
       
-      // Update the words list
-      if (isAdding) {
-        setWords([...words, data.word]);
-        setSuccessMessage('Word added successfully!');
-      } else {
-        setWords(words.map(w => w.word === selectedWord?.word ? data.word : w));
-        setSuccessMessage('Word updated successfully!');
-      }
-
       // Reset form
       setIsEditing(false);
       setIsAdding(false);
       setSelectedWord(null);
       
+      // Show success message
+      setSuccessMessage(isAdding ? 'Word added successfully!' : 'Word updated successfully!');
+      
       // Refresh the word list
-      const refreshResponse = await fetch('/api/admin/words');
-      if (refreshResponse.ok) {
-        const refreshData = await refreshResponse.json();
-        // Ensure each word has a dateAdded field
-        const wordsWithDates = refreshData.words.map((word: WordEntry) => ({
-          ...word,
-          dateAdded: word.dateAdded || formatDate(new Date())
-        }));
-        setWords(wordsWithDates);
-      }
+      await fetchWords(currentPage, wordsPerPage, searchTerm);
     } catch (error) {
       console.error('Error saving word:', error);
       setError(error instanceof Error ? error.message : 'Failed to save word. Please try again.');
@@ -245,9 +276,11 @@ const AdminPanel: React.FC = () => {
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
-      // Remove the word from the list
-      setWords(words.filter(w => w.word !== word.word));
+      // Show success message
       setSuccessMessage(`"${word.word}" was deleted successfully!`);
+      
+      // Refresh the word list
+      await fetchWords(currentPage, wordsPerPage, searchTerm);
     } catch (error) {
       console.error('Error deleting word:', error);
       setError(error instanceof Error ? error.message : 'Failed to delete word. Please try again.');
@@ -260,7 +293,7 @@ const AdminPanel: React.FC = () => {
   };
 
   // Render loading state
-  if (loading) {
+  if (loading && words.length === 0) {
     return <div className="admin-panel loading">Loading words...</div>;
   }
 
@@ -275,6 +308,15 @@ const AdminPanel: React.FC = () => {
       {successMessage && <div className="success-message">{successMessage}</div>}
       
       <div className="admin-controls">
+        <div className="search-controls">
+          <input
+            type="text"
+            placeholder="Search words..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="search-input"
+          />
+        </div>
         <button onClick={handleAdd} disabled={isAdding || isEditing}>
           Add New Word
         </button>
@@ -370,57 +412,120 @@ const AdminPanel: React.FC = () => {
       
       <div className="words-list">
         <h2>Words List</h2>
+        
         {words.length === 0 ? (
-          <p>No words found. Add some words to get started.</p>
+          <p>No words found. {searchTerm ? 'Try a different search term or ' : ''}Add some words to get started.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Word</th>
-                <th>Part of Speech</th>
-                <th>Definition</th>
-                <th>Alt. Definition</th>
-                <th>
-                  Daily Word Date
-                  <div className="column-note">For planning only</div>
-                </th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {words.map((word, index) => (
-                <tr key={word.word}>
-                  <td className="row-number">{index + 1}</td>
-                  <td>{word.word}</td>
-                  <td>{word.partOfSpeech}</td>
-                  <td>{word.definition}</td>
-                  <td>{word.alternateDefinition || '—'}</td>
-                  <td>{word.dateAdded || formatDate(new Date())}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button 
-                        onClick={() => handleEdit(word)} 
-                        className="edit-button" 
-                        title="Edit this word"
-                        aria-label="Edit word"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(word)} 
-                        className="delete-button"
-                        title="Delete this word"
-                        aria-label="Delete word"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
+          <>
+            <div className="table-controls">
+              <div className="rows-per-page">
+                <label>
+                  Rows per page:
+                  <select value={wordsPerPage} onChange={handleRowsPerPageChange}>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                  </select>
+                </label>
+              </div>
+              
+              {pagination && (
+                <div className="pagination-info">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} words
+                </div>
+              )}
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Word</th>
+                  <th>Part of Speech</th>
+                  <th>Definition</th>
+                  <th>Alt. Definition</th>
+                  <th>
+                    Daily Word Date
+                    <div className="column-note">For planning only</div>
+                  </th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {words.map((word, index) => (
+                  <tr key={word.word}>
+                    <td className="row-number">{index + 1}</td>
+                    <td>{word.word}</td>
+                    <td>{word.partOfSpeech}</td>
+                    <td>{word.definition}</td>
+                    <td>{word.alternateDefinition || '—'}</td>
+                    <td>{word.dateAdded || formatDate(new Date())}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button 
+                          onClick={() => handleEdit(word)} 
+                          className="edit-button" 
+                          title="Edit this word"
+                          aria-label="Edit word"
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(word)} 
+                          className="delete-button"
+                          title="Delete this word"
+                          aria-label="Delete word"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {pagination && pagination.pages > 1 && (
+              <div className="pagination-controls">
+                <button 
+                  onClick={() => handlePageChange(1)} 
+                  disabled={currentPage === 1}
+                  className="pagination-button"
+                >
+                  &laquo; First
+                </button>
+                
+                <button 
+                  onClick={() => handlePageChange(currentPage - 1)} 
+                  disabled={currentPage === 1}
+                  className="pagination-button"
+                >
+                  &lsaquo; Prev
+                </button>
+                
+                <span className="page-indicator">
+                  Page {pagination.page} of {pagination.pages}
+                </span>
+                
+                <button 
+                  onClick={() => handlePageChange(currentPage + 1)} 
+                  disabled={currentPage === pagination.pages}
+                  className="pagination-button"
+                >
+                  Next &rsaquo;
+                </button>
+                
+                <button 
+                  onClick={() => handlePageChange(pagination.pages)} 
+                  disabled={currentPage === pagination.pages}
+                  className="pagination-button"
+                >
+                  Last &raquo;
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
