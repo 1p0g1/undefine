@@ -435,6 +435,7 @@ function saveWordsToFile() {
   synonyms?: string[];
   definition: string;
   alternateDefinition?: string;
+  dateAdded?: string;
 }
 
 export const words: WordEntry[] = ${JSON.stringify(words, null, 2)};

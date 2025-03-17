@@ -8,6 +8,7 @@ interface WordEntry {
   synonyms?: string[];
   definition: string;
   alternateDefinition?: string;
+  dateAdded?: string;
 }
 
 const AdminPanel: React.FC = () => {
@@ -22,10 +23,48 @@ const AdminPanel: React.FC = () => {
     partOfSpeech: '',
     definition: '',
     alternateDefinition: '',
-    synonyms: []
+    synonyms: [],
+    dateAdded: formatDate(new Date())
   });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Format date to DD/MM/YY
+  function formatDate(date: Date): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day}/${month}/${year}`;
+  }
+
+  // Parse DD/MM/YY date string to Date object
+  function parseDate(dateString: string): Date | null {
+    // Expected format: DD/MM/YY
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return null;
+    
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Months are 0-indexed in JS
+    const year = 2000 + parseInt(parts[2], 10); // Assuming 20xx for simplicity
+    
+    return new Date(year, month, day);
+  }
+
+  // Validate date format (DD/MM/YY)
+  function isValidDate(dateString: string): boolean {
+    // Check format
+    if (!/^\d{2}\/\d{2}\/\d{2}$/.test(dateString)) return false;
+    
+    const date = parseDate(dateString);
+    if (!date) return false;
+    
+    // Check if parsed date components match input
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    
+    return dateString === `${day}/${month}/${year}`;
+  }
 
   // Fetch all words
   useEffect(() => {
@@ -40,7 +79,14 @@ const AdminPanel: React.FC = () => {
         }
         const data = await response.json();
         console.log('API response data:', data);
-        setWords(data.words);
+        
+        // Ensure each word has a dateAdded field, default to today for existing words that don't have it
+        const wordsWithDates = data.words.map((word: WordEntry) => ({
+          ...word,
+          dateAdded: word.dateAdded || formatDate(new Date())
+        }));
+        
+        setWords(wordsWithDates);
       } catch (error) {
         console.error('Error fetching words:', error);
         setError('Failed to load words. Please try again.');
@@ -60,6 +106,9 @@ const AdminPanel: React.FC = () => {
       // Split comma-separated values into an array
       const synonymsArray = value.split(',').map(s => s.trim()).filter(s => s);
       setFormData({ ...formData, synonyms: synonymsArray });
+    } else if (name === 'dateAdded') {
+      // Validate date format
+      setFormData({ ...formData, dateAdded: value });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -70,7 +119,8 @@ const AdminPanel: React.FC = () => {
     setSelectedWord(word);
     setFormData({
       ...word,
-      synonyms: word.synonyms || []
+      synonyms: word.synonyms || [],
+      dateAdded: word.dateAdded || formatDate(new Date())
     });
     setIsEditing(true);
     setIsAdding(false);
@@ -84,7 +134,8 @@ const AdminPanel: React.FC = () => {
       partOfSpeech: '',
       definition: '',
       alternateDefinition: '',
-      synonyms: []
+      synonyms: [],
+      dateAdded: formatDate(new Date())
     });
     setIsAdding(true);
     setIsEditing(false);
@@ -105,6 +156,12 @@ const AdminPanel: React.FC = () => {
       // Validate form data
       if (!formData.word || !formData.definition || !formData.partOfSpeech) {
         setError('Word, definition, and part of speech are required.');
+        return;
+      }
+      
+      // Validate date format
+      if (formData.dateAdded && !isValidDate(formData.dateAdded)) {
+        setError('Date must be in DD/MM/YY format.');
         return;
       }
 
@@ -158,7 +215,12 @@ const AdminPanel: React.FC = () => {
       const refreshResponse = await fetch('/api/admin/words');
       if (refreshResponse.ok) {
         const refreshData = await refreshResponse.json();
-        setWords(refreshData.words);
+        // Ensure each word has a dateAdded field
+        const wordsWithDates = refreshData.words.map((word: WordEntry) => ({
+          ...word,
+          dateAdded: word.dateAdded || formatDate(new Date())
+        }));
+        setWords(wordsWithDates);
       }
     } catch (error) {
       console.error('Error saving word:', error);
@@ -281,6 +343,18 @@ const AdminPanel: React.FC = () => {
             />
           </div>
           
+          <div className="form-group">
+            <label htmlFor="dateAdded">Date Added (DD/MM/YY):</label>
+            <input
+              type="text"
+              id="dateAdded"
+              name="dateAdded"
+              value={formData.dateAdded || formatDate(new Date())}
+              onChange={handleInputChange}
+              placeholder="DD/MM/YY"
+            />
+          </div>
+          
           <div className="form-actions">
             <button onClick={handleSave}>Save</button>
             <button onClick={handleCancel} className="cancel-button">Cancel</button>
@@ -296,18 +370,24 @@ const AdminPanel: React.FC = () => {
           <table>
             <thead>
               <tr>
+                <th>#</th>
                 <th>Word</th>
                 <th>Part of Speech</th>
                 <th>Definition</th>
+                <th>Alt. Definition</th>
+                <th>Date Added</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {words.map((word) => (
+              {words.map((word, index) => (
                 <tr key={word.word}>
+                  <td className="row-number">{index + 1}</td>
                   <td>{word.word}</td>
                   <td>{word.partOfSpeech}</td>
                   <td>{word.definition}</td>
+                  <td>{word.alternateDefinition || '—'}</td>
+                  <td>{word.dateAdded || formatDate(new Date())}</td>
                   <td>
                     <button onClick={() => handleEdit(word)} className="edit-button">Edit</button>
                     <button onClick={() => handleDelete(word)} className="delete-button">Delete</button>
