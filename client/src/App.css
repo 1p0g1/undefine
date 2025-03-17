@@ -221,14 +221,17 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Hint container styling */
 .hints-container {
-  margin: 3rem 0;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
   align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  width: 100%;
 }
 
+/* Hint button styling */
 .hint-button {
   background: transparent;
   border: 2px solid var(--primary-blue);
@@ -244,6 +247,7 @@ button:disabled {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  border-radius: 6px;
 }
 
 .hint-button::before {
@@ -282,31 +286,45 @@ button:disabled {
   opacity: 0.7;
 }
 
-.hint-content {
-  background: rgba(248, 249, 250, 0.7);
-  padding: 1.5rem;
-  border-radius: 2px;
-  margin-top: 0.8rem;
+/* Hint display styling */
+.hint-display {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.5rem;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-blue);
+  animation: fadeIn 0.5s ease-in-out;
+  text-align: left;
   width: 90%;
   max-width: 400px;
-  border: none;
-  position: relative;
-  font-size: 1.4rem;
-  line-height: 1.6;
-  box-shadow: 0 2px 8px var(--paper-shadow);
-  opacity: 0;
-  animation: fadeIn 0.5s ease-in-out forwards;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.hint-title {
+  font-weight: 600;
+  color: var(--primary-blue);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-family: 'Crimson Text', 'Goudy Old Style', serif;
+}
+
+.hint-content {
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  font-family: 'Crimson Text', 'Goudy Old Style', serif;
+  line-height: 1.4;
 }
 
 .guess-history {
@@ -1135,34 +1153,31 @@ button:disabled {
   }
 }
 
-/* Hint display styling */
-.hint-display {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  border-left: 4px solid var(--primary-blue);
-  animation: fadeIn 0.5s ease-in-out;
+/* Footer styles */
+.app-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid #eaeaea;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
-.hint-title {
-  font-weight: 600;
+.admin-link {
   color: var(--primary-blue);
-  margin-bottom: 0.5rem;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
 }
 
-.hint-content {
-  font-size: 1.1rem;
+.admin-link:hover {
+  color: var(--accent-blue);
+  text-decoration: underline;
 }
 

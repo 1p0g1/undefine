@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import { getRandomWord } from './data/words';
+import { getRandomWord, words, WordEntry } from './data/words';
+import fs from 'fs';
+import path from 'path';
 
 // Debug logging
 console.log('Starting server initialization...');
@@ -47,8 +49,8 @@ process.on('unhandledRejection', (reason, promise) => {
 console.log('Setting up middleware...');
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true
 }));
 
@@ -209,6 +211,129 @@ app.get('/test', (req, res) => {
     env: process.env.NODE_ENV || 'development'
   });
 });
+
+// Get all words
+app.get('/api/admin/words', (req, res) => {
+  try {
+    res.json({ words });
+  } catch (error) {
+    console.error('Error in /api/admin/words:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add a new word
+app.post('/api/admin/words', (req, res) => {
+  try {
+    const newWord: WordEntry = req.body;
+    
+    // Validate the new word
+    if (!newWord.word || !newWord.definition || !newWord.partOfSpeech) {
+      return res.status(400).json({ error: 'Word, definition, and partOfSpeech are required' });
+    }
+    
+    // Check if word already exists
+    const wordExists = words.some(w => w.word.toLowerCase() === newWord.word.toLowerCase());
+    if (wordExists) {
+      return res.status(400).json({ error: 'Word already exists' });
+    }
+    
+    // Add the new word to the array
+    words.push(newWord);
+    
+    // Save the updated words array to the file
+    saveWordsToFile();
+    
+    res.status(201).json({ message: 'Word added successfully', word: newWord });
+  } catch (error) {
+    console.error('Error in POST /api/admin/words:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update an existing word
+app.put('/api/admin/words/:word', (req, res) => {
+  try {
+    const wordToUpdate = req.params.word;
+    const updatedWord: WordEntry = req.body;
+    
+    // Validate the updated word
+    if (!updatedWord.word || !updatedWord.definition || !updatedWord.partOfSpeech) {
+      return res.status(400).json({ error: 'Word, definition, and partOfSpeech are required' });
+    }
+    
+    // Find the index of the word to update
+    const index = words.findIndex(w => w.word.toLowerCase() === wordToUpdate.toLowerCase());
+    if (index === -1) {
+      return res.status(404).json({ error: 'Word not found' });
+    }
+    
+    // Update the word
+    words[index] = updatedWord;
+    
+    // Save the updated words array to the file
+    saveWordsToFile();
+    
+    res.json({ message: 'Word updated successfully', word: updatedWord });
+  } catch (error) {
+    console.error(`Error in PUT /api/admin/words/${req.params.word}:`, error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete a word
+app.delete('/api/admin/words/:word', (req, res) => {
+  try {
+    const wordToDelete = req.params.word;
+    
+    // Find the index of the word to delete
+    const index = words.findIndex(w => w.word.toLowerCase() === wordToDelete.toLowerCase());
+    if (index === -1) {
+      return res.status(404).json({ error: 'Word not found' });
+    }
+    
+    // Remove the word from the array
+    const deletedWord = words.splice(index, 1)[0];
+    
+    // Save the updated words array to the file
+    saveWordsToFile();
+    
+    res.json({ message: 'Word deleted successfully', word: deletedWord });
+  } catch (error) {
+    console.error(`Error in DELETE /api/admin/words/${req.params.word}:`, error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Helper function to save words to file
+function saveWordsToFile() {
+  try {
+    const wordsFilePath = path.join(__dirname, 'data', 'words.ts');
+    
+    // Create the content to write to the file
+    const fileContent = `export interface WordEntry {
+  word: string;
+  partOfSpeech: string;
+  synonyms?: string[];
+  definition: string;
+  alternateDefinition?: string;
+}
+
+export const words: WordEntry[] = ${JSON.stringify(words, null, 2)};
+
+export function getRandomWord(): WordEntry {
+  const randomIndex = Math.floor(Math.random() * words.length);
+  return words[randomIndex];
+}`;
+    
+    // Write the content to the file
+    fs.writeFileSync(wordsFilePath, fileContent);
+    console.log('Words file updated successfully');
+  } catch (error) {
+    console.error('Error saving words to file:', error);
+    throw error;
+  }
+}
 
 // Modify server startup
 console.log('Setting up server...');

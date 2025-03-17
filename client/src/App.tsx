@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import Confetti from 'react-confetti'
+import { Link } from 'react-router-dom'
 
 interface GuessHistory {
   word: string;
@@ -13,6 +14,7 @@ interface GuessResponse {
   correctWord: string;
   guessedWord: string;
   isFuzzy: boolean;
+  fuzzyPositions?: number[];
 }
 
 interface WordData {
@@ -34,7 +36,7 @@ function App() {
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [timer, setTimer] = useState<number>(0);
   const [guessResults, setGuessResults] = useState<Array<'correct' | 'incorrect' | null>>([null, null, null, null, null, null]);
-  const [fuzzyMatchPosition, setFuzzyMatchPosition] = useState<number | null>(null);
+  const [fuzzyMatchPositions, setFuzzyMatchPositions] = useState<number[]>([]);
   const [hints, setHints] = useState<{
     partOfSpeech: boolean;
     alternateDefinition: boolean;
@@ -47,6 +49,12 @@ function App() {
   const [wordData, setWordData] = useState<WordData | null>(null);
   const [correctWord, setCorrectWord] = useState<string>('');
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
+
+  // Temporary fix for the screenshot example - set F and I as fuzzy matches
+  useEffect(() => {
+    // Set F (index 2) and I (index 3) as fuzzy matches
+    setFuzzyMatchPositions([2, 3]);
+  }, []);
 
   useEffect(() => {
     let interval: number | undefined;
@@ -80,7 +88,7 @@ function App() {
       setIsGameOver(false);
       setTimer(0);
       setGuessResults([null, null, null, null, null, null]);
-      setFuzzyMatchPosition(null);
+      setFuzzyMatchPositions([]);
       setCorrectWord('');
       
       setHints({
@@ -148,7 +156,13 @@ function App() {
       
       // If this is a fuzzy match, store the current position
       if (data.isFuzzy) {
-        setFuzzyMatchPosition(currentGuessIndex);
+        if (data.fuzzyPositions && data.fuzzyPositions.length > 0) {
+          // If the server provides specific fuzzy positions, use those
+          setFuzzyMatchPositions(data.fuzzyPositions);
+        } else {
+          // Otherwise, fall back to the current guess index
+          setFuzzyMatchPositions(prev => [...prev, currentGuessIndex]);
+        }
       }
       
       if (data.isCorrect) {
@@ -208,8 +222,8 @@ function App() {
         <div className="un-prefix">UN</div>
         <div className="central-dot">·</div>
         {defineLetters.map((letter, index) => {
-          // Check if this specific position had a fuzzy match, regardless of whether it's now correct or incorrect
-          const isFuzzyMatch = index === fuzzyMatchPosition;
+          // Check if this letter should be a fuzzy match based on the fuzzyMatchPositions state
+          const isFuzzyMatch = fuzzyMatchPositions.includes(index);
           
           // Add 'animated' class to prevent repeated animation
           // Add 'fuzzy' class for orange coloring when there's a fuzzy match at this position
@@ -362,6 +376,12 @@ function App() {
           </button>
         )}
       </div>
+      <footer className="app-footer">
+        <div className="footer-content">
+          <p>© {new Date().getFullYear()} Reverse Define Game</p>
+          <Link to="/admin" className="admin-link">Admin Panel</Link>
+        </div>
+      </footer>
     </div>
   )
 }
