@@ -435,7 +435,7 @@ function saveWordsToFile() {
   synonyms?: string[];
   definition: string;
   alternateDefinition?: string;
-  dateAdded?: string;
+  dateAdded?: string; // Date when this word will be the daily word (DD/MM/YY)
 }
 
 export const words: WordEntry[] = ${JSON.stringify(words, null, 2)};

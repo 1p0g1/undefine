@@ -8,7 +8,7 @@ interface WordEntry {
   synonyms?: string[];
   definition: string;
   alternateDefinition?: string;
-  dateAdded?: string;
+  dateAdded?: string; // This will now represent the daily word date
 }
 
 const AdminPanel: React.FC = () => {
@@ -24,7 +24,7 @@ const AdminPanel: React.FC = () => {
     definition: '',
     alternateDefinition: '',
     synonyms: [],
-    dateAdded: formatDate(new Date())
+    dateAdded: formatDate(new Date()) // Default to today's date
   });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -135,7 +135,7 @@ const AdminPanel: React.FC = () => {
       definition: '',
       alternateDefinition: '',
       synonyms: [],
-      dateAdded: formatDate(new Date())
+      dateAdded: formatDate(new Date()) // Default to today's date
     });
     setIsAdding(true);
     setIsEditing(false);
@@ -344,7 +344,7 @@ const AdminPanel: React.FC = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="dateAdded">Date Added (DD/MM/YY):</label>
+            <label htmlFor="dateAdded">Daily Word Date (DD/MM/YY):</label>
             <input
               type="text"
               id="dateAdded"
@@ -375,7 +375,7 @@ const AdminPanel: React.FC = () => {
                 <th>Part of Speech</th>
                 <th>Definition</th>
                 <th>Alt. Definition</th>
-                <th>Date Added</th>
+                <th>Daily Word Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
