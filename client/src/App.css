@@ -224,48 +224,98 @@ button:disabled {
 /* Hint container styling */
 .hints-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.8rem;
   margin: 2rem 0;
   width: 100%;
+  position: relative;
+  padding: 0 1rem;
+}
+
+/* Hint content wrapper - for dynamic expansion */
+.hints-content-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  overflow: hidden;
+  transition: min-height 0.3s ease-in-out, margin 0.3s ease-in-out;
+}
+
+.hints-content-wrapper.has-active-hint {
+  min-height: 150px;
+  margin-bottom: 2rem;
+}
+
+/* Arrow between hint boxes */
+.hint-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--primary-blue);
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  position: relative;
 }
 
 /* Hint button styling */
 .hint-button {
-  background: transparent;
+  background: #f8f9fa;
   border: 2px solid var(--primary-blue);
   color: var(--primary-blue);
-  width: 90%;
-  max-width: 400px;
-  font-size: 1.3rem;
-  padding: 1rem 1.5rem;
+  width: 120px;
+  height: 130px;
+  font-size: 0.9rem;
+  padding: 0.7rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.8rem;
+  gap: 0.6rem;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Hint sequence indicator */
 .hint-button::before {
-  font-size: 1.5rem;
-  transition: transform 0.3s ease;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: var(--primary-blue);
+  opacity: 0.5;
 }
 
-/* Add emojis to hint buttons */
 .hint-button[data-hint-type="partOfSpeech"]::before {
-  content: '💭';
+  opacity: 1;
 }
 
 .hint-button[data-hint-type="alternateDefinition"]::before {
-  content: '👥';
+  opacity: 0.6;
 }
 
 .hint-button[data-hint-type="synonyms"]::before {
-  content: '👀';
+  opacity: 0.3;
+}
+
+.hint-emoji {
+  font-size: 2.2rem;
+  margin-bottom: 0.4rem;
+  transition: transform 0.3s ease;
+}
+
+.hint-label {
+  font-size: 0.85rem;
+  line-height: 1.2;
+  font-weight: 500;
 }
 
 .hint-button:hover:not(:disabled) {
@@ -275,30 +325,61 @@ button:disabled {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.hint-button:hover:not(:disabled)::before {
+.hint-button:hover:not(:disabled) .hint-emoji {
   transform: scale(1.2);
 }
 
 .hint-button:disabled {
-  background: #e0e0e0;
+  background: #f0f0f0;
   cursor: not-allowed;
   border-color: #e0e0e0;
+  color: #999;
   opacity: 0.7;
 }
 
 /* Hint display styling */
 .hint-display {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 1rem 1.5rem;
-  background-color: #f5f5f5;
+  position: relative;
+  margin: 1.5rem auto 0;
+  padding: 1.2rem 1.5rem;
+  background-color: #f8f9fa;
   border-radius: 8px;
-  border-left: 4px solid var(--primary-blue);
+  border-top: 3px solid var(--primary-blue);
   animation: fadeIn 0.5s ease-in-out;
   text-align: left;
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  max-width: 500px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1;
+}
+
+.hint-title {
+  font-weight: 600;
+  color: var(--primary-blue);
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+  font-family: 'Crimson Text', 'Goudy Old Style', serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hint-title::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: var(--primary-blue);
+  border-radius: 50%;
+}
+
+.hint-content {
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  font-family: 'Crimson Text', 'Goudy Old Style', serif;
+  line-height: 1.5;
+  padding-left: 1.2rem;
+  border-left: 2px solid #e0e0e0;
 }
 
 @keyframes fadeIn {
@@ -310,21 +391,6 @@ button:disabled {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.hint-title {
-  font-weight: 600;
-  color: var(--primary-blue);
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-  font-family: 'Crimson Text', 'Goudy Old Style', serif;
-}
-
-.hint-content {
-  font-size: 1.1rem;
-  color: var(--text-dark);
-  font-family: 'Crimson Text', 'Goudy Old Style', serif;
-  line-height: 1.4;
 }
 
 .guess-history {
@@ -1179,5 +1245,73 @@ button:disabled {
 .admin-link:hover {
   color: var(--accent-blue);
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .hints-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+  
+  .hints-content-wrapper.has-active-hint {
+    min-height: 180px;
+    margin-bottom: 1.5rem;
+  }
+  
+  .hint-arrow {
+    transform: rotate(90deg);
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  
+  .hint-button {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    min-height: 70px;
+    flex-direction: row;
+    padding: 0.8rem 1rem;
+    justify-content: flex-start;
+  }
+  
+  .hint-emoji {
+    margin-bottom: 0;
+    margin-right: 1rem;
+    font-size: 1.8rem;
+  }
+  
+  .hint-label {
+    font-size: 1rem;
+    text-align: left;
+  }
+  
+  .hint-display {
+    margin-top: 1rem;
+    width: 95%;
+    max-width: 100%;
+  }
+}
+
+.hint-button.active {
+  background-color: var(--primary-blue);
+  color: white;
+  cursor: default;
+  opacity: 1;
+  border-color: var(--primary-blue);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hint-button.active::before {
+  background-color: white;
+  opacity: 0.7;
+}
+
+.hint-button.active:disabled {
+  opacity: 1;
+  background-color: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
 }
 

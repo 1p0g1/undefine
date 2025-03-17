@@ -9,7 +9,7 @@ APP_KEY = "aa89a15541dc6df0613e2282087e5e0f"
 BASE_URL = "https://od-api-sandbox.oxforddictionaries.com/api/v2"
 
 # App title
-st.title("Daily Define")
+st.title("Un·Define")
 
 # Instructions
 st.write("Guess the word based on its definition! A new word is available every day.")
@@ -94,7 +94,7 @@ if st.button("Submit Guess"):
 # Generate a share message
 if st.session_state.outcome:
     share_message = (
-        f"Daily Define\n"
+        f"Un·Define\n"
         f"{datetime.now().strftime('%Y-%m-%d')}\n"
         f"{st.session_state.outcome.capitalize()}\n"
         f"define.today"

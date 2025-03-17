@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import Confetti from 'react-confetti'
 import { Link } from 'react-router-dom'
+import Leaderboard from './Leaderboard'
 
 interface GuessHistory {
   word: string;
@@ -15,6 +16,7 @@ interface GuessResponse {
   guessedWord: string;
   isFuzzy: boolean;
   fuzzyPositions?: number[];
+  leaderboardRank?: number;
 }
 
 interface WordData {
@@ -49,6 +51,12 @@ function App() {
   const [wordData, setWordData] = useState<WordData | null>(null);
   const [correctWord, setCorrectWord] = useState<string>('');
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>('');
+  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
+  const [fuzzyCount, setFuzzyCount] = useState<number>(0);
+  const [leaderboardRank, setLeaderboardRank] = useState<number | null>(null);
+  const [userName, setUserName] = useState<string>('');
+  const [hintCount, setHintCount] = useState<number>(0);
 
   // Temporary fix for the screenshot example - set F and I as fuzzy matches
   useEffect(() => {
@@ -67,6 +75,36 @@ function App() {
       if (interval) clearInterval(interval);
     };
   }, [isGameOver]);
+
+  // Generate a unique user ID and set username if not already set
+  useEffect(() => {
+    const storedUserId = localStorage.getItem('userId');
+    const storedUserName = localStorage.getItem('userName');
+    
+    if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      const newUserId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem('userId', newUserId);
+      setUserId(newUserId);
+    }
+    
+    if (storedUserName) {
+      setUserName(storedUserName);
+    } else {
+      // Generate a random username
+      const adjectives = ['Quick', 'Clever', 'Smart', 'Bright', 'Sharp', 'Witty', 'Nimble', 'Keen'];
+      const nouns = ['Thinker', 'Guesser', 'Player', 'Mind', 'Solver', 'Wordsmith', 'Genius'];
+      
+      const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+      const randomNumber = Math.floor(Math.random() * 100);
+      
+      const generatedName = `${randomAdjective}${randomNoun}${randomNumber}`;
+      localStorage.setItem('userName', generatedName);
+      setUserName(generatedName);
+    }
+  }, []);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -96,6 +134,7 @@ function App() {
         alternateDefinition: false,
         synonyms: false,
       });
+      setHintCount(0);
     } catch (error) {
       console.error('Error fetching word:', error);
       setMessage('Error fetching word. Please try again.');
@@ -104,13 +143,16 @@ function App() {
 
   const revealHint = (hintType: keyof typeof hints) => {
     setHints(prev => ({ ...prev, [hintType]: true }));
-    // Optionally: deduct points or add time penalty here
+    setHintCount(prev => prev + 1);
   };
 
   const handleGuess = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guess.trim() || isGameOver) return;
-
+    
+    if (!guess.trim() || isGameOver) {
+      return;
+    }
+    
     try {
       const response = await fetch('/api/guess', {
         method: 'POST',
@@ -118,35 +160,31 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          guess: guess.trim(),
-          remainingGuesses: remainingGuesses 
+          guess, 
+          remainingGuesses,
+          timer,
+          userId,
+          fuzzyCount,
+          userName,
+          hintCount
         }),
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
       const data: GuessResponse = await response.json();
       
-      // Store the correct word when we receive it
-      setCorrectWord(data.correctWord);
+      // Add to guess history
+      setGuessHistory(prev => [
+        ...prev,
+        {
+          word: guess,
+          isCorrect: data.isCorrect,
+          isFuzzy: data.isFuzzy
+        }
+      ]);
       
-      // Debug logging
-      console.log('Guess response:', {
-        data,
-        remainingGuesses
-      });
-      
+      // Update remaining guesses
       const newRemainingGuesses = remainingGuesses - 1;
       setRemainingGuesses(newRemainingGuesses);
-      
-      // Add to guess history
-      setGuessHistory(prev => [...prev, { 
-        word: guess.trim(), 
-        isCorrect: data.isCorrect,
-        isFuzzy: data.isFuzzy
-      }]);
       
       // Update the specific box for this guess attempt
       const currentGuessIndex = 6 - remainingGuesses;
@@ -154,7 +192,7 @@ function App() {
       newGuessResults[currentGuessIndex] = data.isCorrect ? 'correct' : 'incorrect';
       setGuessResults(newGuessResults);
       
-      // If this is a fuzzy match, store the current position
+      // If this is a fuzzy match, store the positions and update fuzzy count
       if (data.isFuzzy) {
         if (data.fuzzyPositions && data.fuzzyPositions.length > 0) {
           // If the server provides specific fuzzy positions, use those
@@ -163,6 +201,9 @@ function App() {
           // Otherwise, fall back to the current guess index
           setFuzzyMatchPositions(prev => [...prev, currentGuessIndex]);
         }
+        
+        // Increment fuzzy count
+        setFuzzyCount(prev => prev + 1);
       }
       
       if (data.isCorrect) {
@@ -170,6 +211,18 @@ function App() {
         setIsCorrect(true);
         setIsGameOver(true);
         setShowConfetti(true);
+        setCorrectWord(data.correctWord);
+        
+        // Store leaderboard rank if provided
+        if (data.leaderboardRank) {
+          setLeaderboardRank(data.leaderboardRank);
+        }
+        
+        // Show leaderboard after a short delay
+        setTimeout(() => {
+          setShowLeaderboard(true);
+        }, 2000);
+        
         // Hide confetti after 5 seconds
         setTimeout(() => {
           setShowConfetti(false);
@@ -178,6 +231,7 @@ function App() {
         if (newRemainingGuesses <= 0) {
           setMessage(`Game Over! The word was: ${data.correctWord}`);
           setIsGameOver(true);
+          setCorrectWord(data.correctWord);
         } else {
           setMessage(`Not quite right. ${newRemainingGuesses} guesses remaining!`);
         }
@@ -219,7 +273,7 @@ function App() {
     
     return (
       <div style={horizontalStyle}>
-        <div className="un-prefix">UN</div>
+        <div className="un-prefix">Un</div>
         <div className="central-dot">·</div>
         {defineLetters.map((letter, index) => {
           // Check if this letter should be a fuzzy match based on the fuzzyMatchPositions state
@@ -251,6 +305,11 @@ function App() {
         <p><em className="game-over-label">The word of the day was: </em> <span className="correct-word">{correctWord}</span></p>
       </div>
     );
+  };
+
+  const handleNewWord = () => {
+    fetchNewWord();
+    setShowLeaderboard(false);
   };
 
   return (
@@ -295,29 +354,51 @@ function App() {
           <button 
             onClick={() => revealHint('partOfSpeech')} 
             disabled={hints.partOfSpeech || isGameOver}
-            className="hint-button"
+            className={`hint-button ${hints.partOfSpeech ? 'active' : ''}`}
             data-hint-type="partOfSpeech"
           >
-            Reveal Part of Speech
+            <span className="hint-emoji">💬</span>
+            <span className="hint-label">Part of Speech</span>
           </button>
-          {hints.partOfSpeech && wordData?.partOfSpeech && (
-            <div className="hint-display">
-              <div className="hint-title">Part of Speech</div>
-              <div className="hint-content">
-                {wordData.partOfSpeech}
-              </div>
-            </div>
-          )}
-
+          
+          <div className="hint-arrow">→</div>
+          
           <button 
             onClick={() => revealHint('alternateDefinition')} 
             disabled={!hints.partOfSpeech || hints.alternateDefinition || isGameOver}
-            className="hint-button"
+            className={`hint-button ${hints.alternateDefinition ? 'active' : ''}`}
             data-hint-type="alternateDefinition"
           >
-            Reveal Alternate Definition
+            <span className="hint-emoji">📖</span>
+            <span className="hint-label">Alternate Definition</span>
           </button>
-          {hints.alternateDefinition && wordData?.alternateDefinition && (
+          
+          <div className="hint-arrow">→</div>
+          
+          <button 
+            onClick={() => revealHint('synonyms')} 
+            disabled={!hints.alternateDefinition || hints.synonyms || isGameOver || !wordData?.synonyms?.length}
+            className={`hint-button ${hints.synonyms ? 'active' : ''}`}
+            data-hint-type="synonyms"
+          >
+            <span className="hint-emoji">🔄</span>
+            <span className="hint-label">Synonyms</span>
+          </button>
+        </div>
+        
+        {/* Expandable content wrapper for hints */}
+        <div className={`hints-content-wrapper ${hints.partOfSpeech || hints.alternateDefinition || hints.synonyms ? 'has-active-hint' : ''}`}>
+          {/* Active hint display - only show the most recently revealed hint */}
+          {hints.synonyms && wordData?.synonyms && (
+            <div className="hint-display">
+              <div className="hint-title">Synonyms</div>
+              <div className="hint-content">
+                {wordData.synonyms.join(', ')}
+              </div>
+            </div>
+          )}
+          
+          {hints.alternateDefinition && !hints.synonyms && wordData?.alternateDefinition && (
             <div className="hint-display">
               <div className="hint-title">Alternate Definition</div>
               <div className="hint-content">
@@ -325,20 +406,12 @@ function App() {
               </div>
             </div>
           )}
-
-          <button 
-            onClick={() => revealHint('synonyms')} 
-            disabled={!hints.alternateDefinition || hints.synonyms || isGameOver || !wordData?.synonyms?.length}
-            className="hint-button"
-            data-hint-type="synonyms"
-          >
-            Reveal Synonyms
-          </button>
-          {hints.synonyms && wordData?.synonyms && (
+          
+          {hints.partOfSpeech && !hints.alternateDefinition && wordData?.partOfSpeech && (
             <div className="hint-display">
-              <div className="hint-title">Synonyms</div>
+              <div className="hint-title">Part of Speech</div>
               <div className="hint-content">
-                {wordData.synonyms.join(', ')}
+                {wordData.partOfSpeech}
               </div>
             </div>
           )}
@@ -371,11 +444,28 @@ function App() {
         )}
 
         {isGameOver && (
-          <button onClick={fetchNewWord} className="next-word-btn">
+          <button onClick={handleNewWord} className="next-word-btn">
             Next Word
           </button>
         )}
       </div>
+
+      {/* Leaderboard component */}
+      {showLeaderboard && (
+        <Leaderboard
+          userId={userId}
+          time={timer}
+          guessCount={6 - remainingGuesses}
+          fuzzyCount={fuzzyCount}
+          hintCount={hintCount}
+          word={correctWord}
+          guessResults={guessResults}
+          fuzzyMatchPositions={fuzzyMatchPositions}
+          hints={hints}
+          onClose={() => setShowLeaderboard(false)}
+        />
+      )}
+
       <footer className="app-footer">
         <div className="footer-content">
           <p>© {new Date().getFullYear()} Reverse Define Game</p>

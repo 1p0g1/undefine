@@ -160,10 +160,64 @@ app.get('/api/word', (req, res) => {
   }
 });
 
+// Define the leaderboard entry interface
+interface LeaderboardEntry {
+  id: string;
+  time: number;
+  guessCount: number;
+  fuzzyCount: number;
+  hintCount?: number; // Number of hints used (optional)
+  date: string;
+  word: string;
+  name?: string; // Optional name for display purposes
+}
+
+// In-memory leaderboard storage
+let leaderboard: LeaderboardEntry[] = [];
+
+// Function to generate dummy leaderboard data
+function generateDummyLeaderboardData(word: string, count: number = 20): LeaderboardEntry[] {
+  const dummyNames = [
+    'SpeedyGuesser', 'WordWizard', 'LexiconMaster', 'QuickThinker', 
+    'BrainiacPlayer', 'WordNinja', 'VocabVirtuoso', 'MindReader',
+    'ThesaurusRex', 'DictionaryDiva', 'WordSmith', 'LinguistPro',
+    'GuessingGuru', 'DefineDevil', 'SyntaxSage', 'EtymologyExpert',
+    'PuzzlePro', 'VerbalVirtuoso', 'WordWanderer', 'LexicalLegend'
+  ];
+  
+  const dummyEntries: LeaderboardEntry[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    // Generate random performance metrics
+    const time = 20 + Math.floor(Math.random() * 120); // 20-140 seconds
+    const guessCount = 1 + Math.floor(Math.random() * 6); // 1-6 guesses
+    const fuzzyCount = Math.floor(Math.random() * 3); // 0-2 fuzzy matches
+    const hintCount = Math.floor(Math.random() * 4); // 0-3 hints
+    
+    dummyEntries.push({
+      id: `dummy-${i}-${Date.now()}`,
+      time,
+      guessCount,
+      fuzzyCount,
+      hintCount,
+      date: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(), // Random time in last 24h
+      word,
+      name: dummyNames[i % dummyNames.length] // Cycle through dummy names
+    });
+  }
+  
+  // Sort by the same criteria as real entries
+  return dummyEntries.sort((a, b) => {
+    if (a.time !== b.time) return a.time - b.time;
+    if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
+    return b.fuzzyCount - a.fuzzyCount;
+  });
+}
+
 // Check if a guess is correct
 app.post('/api/guess', (req, res) => {
   try {
-    const { guess, remainingGuesses } = req.body;
+    const { guess, remainingGuesses, timer, userId } = req.body;
     
     if (!currentWord || !currentWord.word) {
       console.error('No word selected!');
@@ -179,19 +233,69 @@ app.post('/api/guess', (req, res) => {
     const isFuzzy = !isCorrect && isFuzzyMatch(guess, currentWord.word);
     const isGameOver = isCorrect || remainingGuesses <= 1;
     
+    // Calculate fuzzy positions for the current guess
+    const fuzzyPositions: number[] = [];
+    if (isFuzzy) {
+      // Simple implementation: mark positions where letters match
+      const guessLetters = guess.toLowerCase().split('');
+      const correctLetters = currentWord.word.toLowerCase().split('');
+      
+      // Check for exact matches
+      guessLetters.forEach((letter: string, index: number) => {
+        if (index < correctLetters.length && letter === correctLetters[index]) {
+          fuzzyPositions.push(index);
+        }
+      });
+      
+      // If no exact matches but it's fuzzy, add at least one position
+      if (fuzzyPositions.length === 0) {
+        fuzzyPositions.push(0); // Default to first position
+      }
+    }
+    
     console.log('Guess attempt:', {
       guess,
       correctWord: currentWord.word,
       isCorrect,
       isFuzzy,
-      isGameOver
+      isGameOver,
+      fuzzyPositions
     });
+    
+    // If the game is won, add to leaderboard
+    if (isCorrect) {
+      const guessCount = 6 - remainingGuesses + 1; // +1 because this guess counts
+      const entry: LeaderboardEntry = {
+        id: userId || `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        time: timer || 0,
+        guessCount,
+        fuzzyCount: req.body.fuzzyCount || 0,
+        hintCount: req.body.hintCount || 0,
+        date: new Date().toISOString(),
+        word: currentWord.word,
+        name: req.body.userName || 'You' // Use provided username or default to 'You'
+      };
+      
+      leaderboard.push(entry);
+      console.log('Added to leaderboard:', entry);
+      
+      // Sort leaderboard by time, then by guess count (ascending), then by fuzzy count (descending)
+      leaderboard = leaderboard
+        .filter(entry => entry.word === currentWord.word) // Only keep entries for current word
+        .sort((a, b) => {
+          if (a.time !== b.time) return a.time - b.time;
+          if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
+          return b.fuzzyCount - a.fuzzyCount;
+        });
+    }
     
     res.json({ 
       isCorrect,
       correctWord: isGameOver ? currentWord.word : undefined,
       guessedWord: guess,
-      isFuzzy
+      isFuzzy,
+      fuzzyPositions,
+      leaderboardRank: isCorrect ? leaderboard.findIndex(e => e.id === (userId || `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`)) + 1 : undefined
     });
   } catch (error) {
     console.error('Error in /api/guess:', error);
@@ -334,6 +438,128 @@ export function getRandomWord(): WordEntry {
     throw error;
   }
 }
+
+// Get leaderboard data
+app.get('/api/leaderboard', (req, res) => {
+  try {
+    // Get user's position from query parameter
+    const userId = req.query.userId as string;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    
+    // Filter to current word's leaderboard
+    let currentLeaderboard = leaderboard.filter(entry => entry.word === currentWord.word);
+    
+    // For development/demo purposes: If we have fewer than 10 entries, generate dummy data
+    const minEntries = 10;
+    let userEntry = currentLeaderboard.find(entry => entry.id === userId);
+    
+    if (currentLeaderboard.length < minEntries || !userEntry) {
+      // Generate dummy data
+      const dummyData = generateDummyLeaderboardData(currentWord.word, 20);
+      
+      // If the user isn't in the real leaderboard, make sure they're included in the dummy data
+      if (!userEntry) {
+        // Find the user's entry from the full leaderboard (might be for a different word)
+        userEntry = leaderboard.find(entry => entry.id === userId);
+        
+        if (userEntry) {
+          // Clone the entry but update the word to match current word
+          const clonedEntry = { ...userEntry, word: currentWord.word };
+          dummyData.push(clonedEntry);
+        }
+      }
+      
+      // Combine real and dummy data, ensuring no duplicates by ID
+      const combinedLeaderboard = [...currentLeaderboard];
+      
+      for (const dummyEntry of dummyData) {
+        if (!combinedLeaderboard.some(entry => entry.id === dummyEntry.id)) {
+          combinedLeaderboard.push(dummyEntry);
+        }
+      }
+      
+      // Sort the combined leaderboard
+      currentLeaderboard = combinedLeaderboard.sort((a, b) => {
+        // First sort by time
+        if (a.time !== b.time) return a.time - b.time;
+        
+        // Then by guess count (fewer guesses is better)
+        if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
+        
+        // Then by hint count (fewer hints is better)
+        if ((a.hintCount || 0) !== (b.hintCount || 0)) return (a.hintCount || 0) - (b.hintCount || 0);
+        
+        // Finally by fuzzy count (more fuzzy matches is better)
+        return (b.fuzzyCount || 0) - (a.fuzzyCount || 0);
+      });
+    }
+    
+    // Find user's position
+    const userIndex = currentLeaderboard.findIndex(entry => entry.id === userId);
+    
+    // If user not found, create a dummy entry
+    if (userIndex === -1) {
+      // Create a dummy entry for the user
+      const dummyUserEntry: LeaderboardEntry = {
+        id: userId,
+        time: 60, // Default to 1 minute
+        guessCount: 3, // Default to 3 guesses
+        fuzzyCount: 0,
+        hintCount: 0,
+        date: new Date().toISOString(),
+        word: currentWord.word,
+        name: 'You'
+      };
+      currentLeaderboard.push(dummyUserEntry);
+      
+      // Re-sort the leaderboard
+      currentLeaderboard.sort((a, b) => {
+        if (a.time !== b.time) return a.time - b.time;
+        if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
+        if ((a.hintCount || 0) !== (b.hintCount || 0)) return (a.hintCount || 0) - (b.hintCount || 0);
+        return (b.fuzzyCount || 0) - (a.fuzzyCount || 0);
+      });
+      
+      // Find the user's position again
+      const newUserIndex = currentLeaderboard.findIndex(entry => entry.id === userId);
+      if (newUserIndex !== -1) {
+        // Get entries around the user (5 above and 5 below)
+        const startIndex = Math.max(0, newUserIndex - 5);
+        const endIndex = Math.min(currentLeaderboard.length, newUserIndex + 6);
+        const leaderboardSlice = currentLeaderboard.slice(startIndex, endIndex);
+        
+        res.json({
+          leaderboard: leaderboardSlice,
+          userRank: newUserIndex + 1,
+          totalEntries: currentLeaderboard.length,
+          startRank: startIndex + 1
+        });
+        return;
+      }
+      
+      // If we still can't find the user (shouldn't happen), return an error
+      return res.status(404).json({ error: 'User not found in leaderboard' });
+    }
+    
+    // Get entries around the user (5 above and 5 below)
+    const startIndex = Math.max(0, userIndex - 5);
+    const endIndex = Math.min(currentLeaderboard.length, userIndex + 6);
+    const leaderboardSlice = currentLeaderboard.slice(startIndex, endIndex);
+    
+    res.json({
+      leaderboard: leaderboardSlice,
+      userRank: userIndex + 1,
+      totalEntries: currentLeaderboard.length,
+      startRank: startIndex + 1
+    });
+  } catch (error) {
+    console.error('Error in /api/leaderboard:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Modify server startup
 console.log('Setting up server...');
