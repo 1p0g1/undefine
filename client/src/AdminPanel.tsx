@@ -397,23 +397,25 @@ const AdminPanel: React.FC = () => {
                   <td>{word.definition}</td>
                   <td>{word.alternateDefinition || '—'}</td>
                   <td>{word.dateAdded || formatDate(new Date())}</td>
-                  <td className="action-buttons">
-                    <button 
-                      onClick={() => handleEdit(word)} 
-                      className="edit-button" 
-                      title="Edit this word"
-                      aria-label="Edit word"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(word)} 
-                      className="delete-button"
-                      title="Delete this word"
-                      aria-label="Delete word"
-                    >
-                      🗑️
-                    </button>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        onClick={() => handleEdit(word)} 
+                        className="edit-button" 
+                        title="Edit this word"
+                        aria-label="Edit word"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(word)} 
+                        className="delete-button"
+                        title="Delete this word"
+                        aria-label="Delete word"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
