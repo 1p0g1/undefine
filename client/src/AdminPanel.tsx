@@ -403,14 +403,16 @@ const AdminPanel: React.FC = () => {
                       className="edit-button" 
                       title="Edit this word"
                     >
-                      ✏️ Edit
+                      <span className="button-icon">✏️</span>
+                      <span className="button-text">Edit</span>
                     </button>
                     <button 
                       onClick={() => handleDelete(word)} 
                       className="delete-button"
                       title="Delete this word"
                     >
-                      🗑️ Delete
+                      <span className="button-icon">🗑️</span>
+                      <span className="button-text">Delete</span>
                     </button>
                   </td>
                 </tr>
