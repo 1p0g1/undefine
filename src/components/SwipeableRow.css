@@ -1,0 +1,104 @@
+.swipeable-row-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  background-color: white;
+  touch-action: pan-y;
+  user-select: none;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.swipeable-row-content {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.2s ease-out;
+  background-color: inherit;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  will-change: transform;
+}
+
+.swipeable-row-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  z-index: 1;
+}
+
+.swipeable-action {
+  width: 50px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-action {
+  background-color: #6f5bd6;
+}
+
+.edit-action:active {
+  background-color: #5b49b6;
+}
+
+.delete-action {
+  background-color: #dc3545;
+}
+
+.delete-action:active {
+  background-color: #c82333;
+}
+
+/* Hint indicator to show swipeable actions */
+.swipe-hint {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  color: #999;
+  font-size: 0.8rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.swipe-hint-text {
+  margin-right: 4px;
+}
+
+.swipe-hint-icon {
+  font-size: 1rem;
+}
+
+/* Show hint only on mobile touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .swipeable-row-container:not(.actions-visible) .swipeable-row-content:hover .swipe-hint {
+    opacity: 0.7;
+  }
+}
+
+/* Ensure swipeable functionality only on mobile */
+@media (min-width: 769px) {
+  .swipeable-row-content {
+    transform: none !important;
+  }
+  
+  .swipeable-row-actions {
+    display: none;
+  }
+  
+  .swipe-hint {
+    display: none;
+  }
+} 
