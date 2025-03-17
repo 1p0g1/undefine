@@ -54,16 +54,15 @@
 
 .admin-panel .edit-button,
 .admin-panel .delete-button {
-  width: 100px;
+  width: 42px;
+  height: 42px;
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  border-radius: 4px;
-  text-align: center;
+  padding: 0;
+  font-size: 1.2rem;
+  border-radius: 8px;
 }
 
 .admin-panel .edit-button {
@@ -229,8 +228,7 @@
 
 .words-list th:nth-child(7),
 .words-list td:nth-child(7) {
-  width: 110px;
-  padding: 0.5rem;
+  width: 14%;
   text-align: center;
   vertical-align: middle;
 }
@@ -260,11 +258,10 @@
 
 .action-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-direction: row;
+  gap: 0.75rem;
   justify-content: center;
   align-items: center;
-  width: 100%;
 }
 
 .field-note {
@@ -281,16 +278,4 @@
   font-style: italic;
   color: #666;
   font-weight: normal;
-}
-
-.button-icon {
-  display: inline-block;
-  font-size: 1rem;
-  margin-right: 2px;
-}
-
-.button-text {
-  display: inline-block;
-  font-size: 0.9rem;
-  white-space: nowrap;
 } 

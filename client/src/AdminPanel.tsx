@@ -402,17 +402,17 @@ const AdminPanel: React.FC = () => {
                       onClick={() => handleEdit(word)} 
                       className="edit-button" 
                       title="Edit this word"
+                      aria-label="Edit word"
                     >
-                      <span className="button-icon">✏️</span>
-                      <span className="button-text">Edit</span>
+                      ✏️
                     </button>
                     <button 
                       onClick={() => handleDelete(word)} 
                       className="delete-button"
                       title="Delete this word"
+                      aria-label="Delete word"
                     >
-                      <span className="button-icon">🗑️</span>
-                      <span className="button-text">Delete</span>
+                      🗑️
                     </button>
                   </td>
                 </tr>
