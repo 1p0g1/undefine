@@ -26,6 +26,10 @@ interface WordData {
   alternateDefinition?: string;
   synonyms?: string[];
   correctWord?: string;
+  letterCount?: {
+    count: number;
+    display: string;
+  };
 }
 
 function App() {
@@ -40,11 +44,11 @@ function App() {
   const [guessResults, setGuessResults] = useState<Array<'correct' | 'incorrect' | null>>([null, null, null, null, null, null]);
   const [fuzzyMatchPositions, setFuzzyMatchPositions] = useState<number[]>([]);
   const [hints, setHints] = useState<{
-    partOfSpeech: boolean;
+    letterCount: boolean;
     alternateDefinition: boolean;
     synonyms: boolean;
   }>({
-    partOfSpeech: false,
+    letterCount: false,
     alternateDefinition: false,
     synonyms: false,
   });
@@ -130,7 +134,7 @@ function App() {
       setCorrectWord('');
       
       setHints({
-        partOfSpeech: false,
+        letterCount: false,
         alternateDefinition: false,
         synonyms: false,
       });
@@ -352,20 +356,20 @@ function App() {
 
         <div className="hints-container">
           <button 
-            onClick={() => revealHint('partOfSpeech')} 
-            disabled={hints.partOfSpeech || isGameOver}
-            className={`hint-button ${hints.partOfSpeech ? 'active' : ''}`}
-            data-hint-type="partOfSpeech"
+            onClick={() => revealHint('letterCount')} 
+            disabled={hints.letterCount || isGameOver}
+            className={`hint-button ${hints.letterCount ? 'active' : ''}`}
+            data-hint-type="letterCount"
           >
-            <span className="hint-emoji">💬</span>
-            <span className="hint-label">Part of Speech</span>
+            <span className="hint-emoji">🔢</span>
+            <span className="hint-label"># of letters</span>
           </button>
           
           <div className="hint-arrow">→</div>
           
           <button 
             onClick={() => revealHint('alternateDefinition')} 
-            disabled={!hints.partOfSpeech || hints.alternateDefinition || isGameOver}
+            disabled={!hints.letterCount || hints.alternateDefinition || isGameOver}
             className={`hint-button ${hints.alternateDefinition ? 'active' : ''}`}
             data-hint-type="alternateDefinition"
           >
@@ -387,18 +391,18 @@ function App() {
         </div>
         
         {/* Expandable content wrapper for hints */}
-        <div className={`hints-content-wrapper ${hints.partOfSpeech || hints.alternateDefinition || hints.synonyms ? 'has-active-hint' : ''}`}>
-          {/* Active hint display - only show the most recently revealed hint */}
-          {hints.synonyms && wordData?.synonyms && (
+        <div className={`hints-content-wrapper ${hints.letterCount || hints.alternateDefinition || hints.synonyms ? 'has-active-hint' : ''}`}>
+          {/* Show all revealed hints in order */}
+          {hints.letterCount && wordData?.letterCount && (
             <div className="hint-display">
-              <div className="hint-title">Synonyms</div>
+              <div className="hint-title"># of letters</div>
               <div className="hint-content">
-                {wordData.synonyms.join(', ')}
+                {wordData.letterCount.display}
               </div>
             </div>
           )}
           
-          {hints.alternateDefinition && !hints.synonyms && wordData?.alternateDefinition && (
+          {hints.alternateDefinition && wordData?.alternateDefinition && (
             <div className="hint-display">
               <div className="hint-title">Alternate Definition</div>
               <div className="hint-content">
@@ -407,11 +411,11 @@ function App() {
             </div>
           )}
           
-          {hints.partOfSpeech && !hints.alternateDefinition && wordData?.partOfSpeech && (
+          {hints.synonyms && wordData?.synonyms && (
             <div className="hint-display">
-              <div className="hint-title">Part of Speech</div>
+              <div className="hint-title">Synonyms</div>
               <div className="hint-content">
-                {wordData.partOfSpeech}
+                {wordData.synonyms.join(', ')}
               </div>
             </div>
           )}

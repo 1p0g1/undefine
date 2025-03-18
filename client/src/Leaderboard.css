@@ -10,10 +10,11 @@
   align-items: center;
   z-index: 1000;
   animation: fadeIn 0.3s ease-in-out;
+  perspective: 1000px;
 }
 
 .leaderboard-container {
-  background-color: white;
+  background-color: #faf7f2;
   border-radius: 12px;
   padding: 2rem;
   width: 90%;
@@ -23,7 +24,12 @@
   position: relative;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   font-family: 'Crimson Text', serif;
-  animation: slideUp 0.4s ease-out;
+  transform-origin: 50% 0%;
+  animation: unfurl 1s cubic-bezier(0.23, 1, 0.32, 1);
+  background-image: 
+    linear-gradient(90deg, rgba(255,255,255,0.5) 0%, transparent 20%, transparent 80%, rgba(255,255,255,0.5) 100%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='0.08'/%3E%3C/svg%3E");
+  background-color: #faf7f2;
 }
 
 .close-button {
@@ -255,6 +261,68 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+@keyframes pageTurn {
+  0% {
+    transform: rotateY(90deg);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes unfurl {
+  0% {
+    transform: translateY(-100%) scaleY(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-50%) scaleY(0.5);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(0) scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* Add decorative top edge */
+.leaderboard-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: var(--primary-blue);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  opacity: 0.8;
+}
+
+/* Add subtle shadow gradient for depth */
+.leaderboard-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, 
+    rgba(0, 0, 0, 0.1) 0%,
+    transparent 10%,
+    transparent 90%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  pointer-events: none;
+  opacity: 0.5;
+  border-radius: 12px;
 }
 
 .hint-icons {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminPanel.css';
+import { FiSearch, FiX } from 'react-icons/fi';
 
 interface WordEntry {
   word: string;
@@ -9,6 +10,10 @@ interface WordEntry {
   definition: string;
   alternateDefinition?: string;
   dateAdded?: string; // This will now represent the daily word date
+  letterCount: {
+    count: number;
+    display: string;
+  };
 }
 
 interface PaginationInfo {
@@ -33,7 +38,11 @@ const AdminPanel: React.FC = () => {
     definition: '',
     alternateDefinition: '',
     synonyms: [],
-    dateAdded: formatDate(new Date()) // Default to today's date
+    dateAdded: formatDate(new Date()), // Default to today's date
+    letterCount: {
+      count: 0,
+      display: '[0]: '
+    }
   });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -79,38 +88,100 @@ const AdminPanel: React.FC = () => {
     return dateString === `${day}/${month}/${year}`;
   }
 
+  // Calculate fuzzy score
+  function calculateFuzzyScore(str1: string, str2: string): number {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    // Check for exact substring match first
+    if (s1.includes(s2) || s2.includes(s1)) {
+      return 1;
+    }
+    
+    // Calculate Levenshtein distance
+    const matrix: number[][] = [];
+    
+    for (let i = 0; i <= s1.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= s2.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= s1.length; i++) {
+      for (let j = 1; j <= s2.length; j++) {
+        if (s1[i - 1] === s2[j - 1]) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+    
+    // Calculate similarity score (0 to 1)
+    const maxLength = Math.max(s1.length, s2.length);
+    const distance = matrix[s1.length][s2.length];
+    return 1 - (distance / maxLength);
+  }
+
   // Fetch words with optional pagination and search
   const fetchWords = async (page = 1, limit = 10, search = '') => {
     try {
       setLoading(true);
       
       let url = `/api/admin/words?page=${page}&limit=${limit}`;
-      if (search) {
-        url += `&search=${encodeURIComponent(search)}`;
-      }
       
-      console.log('Fetching words from API:', url);
       const response = await fetch(url);
       
-      console.log('API response status:', response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('API response data:', data);
       
-      // Ensure each word has a dateAdded field, default to today for existing words that don't have it
-      const wordsWithDates = data.words.map((word: WordEntry) => ({
+      // Apply fuzzy search if search term exists
+      let filteredWords = data.words;
+      if (search) {
+        filteredWords = data.words.filter((word: WordEntry) => {
+          const fuzzyScore = calculateFuzzyScore(word.word, search);
+          const definitionScore = calculateFuzzyScore(word.definition, search);
+          return fuzzyScore > 0.6 || definitionScore > 0.6;
+        });
+        
+        // Sort by fuzzy match score
+        filteredWords.sort((a: WordEntry, b: WordEntry) => {
+          const scoreA = Math.max(
+            calculateFuzzyScore(a.word, search),
+            calculateFuzzyScore(a.definition, search)
+          );
+          const scoreB = Math.max(
+            calculateFuzzyScore(b.word, search),
+            calculateFuzzyScore(b.definition, search)
+          );
+          return scoreB - scoreA;
+        });
+      }
+      
+      // Ensure each word has a dateAdded field
+      const wordsWithDates = filteredWords.map((word: WordEntry) => ({
         ...word,
         dateAdded: word.dateAdded || formatDate(new Date())
       }));
       
       setWords(wordsWithDates);
       
-      // Set pagination info if available
+      // Update pagination info
       if (data.pagination) {
-        setPagination(data.pagination);
+        setPagination({
+          ...data.pagination,
+          total: filteredWords.length,
+          pages: Math.ceil(filteredWords.length / limit)
+        });
       }
     } catch (error) {
       console.error('Error fetching words:', error);
@@ -129,13 +200,34 @@ const AdminPanel: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    if (name === 'synonyms') {
+    if (name === 'word') {
+      // When word changes, update letterCount
+      const count = value.length;
+      const display = `[${count}]: ${Array(count).fill('_').join(' ')}`;
+      setFormData({
+        ...formData,
+        word: value,
+        letterCount: {
+          count,
+          display
+        }
+      });
+    } else if (name === 'synonyms') {
       // Split comma-separated values into an array
       const synonymsArray = value.split(',').map(s => s.trim()).filter(s => s);
       setFormData({ ...formData, synonyms: synonymsArray });
     } else if (name === 'dateAdded') {
       // Validate date format
       setFormData({ ...formData, dateAdded: value });
+    } else if (name === 'letterCount') {
+      // Update letterCount display while keeping the count in sync with word length
+      setFormData({
+        ...formData,
+        letterCount: {
+          count: formData.word.length,
+          display: value
+        }
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -162,7 +254,11 @@ const AdminPanel: React.FC = () => {
       definition: '',
       alternateDefinition: '',
       synonyms: [],
-      dateAdded: formatDate(new Date()) // Default to today's date
+      dateAdded: formatDate(new Date()), // Default to today's date
+      letterCount: {
+        count: 0,
+        display: '[0]: '
+      }
     });
     setIsAdding(true);
     setIsEditing(false);
@@ -192,6 +288,12 @@ const AdminPanel: React.FC = () => {
   const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setWordsPerPage(parseInt(e.target.value));
     setCurrentPage(1); // Reset to first page on limit change
+  };
+
+  // Add clear search function
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
   };
 
   // Save a new or updated word
@@ -309,13 +411,23 @@ const AdminPanel: React.FC = () => {
       
       <div className="admin-controls">
         <div className="search-controls">
+          <FiSearch className="search-icon" />
           <input
             type="text"
-            placeholder="Search words..."
+            className="search-input"
+            placeholder="Search words, definitions..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="search-input"
           />
+          {searchTerm && (
+            <button
+              className="search-clear"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+            >
+              <FiX />
+            </button>
+          )}
         </div>
         <button onClick={handleAdd} disabled={isAdding || isEditing}>
           Add New Word
@@ -403,6 +515,26 @@ const AdminPanel: React.FC = () => {
             />
           </div>
           
+          <div className="form-group">
+            <label htmlFor="letterCount">Letter Count Display:</label>
+            <input
+              type="text"
+              id="letterCount"
+              name="letterCount"
+              value={formData.letterCount?.display || `[${formData.word.length}]: ${Array(formData.word.length).fill('_').join(' ')}`}
+              onChange={(e) => {
+                setFormData({
+                  ...formData,
+                  letterCount: {
+                    count: formData.word.length,
+                    display: e.target.value
+                  }
+                });
+              }}
+              placeholder="[N]: _ _ _ _"
+            />
+          </div>
+          
           <div className="form-actions">
             <button onClick={handleSave}>Save</button>
             <button onClick={handleCancel} className="cancel-button">Cancel</button>
@@ -443,6 +575,7 @@ const AdminPanel: React.FC = () => {
                   <th>#</th>
                   <th>Word</th>
                   <th>Part of Speech</th>
+                  <th># of Letters</th>
                   <th>Definition</th>
                   <th>Alt. Definition</th>
                   <th>
@@ -455,9 +588,10 @@ const AdminPanel: React.FC = () => {
               <tbody>
                 {words.map((word, index) => (
                   <tr key={word.word}>
-                    <td className="row-number">{index + 1}</td>
+                    <td className="row-number">{((pagination?.page || 1) - 1) * (pagination?.limit || 10) + index + 1}</td>
                     <td>{word.word}</td>
                     <td>{word.partOfSpeech}</td>
+                    <td>{word.letterCount?.count || word.word.length}</td>
                     <td>{word.definition}</td>
                     <td>{word.alternateDefinition || '—'}</td>
                     <td>{word.dateAdded || formatDate(new Date())}</td>

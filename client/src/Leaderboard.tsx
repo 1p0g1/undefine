@@ -22,7 +22,7 @@ interface LeaderboardProps {
   guessResults: Array<'correct' | 'incorrect' | null>;
   fuzzyMatchPositions: number[];
   hints: {
-    partOfSpeech: boolean;
+    letterCount: boolean;
     alternateDefinition: boolean;
     synonyms: boolean;
   };
@@ -117,15 +117,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           
           // Determine the appropriate class based on the guess result and fuzzy match status
           let boxClass = 'define-box';
-          if (index < guessResults.length) {
-            if (guessResults[index] === 'correct') {
-              boxClass += ' correct';
-            } else if (guessResults[index] === 'incorrect') {
-              boxClass += ' incorrect';
-            }
+          
+          // Only add result class if we have a result for this position
+          if (guessResults[index]) {
+            boxClass += ` ${guessResults[index]}`;
           }
           
-          // Add fuzzy class if this is a fuzzy match
+          // Add fuzzy class if this is a fuzzy match position
           if (isFuzzyMatch) {
             boxClass += ' fuzzy';
           }
@@ -147,8 +145,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     const icons = [];
     
     // Add icons based on which hints were used
-    if (hints.partOfSpeech) {
-      icons.push(<span key="pos" className="hint-icon" title="Part of Speech">🔤</span>);
+    if (hints.letterCount) {
+      icons.push(<span key="letter" className="hint-icon" title="# of letters">🔢</span>);
     }
     
     if (hints.alternateDefinition) {
@@ -170,9 +168,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     if (count <= 3) {
       const icons = [];
       
-      // First hint is always Part of Speech
+      // First hint is always Letter Count
       if (count >= 1) {
-        icons.push(<span key="pos" className="hint-icon" title="Part of Speech">🔤</span>);
+        icons.push(<span key="letter" className="hint-icon" title="# of letters">🔢</span>);
       }
       
       // Second hint is always Alternate Definition

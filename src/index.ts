@@ -1,11 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import { getRandomWord, words, WordEntry } from './data/words';
-import fs from 'fs';
-import path from 'path';
-import { authenticateAdmin } from './auth/authMiddleware';
-import { login } from './auth/authController';
+import morgan from 'morgan';
+import { connectDB } from './config/database.js';
+import { WordService } from './services/WordService.js';
+import promClient from 'prom-client';
 import dotenv from 'dotenv';
+import { authenticateAdmin } from './auth/authMiddleware.js';
+import { login } from './auth/authController.js';
 
 // Load environment variables
 dotenv.config();
@@ -14,7 +15,17 @@ dotenv.config();
 console.log('Starting server initialization...');
 
 const app = express();
-const port = 3000; // Change to a standard development port
+const port = process.env.PORT || 3001;
+
+// Prometheus metrics
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+collectDefaultMetrics();
+
+const httpRequestDurationMicroseconds = new promClient.Histogram({
+  name: 'http_request_duration_ms',
+  help: 'Duration of HTTP requests in ms',
+  labelNames: ['route', 'method'],
+});
 
 // Keep track of server instance
 let server: any = null;
@@ -61,8 +72,12 @@ app.use(cors({
 }));
 
 // Add request logging middleware
+app.use(morgan('combined'));
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const end = httpRequestDurationMicroseconds.startTimer();
+  res.on('finish', () => {
+    end({ route: req.path, method: req.method });
+  });
   next();
 });
 
@@ -79,89 +94,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Store current word in memory (in a real app, you'd use a session or database)
-let currentWord: ReturnType<typeof getRandomWord>;
-
-try {
-  console.log('Initializing first word...');
-  currentWord = getRandomWord();
-  console.log('Initial word selected:', currentWord);
-} catch (error) {
-  console.error('Error selecting initial word:', error);
-  process.exit(1);
-}
-
-// Check if words are similar using fuzzy matching
-function isFuzzyMatch(guess: string, correct: string): boolean {
-  try {
-    const normalizedGuess = guess.toLowerCase();
-    const normalizedCorrect = correct.toLowerCase();
-
-    // If the guess is the start of the correct word (or vice versa)
-    if (normalizedCorrect.startsWith(normalizedGuess) || normalizedGuess.startsWith(normalizedCorrect)) {
-      return true;
-    }
-
-    // If they share a significant common prefix
-    const minLength = Math.min(normalizedGuess.length, normalizedCorrect.length);
-    const commonPrefixLength = [...Array(minLength)].findIndex((_, i) => 
-      normalizedGuess[i] !== normalizedCorrect[i]
-    );
-    
-    if (commonPrefixLength > 4) {
-      return true;
-    }
-
-    // Calculate edit distance
-    const matrix: number[][] = [];
-    for (let i = 0; i <= normalizedGuess.length; i++) {
-      matrix[i] = [i];
-    }
-    for (let j = 0; j <= normalizedCorrect.length; j++) {
-      matrix[0][j] = j;
-    }
-
-    for (let i = 1; i <= normalizedGuess.length; i++) {
-      for (let j = 1; j <= normalizedCorrect.length; j++) {
-        if (normalizedGuess[i-1] === normalizedCorrect[j-1]) {
-          matrix[i][j] = matrix[i-1][j-1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i-1][j-1] + 1, // substitution
-            matrix[i][j-1] + 1,   // insertion
-            matrix[i-1][j] + 1    // deletion
-          );
-        }
-      }
-    }
-
-    const distance = matrix[normalizedGuess.length][normalizedCorrect.length];
-    const maxLength = Math.max(normalizedGuess.length, normalizedCorrect.length);
-    
-    // More lenient threshold for longer words
-    const threshold = Math.max(2, Math.floor(maxLength * 0.3));
-    
-    return distance <= threshold;
-  } catch (error) {
-    console.error('Error in fuzzy matching:', error);
-    return false;
-  }
-}
-
 // Get a random word and its definition
-app.get('/api/word', (req, res) => {
+app.get('/api/word', async (req, res) => {
   try {
-    currentWord = getRandomWord();
-    console.log('New word selected:', currentWord);
-    res.json({ 
-      definition: currentWord.definition,
-      totalGuesses: 5,
-      partOfSpeech: currentWord.partOfSpeech,
-      alternateDefinition: currentWord.alternateDefinition,
-      synonyms: currentWord.synonyms
-    });
+    const word = await WordService.getRandomWord();
+    if (!word) {
+      return res.status(404).json({ error: 'No words available' });
+    }
+    res.json(word);
   } catch (error) {
-    console.error('Error in /api/word:', error);
+    console.error('Error getting random word:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -172,10 +114,10 @@ interface LeaderboardEntry {
   time: number;
   guessCount: number;
   fuzzyCount: number;
-  hintCount?: number; // Number of hints used (optional)
+  hintCount?: number;
   date: string;
   word: string;
-  name?: string; // Optional name for display purposes
+  name?: string;
 }
 
 // In-memory leaderboard storage
@@ -194,11 +136,10 @@ function generateDummyLeaderboardData(word: string, count: number = 20): Leaderb
   const dummyEntries: LeaderboardEntry[] = [];
   
   for (let i = 0; i < count; i++) {
-    // Generate random performance metrics
-    const time = 20 + Math.floor(Math.random() * 120); // 20-140 seconds
-    const guessCount = 1 + Math.floor(Math.random() * 6); // 1-6 guesses
-    const fuzzyCount = Math.floor(Math.random() * 3); // 0-2 fuzzy matches
-    const hintCount = Math.floor(Math.random() * 4); // 0-3 hints
+    const time = 20 + Math.floor(Math.random() * 120);
+    const guessCount = 1 + Math.floor(Math.random() * 6);
+    const fuzzyCount = Math.floor(Math.random() * 3);
+    const hintCount = Math.floor(Math.random() * 4);
     
     dummyEntries.push({
       id: `dummy-${i}-${Date.now()}`,
@@ -206,13 +147,12 @@ function generateDummyLeaderboardData(word: string, count: number = 20): Leaderb
       guessCount,
       fuzzyCount,
       hintCount,
-      date: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(), // Random time in last 24h
+      date: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(),
       word,
-      name: dummyNames[i % dummyNames.length] // Cycle through dummy names
+      name: dummyNames[i % dummyNames.length]
     });
   }
   
-  // Sort by the same criteria as real entries
   return dummyEntries.sort((a, b) => {
     if (a.time !== b.time) return a.time - b.time;
     if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
@@ -221,17 +161,17 @@ function generateDummyLeaderboardData(word: string, count: number = 20): Leaderb
 }
 
 // Check if a guess is correct
-app.post('/api/guess', (req, res) => {
+app.post('/api/guess', async (req, res) => {
   try {
     const { guess, remainingGuesses, timer, userId } = req.body;
+    const currentWord = await WordService.getRandomWord();
     
-    if (!currentWord || !currentWord.word) {
+    if (!currentWord) {
       console.error('No word selected!');
       res.status(500).json({ error: 'No word selected' });
       return;
     }
     
-    // Log the current state
     console.log('Current word:', currentWord);
     console.log('Received guess:', guess);
     
@@ -239,23 +179,19 @@ app.post('/api/guess', (req, res) => {
     const isFuzzy = !isCorrect && isFuzzyMatch(guess, currentWord.word);
     const isGameOver = isCorrect || remainingGuesses <= 1;
     
-    // Calculate fuzzy positions for the current guess
     const fuzzyPositions: number[] = [];
     if (isFuzzy) {
-      // Simple implementation: mark positions where letters match
       const guessLetters = guess.toLowerCase().split('');
       const correctLetters = currentWord.word.toLowerCase().split('');
       
-      // Check for exact matches
       guessLetters.forEach((letter: string, index: number) => {
         if (index < correctLetters.length && letter === correctLetters[index]) {
           fuzzyPositions.push(index);
         }
       });
       
-      // If no exact matches but it's fuzzy, add at least one position
       if (fuzzyPositions.length === 0) {
-        fuzzyPositions.push(0); // Default to first position
+        fuzzyPositions.push(0);
       }
     }
     
@@ -268,9 +204,8 @@ app.post('/api/guess', (req, res) => {
       fuzzyPositions
     });
     
-    // If the game is won, add to leaderboard
     if (isCorrect) {
-      const guessCount = 6 - remainingGuesses + 1; // +1 because this guess counts
+      const guessCount = 6 - remainingGuesses + 1;
       const entry: LeaderboardEntry = {
         id: userId || `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         time: timer || 0,
@@ -279,15 +214,14 @@ app.post('/api/guess', (req, res) => {
         hintCount: req.body.hintCount || 0,
         date: new Date().toISOString(),
         word: currentWord.word,
-        name: req.body.userName || 'You' // Use provided username or default to 'You'
+        name: req.body.userName || 'You'
       };
       
       leaderboard.push(entry);
       console.log('Added to leaderboard:', entry);
       
-      // Sort leaderboard by time, then by guess count (ascending), then by fuzzy count (descending)
       leaderboard = leaderboard
-        .filter(entry => entry.word === currentWord.word) // Only keep entries for current word
+        .filter(entry => entry.word === currentWord.word)
         .sort((a, b) => {
           if (a.time !== b.time) return a.time - b.time;
           if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
@@ -331,357 +265,120 @@ app.get('/api/auth/validate', authenticateAdmin, (req, res) => {
 });
 
 // Get all words - no auth required for now
-app.get('/api/admin/words', (req, res) => {
+app.get('/api/admin/words', async (req, res) => {
   try {
-    // Support pagination with default values
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 50;
-    const search = (req.query.search as string) || '';
-    
-    // Filter words if search parameter is provided
-    let filteredWords = words;
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filteredWords = words.filter(word => 
-        word.word.toLowerCase().includes(searchLower) || 
-        word.definition.toLowerCase().includes(searchLower) ||
-        (word.alternateDefinition && word.alternateDefinition.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    // Calculate pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    
-    // Prepare pagination metadata
-    const pagination: any = {
-      total: filteredWords.length,
-      page,
-      limit,
-      pages: Math.ceil(filteredWords.length / limit)
-    };
-    
-    // Add next/prev page info if available
-    if (endIndex < filteredWords.length) {
-      pagination.next = { page: page + 1, limit };
-    }
-    
-    if (startIndex > 0) {
-      pagination.prev = { page: page - 1, limit };
-    }
-    
-    // Send paginated results if pagination is requested
-    if (req.query.page || req.query.limit) {
-      const paginatedWords = filteredWords.slice(startIndex, endIndex);
-      return res.json({ 
-        words: paginatedWords,
-        pagination 
-      });
-    }
-    
-    // Otherwise send all results (for backward compatibility)
-    res.json({ words: filteredWords });
-    
+    const result = await WordService.getWords(page, limit);
+    res.json(result);
   } catch (error) {
-    console.error('Error in /api/admin/words:', error);
+    console.error('Error getting words:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Add a new word - no auth required for now
-app.post('/api/admin/words', (req, res) => {
+app.post('/api/admin/words', async (req, res) => {
   try {
-    const newWord: WordEntry = req.body;
-    
-    // Validate the new word
-    if (!newWord.word || !newWord.definition || !newWord.partOfSpeech) {
-      return res.status(400).json({ error: 'Word, definition, and partOfSpeech are required' });
+    const { word, partOfSpeech, definition } = req.body;
+    if (!word || !partOfSpeech || !definition) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
-    
-    // Check if word already exists
-    const wordExists = words.some(w => w.word.toLowerCase() === newWord.word.toLowerCase());
-    if (wordExists) {
-      return res.status(400).json({ 
-        error: `"${newWord.word}" already exists in the database. Please choose a different word.` 
-      });
-    }
-    
-    // Add the new word to the array
-    words.push(newWord);
-    
-    // Save the updated words array to the file
-    saveWordsToFile();
-    
-    res.status(201).json({ message: 'Word added successfully', word: newWord });
+
+    const newWord = await WordService.addWord({
+      word,
+      partOfSpeech,
+      definition
+    });
+
+    res.status(201).json(newWord);
   } catch (error) {
-    console.error('Error in POST /api/admin/words:', error);
+    console.error('Error adding word:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Update an existing word - no auth required for now
-app.put('/api/admin/words/:word', (req, res) => {
+// Function to check if words are similar using fuzzy matching
+function isFuzzyMatch(guess: string, correct: string): boolean {
   try {
-    const wordToUpdate = req.params.word;
-    const updatedWord: WordEntry = req.body;
-    
-    // Validate the updated word
-    if (!updatedWord.word || !updatedWord.definition || !updatedWord.partOfSpeech) {
-      return res.status(400).json({ error: 'Word, definition, and partOfSpeech are required' });
+    const normalizedGuess = guess.toLowerCase();
+    const normalizedCorrect = correct.toLowerCase();
+
+    if (normalizedCorrect.startsWith(normalizedGuess) || normalizedGuess.startsWith(normalizedCorrect)) {
+      return true;
     }
+
+    const minLength = Math.min(normalizedGuess.length, normalizedCorrect.length);
+    const commonPrefixLength = [...Array(minLength)].findIndex((_, i) => 
+      normalizedGuess[i] !== normalizedCorrect[i]
+    );
     
-    // Find the index of the word to update
-    const index = words.findIndex(w => w.word.toLowerCase() === wordToUpdate.toLowerCase());
-    if (index === -1) {
-      return res.status(404).json({ error: 'Word not found' });
+    if (commonPrefixLength > 4) {
+      return true;
     }
-    
-    // If the word value is being changed, check if the new word already exists
-    if (wordToUpdate.toLowerCase() !== updatedWord.word.toLowerCase()) {
-      const wordExists = words.some(w => w.word.toLowerCase() === updatedWord.word.toLowerCase() && 
-                                   w.word.toLowerCase() !== wordToUpdate.toLowerCase());
-      if (wordExists) {
-        return res.status(400).json({ 
-          error: `"${updatedWord.word}" already exists in the database. Please choose a different word.` 
-        });
+
+    const matrix: number[][] = [];
+    for (let i = 0; i <= normalizedGuess.length; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= normalizedCorrect.length; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= normalizedGuess.length; i++) {
+      for (let j = 1; j <= normalizedCorrect.length; j++) {
+        if (normalizedGuess[i-1] === normalizedCorrect[j-1]) {
+          matrix[i][j] = matrix[i-1][j-1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i-1][j-1] + 1,
+            matrix[i][j-1] + 1,
+            matrix[i-1][j] + 1
+          );
+        }
       }
     }
+
+    const distance = matrix[normalizedGuess.length][normalizedCorrect.length];
+    const maxLength = Math.max(normalizedGuess.length, normalizedCorrect.length);
+    const threshold = Math.max(2, Math.floor(maxLength * 0.3));
     
-    // Update the word
-    words[index] = updatedWord;
-    
-    // Save the updated words array to the file
-    saveWordsToFile();
-    
-    res.json({ message: 'Word updated successfully', word: updatedWord });
+    return distance <= threshold;
   } catch (error) {
-    console.error(`Error in PUT /api/admin/words/${req.params.word}:`, error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Delete a word - no auth required for now
-app.delete('/api/admin/words/:word', (req, res) => {
-  try {
-    const wordToDelete = req.params.word;
-    
-    // Find the index of the word to delete
-    const index = words.findIndex(w => w.word.toLowerCase() === wordToDelete.toLowerCase());
-    if (index === -1) {
-      return res.status(404).json({ error: 'Word not found' });
-    }
-    
-    // Remove the word from the array
-    const deletedWord = words.splice(index, 1)[0];
-    
-    // Save the updated words array to the file
-    saveWordsToFile();
-    
-    res.json({ message: 'Word deleted successfully', word: deletedWord });
-  } catch (error) {
-    console.error(`Error in DELETE /api/admin/words/${req.params.word}:`, error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Helper function to save words to file
-function saveWordsToFile() {
-  try {
-    const wordsFilePath = path.join(__dirname, 'data', 'words.ts');
-    
-    // Create the content to write to the file
-    const fileContent = `export interface WordEntry {
-  word: string;
-  partOfSpeech: string;
-  synonyms?: string[];
-  definition: string;
-  alternateDefinition?: string;
-  dateAdded?: string; // Date when this word will be the daily word (DD/MM/YY)
-}
-
-export const words: WordEntry[] = ${JSON.stringify(words, null, 2)};
-
-export function getRandomWord(): WordEntry {
-  const randomIndex = Math.floor(Math.random() * words.length);
-  return words[randomIndex];
-}`;
-    
-    // Create a temp file and then rename to avoid file corruption if process is interrupted
-    const tempFilePath = `${wordsFilePath}.temp`;
-    
-    // Write to a temp file first
-    fs.writeFileSync(tempFilePath, fileContent);
-    
-    // Then rename the temp file to the target file (atomic operation)
-    fs.renameSync(tempFilePath, wordsFilePath);
-    
-    console.log(`Words file updated successfully (${words.length} words)`);
-    
-    // Optional: if the words array gets very large, consider implementing a backup system
-    if (words.length > 100) {
-      const backupDir = path.join(__dirname, 'data', 'backups');
-      if (!fs.existsSync(backupDir)) {
-        fs.mkdirSync(backupDir, { recursive: true });
-      }
-      
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const backupPath = path.join(backupDir, `words-backup-${timestamp}.json`);
-      fs.writeFileSync(backupPath, JSON.stringify(words, null, 2));
-      
-      // Keep only the latest 10 backups
-      const backups = fs.readdirSync(backupDir)
-        .filter(file => file.startsWith('words-backup-'))
-        .sort((a, b) => b.localeCompare(a));
-      
-      if (backups.length > 10) {
-        backups.slice(10).forEach(oldBackup => {
-          fs.unlinkSync(path.join(backupDir, oldBackup));
-        });
-      }
-    }
-  } catch (error) {
-    console.error('Error saving words to file:', error);
-    throw error;
+    console.error('Error in fuzzy matching:', error);
+    return false;
   }
 }
 
-// Get leaderboard data
-app.get('/api/leaderboard', (req, res) => {
+// Start server
+const startServer = async () => {
+  console.log('Starting server initialization...');
+  
   try {
-    // Get user's position from query parameter
-    const userId = req.query.userId as string;
+    await connectDB();
     
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
-    
-    // Filter to current word's leaderboard
-    let currentLeaderboard = leaderboard.filter(entry => entry.word === currentWord.word);
-    
-    // For development/demo purposes: If we have fewer than 10 entries, generate dummy data
-    const minEntries = 10;
-    let userEntry = currentLeaderboard.find(entry => entry.id === userId);
-    
-    if (currentLeaderboard.length < minEntries || !userEntry) {
-      // Generate dummy data
-      const dummyData = generateDummyLeaderboardData(currentWord.word, 20);
-      
-      // If the user isn't in the real leaderboard, make sure they're included in the dummy data
-      if (!userEntry) {
-        // Find the user's entry from the full leaderboard (might be for a different word)
-        userEntry = leaderboard.find(entry => entry.id === userId);
-        
-        if (userEntry) {
-          // Clone the entry but update the word to match current word
-          const clonedEntry = { ...userEntry, word: currentWord.word };
-          dummyData.push(clonedEntry);
-        }
-      }
-      
-      // Combine real and dummy data, ensuring no duplicates by ID
-      const combinedLeaderboard = [...currentLeaderboard];
-      
-      for (const dummyEntry of dummyData) {
-        if (!combinedLeaderboard.some(entry => entry.id === dummyEntry.id)) {
-          combinedLeaderboard.push(dummyEntry);
-        }
-      }
-      
-      // Sort the combined leaderboard
-      currentLeaderboard = combinedLeaderboard.sort((a, b) => {
-        // First sort by time
-        if (a.time !== b.time) return a.time - b.time;
-        
-        // Then by guess count (fewer guesses is better)
-        if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
-        
-        // Then by hint count (fewer hints is better)
-        if ((a.hintCount || 0) !== (b.hintCount || 0)) return (a.hintCount || 0) - (b.hintCount || 0);
-        
-        // Finally by fuzzy count (more fuzzy matches is better)
-        return (b.fuzzyCount || 0) - (a.fuzzyCount || 0);
-      });
-    }
-    
-    // Find user's position
-    const userIndex = currentLeaderboard.findIndex(entry => entry.id === userId);
-    
-    // If user not found, create a dummy entry
-    if (userIndex === -1) {
-      // Create a dummy entry for the user
-      const dummyUserEntry: LeaderboardEntry = {
-        id: userId,
-        time: 60, // Default to 1 minute
-        guessCount: 3, // Default to 3 guesses
-        fuzzyCount: 0,
-        hintCount: 0,
-        date: new Date().toISOString(),
-        word: currentWord.word,
-        name: 'You'
-      };
-      currentLeaderboard.push(dummyUserEntry);
-      
-      // Re-sort the leaderboard
-      currentLeaderboard.sort((a, b) => {
-        if (a.time !== b.time) return a.time - b.time;
-        if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
-        if ((a.hintCount || 0) !== (b.hintCount || 0)) return (a.hintCount || 0) - (b.hintCount || 0);
-        return (b.fuzzyCount || 0) - (a.fuzzyCount || 0);
-      });
-      
-      // Find the user's position again
-      const newUserIndex = currentLeaderboard.findIndex(entry => entry.id === userId);
-      if (newUserIndex !== -1) {
-        // Get entries around the user (5 above and 5 below)
-        const startIndex = Math.max(0, newUserIndex - 5);
-        const endIndex = Math.min(currentLeaderboard.length, newUserIndex + 6);
-        const leaderboardSlice = currentLeaderboard.slice(startIndex, endIndex);
-        
-        res.json({
-          leaderboard: leaderboardSlice,
-          userRank: newUserIndex + 1,
-          totalEntries: currentLeaderboard.length,
-          startRank: startIndex + 1
-        });
-        return;
-      }
-      
-      // If we still can't find the user (shouldn't happen), return an error
-      return res.status(404).json({ error: 'User not found in leaderboard' });
-    }
-    
-    // Get entries around the user (5 above and 5 below)
-    const startIndex = Math.max(0, userIndex - 5);
-    const endIndex = Math.min(currentLeaderboard.length, userIndex + 6);
-    const leaderboardSlice = currentLeaderboard.slice(startIndex, endIndex);
-    
-    res.json({
-      leaderboard: leaderboardSlice,
-      userRank: userIndex + 1,
-      totalEntries: currentLeaderboard.length,
-      startRank: startIndex + 1
+    const serverPort = typeof port === 'string' ? parseInt(port) : port;
+    server = app.listen(serverPort, 'localhost', () => {
+      console.log('\n=== Server Status ===');
+      console.log(`Time: ${new Date().toISOString()}`);
+      console.log(`Port: ${serverPort}`);
+      console.log(`URL: http://localhost:${serverPort}`);
+      console.log('\nTest these endpoints:');
+      console.log(`1. http://localhost:${serverPort}/`);
+      console.log(`2. http://localhost:${serverPort}/test`);
+      console.log(`3. http://localhost:${serverPort}/health`);
+      console.log('==================\n');
     });
   } catch (error) {
-    console.error('Error in /api/leaderboard:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Failed to start server:', error);
+    process.exit(1);
   }
-});
+};
 
-// Modify server startup
-console.log('Setting up server...');
-try {
-  server = app.listen(port, 'localhost', () => {
-    console.log('\n=== Server Status ===');
-    console.log(`Time: ${new Date().toISOString()}`);
-    console.log(`Port: ${port}`);
-    console.log(`URL: http://localhost:${port}`);
-    console.log('\nTest these endpoints:');
-    console.log(`1. http://localhost:${port}/`);
-    console.log(`2. http://localhost:${port}/test`);
-    console.log(`3. http://localhost:${port}/health`);
-    console.log('==================\n');
-  });
-} catch (error) {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-} 
+startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('Shutting down gracefully...');
+  process.exit(0);
+}); 

@@ -14,6 +14,11 @@ export interface WordEntry {
   alternateDefinition?: string;
   /** Date when this word will be the daily word (DD/MM/YY) */
   dateAdded: string;
+  /** Letter count information */
+  letterCount: {
+    count: number;
+    display: string;
+  };
 }
 
 /**
@@ -26,6 +31,10 @@ export interface FormState {
   definition: string;
   alternateDefinition: string;
   dateAdded: string;
+  letterCount: {
+    count: number;
+    display: string;
+  };
 }
 
 /**

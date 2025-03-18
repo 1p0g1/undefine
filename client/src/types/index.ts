@@ -6,16 +6,24 @@ export interface WordEntry {
   definition: string;
   alternateDefinition?: string;
   dateAdded?: string; // Date when this word will be the daily word (DD/MM/YY)
+  letterCount: {
+    count: number;
+    display: string;
+  };
 }
 
 // Form and state types
 export interface FormState {
   word: string;
   partOfSpeech: string;
+  synonyms: string[];
   definition: string;
   alternateDefinition: string;
-  synonyms: string[];
   dateAdded: string;
+  letterCount: {
+    count: number;
+    display: string;
+  };
 }
 
 export interface ValidationError {
@@ -80,6 +88,7 @@ export interface PaginationProps {
   pagination: PaginationInfo;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
+  pageSizeOptions?: number[];
 }
 
 export interface SearchBarProps {
