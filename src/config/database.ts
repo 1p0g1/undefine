@@ -1,19 +1,17 @@
-import mongoose from 'mongoose';
 import Redis from 'ioredis';
 import dotenv from 'dotenv';
+import { connectionManager } from './snowflake.js';
 
 dotenv.config();
 
-// MongoDB Configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/reversedefine';
 const REDIS_URI = process.env.REDIS_URI || 'redis://localhost:6379';
 
 export const connectDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('MongoDB connected successfully');
+    await connectionManager.initialize();
+    console.log('Database connection initialized');
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('Failed to initialize database connection:', error);
     process.exit(1);
   }
 };
@@ -30,7 +28,17 @@ redisClient.on('connect', () => console.log('Redis Connected Successfully'));
 // Cache TTL in seconds (24 hours)
 export const CACHE_TTL = 24 * 60 * 60;
 
-// Export mongoose for use in other files
-export { mongoose };
+// Graceful shutdown handler
+process.on('SIGTERM', async () => {
+  try {
+    await connectionManager.cleanup();
+    await redisClient.quit();
+    console.log('Database connections closed.');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+});
 
 export default connectDB; 

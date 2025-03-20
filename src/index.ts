@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { connectDB } from './config/database.js';
-import { WordService } from './services/WordService.js';
+import { WordService, IWord } from './services/WordService.js';
 import promClient from 'prom-client';
 import dotenv from 'dotenv';
 import { authenticateAdmin } from './auth/authMiddleware.js';
@@ -94,6 +94,17 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// In-memory game state storage
+interface GameState {
+  word: IWord;
+  startTime: Date;
+  guessCount: number;
+  fuzzyCount: number;
+  hintCount: number;
+}
+
+const activeGames = new Map<string, GameState>();
+
 // Get a random word and its definition
 app.get('/api/word', async (req, res) => {
   try {
@@ -101,7 +112,28 @@ app.get('/api/word', async (req, res) => {
     if (!word) {
       return res.status(404).json({ error: 'No words available' });
     }
-    res.json(word);
+
+    // Generate a unique game ID
+    const gameId = `game-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Store the game state
+    activeGames.set(gameId, {
+      word,
+      startTime: new Date(),
+      guessCount: 0,
+      fuzzyCount: 0,
+      hintCount: 0
+    });
+
+    // Send only the necessary information to start the game
+    res.json({
+      gameId,
+      word: {
+        id: word.wordId,
+        definition: word.definition,
+        partOfSpeech: word.partOfSpeech
+      }
+    });
   } catch (error) {
     console.error('Error getting random word:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -163,21 +195,24 @@ function generateDummyLeaderboardData(word: string, count: number = 20): Leaderb
 // Check if a guess is correct
 app.post('/api/guess', async (req, res) => {
   try {
-    const { guess, remainingGuesses, timer, userId } = req.body;
-    const currentWord = await WordService.getRandomWord();
+    const { guess, gameId } = req.body;
     
-    if (!currentWord) {
-      console.error('No word selected!');
-      res.status(500).json({ error: 'No word selected' });
-      return;
+    // Get the game state
+    const gameState = activeGames.get(gameId);
+    if (!gameState) {
+      return res.status(404).json({ error: 'Game not found' });
     }
-    
-    console.log('Current word:', currentWord);
-    console.log('Received guess:', guess);
+
+    const { word: currentWord } = gameState;
+    gameState.guessCount++;
     
     const isCorrect = guess.toLowerCase() === currentWord.word.toLowerCase();
     const isFuzzy = !isCorrect && isFuzzyMatch(guess, currentWord.word);
-    const isGameOver = isCorrect || remainingGuesses <= 1;
+    const isGameOver = isCorrect || gameState.guessCount >= 6;
+    
+    if (isFuzzy) {
+      gameState.fuzzyCount++;
+    }
     
     const fuzzyPositions: number[] = [];
     if (isFuzzy) {
@@ -195,38 +230,32 @@ app.post('/api/guess', async (req, res) => {
       }
     }
     
-    console.log('Guess attempt:', {
-      guess,
-      correctWord: currentWord.word,
-      isCorrect,
-      isFuzzy,
-      isGameOver,
-      fuzzyPositions
-    });
-    
-    if (isCorrect) {
-      const guessCount = 6 - remainingGuesses + 1;
-      const entry: LeaderboardEntry = {
-        id: userId || `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        time: timer || 0,
-        guessCount,
-        fuzzyCount: req.body.fuzzyCount || 0,
-        hintCount: req.body.hintCount || 0,
-        date: new Date().toISOString(),
-        word: currentWord.word,
-        name: req.body.userName || 'You'
-      };
+    if (isCorrect || isGameOver) {
+      // Add to leaderboard if game is over
+      if (isCorrect) {
+        const timeTaken = Date.now() - gameState.startTime.getTime();
+        const entry: LeaderboardEntry = {
+          id: gameId,
+          time: Math.floor(timeTaken / 1000),
+          guessCount: gameState.guessCount,
+          fuzzyCount: gameState.fuzzyCount,
+          hintCount: gameState.hintCount,
+          date: new Date().toISOString(),
+          word: currentWord.word
+        };
+        
+        leaderboard.push(entry);
+        leaderboard = leaderboard
+          .filter(entry => entry.word === currentWord.word)
+          .sort((a, b) => {
+            if (a.time !== b.time) return a.time - b.time;
+            if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
+            return b.fuzzyCount - a.fuzzyCount;
+          });
+      }
       
-      leaderboard.push(entry);
-      console.log('Added to leaderboard:', entry);
-      
-      leaderboard = leaderboard
-        .filter(entry => entry.word === currentWord.word)
-        .sort((a, b) => {
-          if (a.time !== b.time) return a.time - b.time;
-          if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
-          return b.fuzzyCount - a.fuzzyCount;
-        });
+      // Clean up the game state
+      activeGames.delete(gameId);
     }
     
     res.json({ 
@@ -235,13 +264,24 @@ app.post('/api/guess', async (req, res) => {
       guessedWord: guess,
       isFuzzy,
       fuzzyPositions,
-      leaderboardRank: isCorrect ? leaderboard.findIndex(e => e.id === (userId || `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`)) + 1 : undefined
+      remainingGuesses: 6 - gameState.guessCount,
+      leaderboardRank: isCorrect ? leaderboard.findIndex(e => e.id === gameId) + 1 : undefined
     });
   } catch (error) {
     console.error('Error in /api/guess:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Clean up old game sessions periodically
+setInterval(() => {
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  for (const [gameId, state] of activeGames.entries()) {
+    if (state.startTime.getTime() < oneHourAgo) {
+      activeGames.delete(gameId);
+    }
+  }
+}, 15 * 60 * 1000); // Run every 15 minutes
 
 // Add basic test routes
 app.get('/', (req, res) => {
@@ -277,10 +317,25 @@ app.get('/api/admin/words', async (req, res) => {
   }
 });
 
-// Add a new word - no auth required for now
+// Get a single word
+app.get('/api/admin/words/:word', async (req, res) => {
+  try {
+    const word = await WordService.getWord(req.params.word);
+    if (!word) {
+      return res.status(404).json({ error: 'Word not found' });
+    }
+    res.json({ word });
+  } catch (error) {
+    console.error('Error getting word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add a new word
 app.post('/api/admin/words', async (req, res) => {
   try {
-    const { word, partOfSpeech, definition } = req.body;
+    const { word, partOfSpeech, definition, alternateDefinition } = req.body;
+    
     if (!word || !partOfSpeech || !definition) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -288,12 +343,66 @@ app.post('/api/admin/words', async (req, res) => {
     const newWord = await WordService.addWord({
       word,
       partOfSpeech,
-      definition
+      definition,
+      alternateDefinition
     });
 
-    res.status(201).json(newWord);
+    res.status(201).json({ word: newWord });
   } catch (error) {
     console.error('Error adding word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update a word
+app.put('/api/admin/words/:wordId', async (req, res) => {
+  try {
+    const { word, partOfSpeech, definition, alternateDefinition } = req.body;
+    
+    if (!req.params.wordId) {
+      return res.status(400).json({ error: 'Word ID is required' });
+    }
+
+    const updatedWord = await WordService.updateWord(req.params.wordId, {
+      word,
+      partOfSpeech,
+      definition,
+      alternateDefinition
+    });
+
+    res.json({ word: updatedWord });
+  } catch (error) {
+    console.error('Error updating word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete a word
+app.delete('/api/admin/words/:wordId', async (req, res) => {
+  try {
+    if (!req.params.wordId) {
+      return res.status(400).json({ error: 'Word ID is required' });
+    }
+
+    const deleted = await WordService.deleteWord(req.params.wordId);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Word not found' });
+    }
+
+    res.json({ message: 'Word deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Search words
+app.get('/api/admin/words/search/:query', async (req, res) => {
+  try {
+    const words = await WordService.searchWords(req.params.query);
+    res.json({ words });
+  } catch (error) {
+    console.error('Error searching words:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
