@@ -1,15 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import './Leaderboard.css';
+import { buildApiUrl } from './config';
 
 interface LeaderboardEntry {
-  id: string;
+  userId: string;
+  userName: string;
   time: number;
   guessCount: number;
   fuzzyCount: number;
-  hintCount?: number;
-  date: string;
-  word: string;
-  name?: string;
+  hintCount: number;
+}
+
+interface UserStats {
+  gamesPlayed: number;
+  averageGuesses: number;
+  averageTime: number;
+  bestTime: number;
+  currentStreak: number;
+  longestStreak: number;
+  topTenCount: number;
 }
 
 interface LeaderboardProps {
@@ -41,12 +50,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   hints,
   onClose
 }) => {
-  const [leaderboardData, setLeaderboardData] = useState<{
-    leaderboard: LeaderboardEntry[];
-    userRank: number;
-    totalEntries: number;
-    startRank: number;
-  } | null>(null);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [userRank, setUserRank] = useState<number | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [totalPlayers, setTotalPlayers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,40 +69,25 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       setLoading(true);
       setError(null);
       
-      // Add a timestamp to prevent caching
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/leaderboard?userId=${userId}&t=${timestamp}`);
+      const response = await fetch(buildApiUrl(`/api/leaderboard?userId=${userId}`));
       
       if (!response.ok) {
-        // If we get a 404 for user not found, create a fallback leaderboard
-        if (response.status === 404) {
-          // Create a simple fallback with just the user
-          setLeaderboardData({
-            leaderboard: [{
-              id: userId,
-              time,
-              guessCount,
-              fuzzyCount,
-              date: new Date().toISOString(),
-              word,
-              name: 'You'
-            }],
-            userRank: 1,
-            totalEntries: 1,
-            startRank: 1
-          });
-          setLoading(false);
-          return;
-        }
-        
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        throw new Error('Failed to fetch leaderboard');
       }
       
       const data = await response.json();
-      setLeaderboardData(data);
+      setEntries(data.entries || []);
+      setUserRank(data.userRank || null);
+      setUserStats(data.userStats || null);
+      setTotalPlayers(data.totalPlayers || 0);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       setError('Failed to load leaderboard. Please try again later.');
+      // Set default values on error
+      setEntries([]);
+      setUserRank(null);
+      setUserStats(null);
+      setTotalPlayers(0);
     } finally {
       setLoading(false);
     }
@@ -112,19 +104,16 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return (
       <div className="leaderboard-define-boxes">
         {defineLetters.map((letter, index) => {
-          // Check if this position is a fuzzy match
-          const isFuzzyMatch = fuzzyMatchPositions && fuzzyMatchPositions.includes(index);
-          
-          // Determine the appropriate class based on the guess result and fuzzy match status
           let boxClass = 'define-box';
           
-          // Only add result class if we have a result for this position
-          if (guessResults[index]) {
+          // First check if this position has a guess result
+          if (guessResults && guessResults[index]) {
             boxClass += ` ${guessResults[index]}`;
           }
           
-          // Add fuzzy class if this is a fuzzy match position
-          if (isFuzzyMatch) {
+          // Then check if this position is a fuzzy match
+          // If it is, add the fuzzy class regardless of the guess result
+          if (fuzzyMatchPositions && fuzzyMatchPositions.includes(index)) {
             boxClass += ' fuzzy';
           }
           
@@ -214,7 +203,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     const dateString = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear().toString().slice(-2)}`;
     
     // Create the share text
-    const shareText = `UN·DEFINE ${dateString}\n${emojiBoxes}\n${formatTime(time)}${hintEmojis}\nwww.undefine.io`;
+    const shareText = `🎯 Reverse Define #1\n\n` +
+      `Solved in ${formatTime(time)}\n` +
+      `Guesses: ${guessCount}/6\n` +
+      `Hints: ${hintCount}\n` +
+      `Rank: #${userRank || '?'}\n\n` +
+      `Current Streak: ${userStats?.currentStreak || 0}\n` +
+      `Best Streak: ${userStats?.longestStreak || 0}\n` +
+      `🏆 Top 10 Finishes: ${userStats?.topTenCount || 0}\n\n` +
+      `Play at: https://reversedefine.com`;
     
     // Copy to clipboard
     navigator.clipboard.writeText(shareText)
@@ -246,8 +243,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           {renderDefineBoxes()}
           <p className="performance-summary">
             You guessed <strong>{word}</strong> in <strong>{formatTime(time)}</strong>
-            {leaderboardData && leaderboardData.userRank > 0 && (
-              <>, ranking <strong>#{leaderboardData.userRank}</strong> in the world</>
+            {userRank && userRank > 0 && (
+              <>, ranking <strong>#{userRank}</strong> in the world</>
             )}
           </p>
           <p className="performance-details">
@@ -257,58 +254,69 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           </p>
         </div>
         
-        {loading && <div className="loading-spinner">Loading leaderboard...</div>}
-        
-        {error && (
-          <div className="error-container">
-            <div className="error-message">{error}</div>
-            <button className="retry-button" onClick={fetchLeaderboard}>
-              Retry
-            </button>
+        <div className="user-stats">
+          <div className="stats-row">
+            <div className="stat-box">
+              <div className="stat-value">{userStats?.currentStreak || 0}</div>
+              <div className="stat-label">Current Streak</div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-value">{userStats?.longestStreak || 0}</div>
+              <div className="stat-label">Longest Streak</div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-value">{userStats?.topTenCount || 0}</div>
+              <div className="stat-label">Top 10 Finishes</div>
+            </div>
           </div>
-        )}
-        
-        {leaderboardData && !loading && !error && (
-          <div className="leaderboard-table-container">
-            <h3>Leaderboard</h3>
-            <table className="leaderboard-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Player</th>
-                  <th>Time</th>
-                  <th>Guesses</th>
-                  <th>Fuzzy</th>
-                  <th>Hints</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboardData.leaderboard.map((entry, index) => {
-                  const rank = leaderboardData.startRank + index;
-                  const isCurrentUser = entry.id === userId;
-                  
-                  return (
-                    <tr key={entry.id} className={isCurrentUser ? 'current-user' : ''}>
-                      <td>{rank}</td>
-                      <td>{isCurrentUser ? 'You' : (entry.name || `Player ${rank}`)}</td>
-                      <td>{formatTime(entry.time)}</td>
-                      <td>{entry.guessCount}/6</td>
-                      <td>{entry.fuzzyCount}</td>
-                      <td>{renderLeaderboardHintIcons(entry.hintCount || 0)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <p className="leaderboard-total">
-              Total players today: {leaderboardData.totalEntries}
-            </p>
+          <div className="stats-row">
+            <div className="stat-box">
+              <div className="stat-value">{userStats?.gamesPlayed || 0}</div>
+              <div className="stat-label">Games Played</div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-value">{userStats?.averageGuesses?.toFixed(1) || '0.0'}</div>
+              <div className="stat-label">Avg. Guesses</div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-value">{formatTime(userStats?.bestTime || 0)}</div>
+              <div className="stat-label">Best Time</div>
+            </div>
           </div>
-        )}
+        </div>
+        
+        <div className="leaderboard-section">
+          <h3>Today's Leaderboard</h3>
+          {loading ? (
+            <p className="loading">Loading leaderboard...</p>
+          ) : error ? (
+            <p className="error">{error}</p>
+          ) : entries.length === 0 ? (
+            <p className="no-entries">Be the first to complete today's challenge!</p>
+          ) : (
+            <>
+              <div className="leaderboard-stats">
+                <p>Total players today: <strong>{totalPlayers}</strong></p>
+              </div>
+              <div className="leaderboard-entries">
+                {entries.map((entry, index) => (
+                  <div key={entry.userId} className={`leaderboard-entry ${entry.userId === userId ? 'current-user' : ''}`}>
+                    <span className="rank">#{index + 1}</span>
+                    <span className="name">{entry.userName}</span>
+                    <span className="time">{formatTime(entry.time)}</span>
+                    <span className="guesses">{entry.guessCount} guesses</span>
+                    <span className="hints">{renderLeaderboardHintIcons(entry.hintCount)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
         
         <div className="leaderboard-actions">
-          <button className="share-button" onClick={handleShareResults}>Share Results</button>
-          <button className="play-again-button" onClick={onClose}>Play Again</button>
+          <button className="share-button" onClick={handleShareResults}>
+            Share Results
+          </button>
         </div>
       </div>
     </div>
