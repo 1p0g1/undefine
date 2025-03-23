@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import Confetti from 'react-confetti'
 import Leaderboard from './Leaderboard'
+import { getApiUrl } from './config';
+
+// Add TypeScript declarations for our window extensions
+declare global {
+  interface Window {
+    API_BASE_URL?: string;
+    getApiUrl?: (path: string) => string;
+    buildApiUrl?: (endpoint: string) => string;
+    testApiConnection?: () => Promise<void>;
+  }
+}
 
 interface GuessHistory {
   word: string;
@@ -56,7 +67,11 @@ function App() {
   const [timer, setTimer] = useState<number>(0);
   const [guessResults, setGuessResults] = useState<GuessResult[]>([null, null, null, null, null, null]);
   const [fuzzyMatchPositions, setFuzzyMatchPositions] = useState<number[]>([]);
-  const [hints, setHints] = useState<HintType[]>([]);
+  const [hints, setHints] = useState<Hint>({
+    letterCount: false,
+    alternateDefinition: false,
+    synonyms: false
+  });
   const [wordData, setWordData] = useState<WordData | null>(null);
   const [correctWord, setCorrectWord] = useState<string>('');
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
@@ -67,11 +82,8 @@ function App() {
   const [userName, setUserName] = useState<string>('');
   const [hintCount, setHintCount] = useState<number>(0);
   const [gameId, setGameId] = useState<string>('');
-  const [hintsState, setHintsState] = useState<Hint>({
-    letterCount: false,
-    alternateDefinition: false,
-    synonyms: false
-  });
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     let interval: number | undefined;
@@ -121,186 +133,240 @@ function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const fetchNewWord = async () => {
-    try {
-      console.log('Calling /api/word endpoint...');
-      const response = await fetch('/api/word');
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`API error: ${response.status} ${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Received data from /api/word:', data);
-      
-      // Store the gameId from the response
-      if (data.gameId) {
-        console.log('Game ID received:', data.gameId);
-        setGameId(data.gameId);
-      } else {
-        console.warn('No gameId found in response');
-      }
-      
-      // Handle the response based on its structure
-      if (data.word) {
-        // Handle new response format with word object
-        setDefinition(data.word.definition);
-        setWordData(data.word);
-        setCorrectWord(data.word.word.toLowerCase());
-      } else if (data.definition) {
-        // Handle legacy response format (direct properties)
-        setDefinition(data.definition);
-        setWordData(data);
-        setCorrectWord(data.word.toLowerCase());
-      } else {
-        console.error('Unexpected response structure:', data);
-        throw new Error('Unexpected response format from API');
-      }
-      
-      // Reset game state
-      setIsCorrect(false);
-      setMessage('');
-      setGuess('');
-      setGuessHistory([]);
-      setRemainingGuesses(6);
-      setIsGameOver(false);
-      setTimer(0);
-      setGuessResults([null, null, null, null, null, null]);
-      setFuzzyMatchPositions([]);
-      
-      setHintsState({
-        letterCount: false,
-        alternateDefinition: false,
-        synonyms: false
-      });
-      setHints([]);
-      setHintCount(0);
-    } catch (error) {
-      console.error('Error fetching word:', error);
-      setMessage('Error fetching word. Using fallback data.');
-      
-      // Fallback to hardcoded data for development/demo purposes
-      console.log('FALLING BACK TO HARDCODED DATA due to API error');
-      const fallbackData: WordData = {
-        wordId: '123',
-        word: 'cogitate',
-        definition: "To reason, argue, or think carefully and thoroughly.",
-        partOfSpeech: "verb",
-        alternateDefinition: "To ponder or meditate on something deeply.",
-        synonyms: "think, ponder, contemplate, meditate, reflect"
-      };
-      setDefinition(fallbackData.definition);
-      setWordData(fallbackData);
-      setCorrectWord(fallbackData.word.toLowerCase());
+  useEffect(() => {
+    console.log('App component mounted - initializing game...');
+    
+    if (!definition) {
+      console.log('No definition found - fetching new word...');
+      fetchNewWord();
+    } else {
+      console.log('Definition already exists, skipping initial fetch');
     }
+  }, []);
+
+  const fetchNewWord = async () => {
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+    
+    const attemptFetch = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        
+        console.log('Fetching new word from API...');
+        const apiUrl = getApiUrl('/api/word');
+        console.log(`API URL: ${apiUrl}`);
+        
+        const response = await fetch(apiUrl);
+        
+        console.log('Word API response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        console.log('Word data received:', {
+          gameId: data.gameId,
+          wordId: data.word?.wordId || data.wordId,
+          word: data.word?.word || data.word,
+          definition: data.word?.definition || data.definition,
+          alternateDefinition: data.word?.alternateDefinition,
+          synonyms: data.word?.synonyms,
+        });
+
+        // Store the gameId from the response
+        if (data.gameId) {
+          console.log('Game ID received:', data.gameId);
+          setGameId(data.gameId);
+        } else {
+          console.warn('No gameId found in response');
+          setMessage('Warning: No game ID received. Guesses may not work correctly.');
+        }
+        
+        // Handle the response based on its structure
+        if (data.word) {
+          // Handle new response format with word object
+          setDefinition(data.word.definition);
+          setWordData(data.word);
+          setCorrectWord(data.word.word?.toLowerCase() || '');
+        } else if (data.definition) {
+          // Handle legacy response format (direct properties)
+          setDefinition(data.definition);
+          setWordData(data);
+          setCorrectWord(data.word?.toLowerCase() || '');
+        } else {
+          console.error('Unexpected response structure:', data);
+          throw new Error('Unexpected response format from API');
+        }
+        
+        // Reset game state
+        setIsCorrect(false);
+        setMessage('');
+        setGuess('');
+        setGuessHistory([]);
+        setRemainingGuesses(6);
+        setIsGameOver(false);
+        setTimer(0);
+        setGuessResults([null, null, null, null, null, null]);
+        setFuzzyMatchPositions([]);
+        
+        setHints({
+          letterCount: false,
+          alternateDefinition: false,
+          synonyms: false
+        });
+        setHintCount(0);
+      } catch (error) {
+        console.error('Error fetching word:', error);
+        
+        // If we have retries left, try again
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          console.log(`Retry attempt ${retryCount}/${MAX_RETRIES}...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          return attemptFetch();
+        }
+        
+        setMessage(`Error fetching word (after ${MAX_RETRIES} attempts). Using fallback data.`);
+        
+        // Fallback to hardcoded data for development/demo purposes
+        console.log('FALLING BACK TO HARDCODED DATA due to API error');
+        const fallbackData: WordData = {
+          wordId: '123',
+          word: 'cogitate',
+          definition: "To reason, argue, or think carefully and thoroughly.",
+          partOfSpeech: "verb",
+          alternateDefinition: "To ponder or meditate on something deeply.",
+          synonyms: "think, ponder, contemplate, meditate, reflect"
+        };
+        
+        // Generate a fallback gameId so the game still works
+        const fallbackGameId = `fallback-game-${Date.now()}`;
+        setGameId(fallbackGameId);
+        
+        setDefinition(fallbackData.definition);
+        setWordData(fallbackData);
+        setCorrectWord(fallbackData.word.toLowerCase());
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    return attemptFetch();
   };
 
   const revealHint = (hintType: HintType) => {
     if (isGameOver) return;
     
-    // Add the hint to the array if it's not already there
-    if (!hints.includes(hintType)) {
-      setHints([...hints, hintType]);
+    // Set the corresponding hint type to true
+    if (!hints[getHintKey(hintType)]) {
+      setHints({
+        ...hints,
+        [getHintKey(hintType)]: true
+      });
       setHintCount(prev => prev + 1);
     }
+  };
+  
+  // Helper function to map hint types to Hint object keys
+  const getHintKey = (hintType: HintType): keyof Hint => {
+    if (hintType === 'partOfSpeech') return 'letterCount';
+    return hintType;
   };
 
   const handleGuess = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!guess.trim() || isGameOver) {
+    if (isGameOver || isCorrect || !guess.trim() || loading) {
       return;
     }
     
-    // Reset fuzzy match positions for this new guess
-    // This ensures we don't carry over fuzzy matches from previous guesses
-    if (guess.toLowerCase() !== correctWord) {
-      setFuzzyMatchPositions([]);
-    }
-    
-    console.log('Submitting guess:', guess);
-    console.log('Game ID being sent:', gameId);
-    
     try {
-      const payload = { 
-        gameId, // Include gameId in the request
-        guess, 
+      console.log('Submitting guess:', guess);
+      
+      // Only proceed if we have a gameId
+      if (!gameId) {
+        setMessage('No active game. Please refresh to start a new game.');
+        return;
+      }
+      
+      console.log('Game ID being sent:', gameId);
+      
+      const newRemainingGuesses = remainingGuesses - 1;
+      const currentGuessIndex = 5 - remainingGuesses;
+      
+      // Create a new guessResults array - DO NOT directly update before API response
+      const newGuessResults = [...guessResults];
+      
+      // Add guess to history
+      const newHistory = [...guessHistory];
+      newHistory.push({
+        word: guess,
+        isCorrect: false,
+        isFuzzy: false
+      });
+      setGuessHistory(newHistory);
+      
+      // Create payload with essential data
+      const payload = {
+        gameId,
+        guess,
         remainingGuesses,
         timer,
         userId,
-        fuzzyCount,
+        fuzzyCount: fuzzyMatchPositions.length,
         userName,
         hintCount
       };
       
       console.log('Sending payload to /api/guess:', payload);
       
-      const response = await fetch('/api/guess', {
+      // Clear the input field immediately for better UX
+      const submittedGuess = guess.trim();
+      setGuess('');
+      
+      const response = await fetch(getApiUrl('/api/guess'), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
       
       console.log('Response status from /api/guess:', response.status);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response from /api/guess:', errorText);
-        throw new Error(`API error: ${response.status} ${errorText}`);
+        const errorData = await response.json();
+        console.error('Error response from /api/guess:', errorData);
+        throw new Error(`API error: ${response.status} ${errorData.error || ''}`);
       }
       
-      const data: GuessResponse = await response.json();
-      console.log('Received data from /api/guess:', data);
+      const data = await response.json();
       
-      // Add to guess history
-      setGuessHistory(prev => [
-        ...prev,
-        {
-          word: guess,
-          isCorrect: data.isCorrect,
-          isFuzzy: data.isFuzzy
-        }
-      ]);
+      console.log('Guess result:', data);
       
-      // Update remaining guesses
-      const newRemainingGuesses = remainingGuesses - 1;
+      // Update state based on the response
       setRemainingGuesses(newRemainingGuesses);
       
-      // Update the specific box for this guess attempt
-      const currentGuessIndex = 6 - remainingGuesses;
-      const newGuessResults = [...guessResults];
-      newGuessResults[currentGuessIndex] = data.isCorrect ? 'correct' : 'incorrect';
-      setGuessResults(newGuessResults);
-      
-      // If this is a fuzzy match, store the positions and update fuzzy count
-      if (data.isFuzzy) {
-        if (data.fuzzyPositions && data.fuzzyPositions.length > 0) {
-          // The server now correctly sends the DEFINE box position to mark as fuzzy
-          // This should correspond to the current guess index
-          const validPositions = data.fuzzyPositions.filter(
-            pos => pos <= currentGuessIndex && pos >= 0 && pos < 6
-          );
-          console.log(`Filtered fuzzy positions: ${JSON.stringify(validPositions)}`);
-          setFuzzyMatchPositions(validPositions);
-        } else {
-          // No specific fuzzy positions provided, don't mark any positions
-          console.log('No specific fuzzy positions provided by server');
-          setFuzzyMatchPositions([]);
-        }
-        
-        // Increment fuzzy count
-        setFuzzyCount(prev => prev + 1);
-      } else {
-        // If it's not a fuzzy match, clear any fuzzy positions
-        setFuzzyMatchPositions([]);
+      if (data.isFuzzy && data.fuzzyPositions && data.fuzzyPositions.length) {
+        setFuzzyMatchPositions(data.fuzzyPositions);
       }
       
       if (data.isCorrect) {
+        // Mark all DEFINE boxes as correct when the guess is correct
+        for (let i = 0; i <= 5; i++) {
+          newGuessResults[i] = 'correct';
+        }
+        
+        // Update the latest guess in history to be marked as correct
+        if (newHistory.length > 0) {
+          const lastIndex = newHistory.length - 1;
+          newHistory[lastIndex].isCorrect = true;
+        }
+        setGuessHistory(newHistory);
+        
         setMessage('Correct! Well done! 🎉');
         setIsCorrect(true);
         setIsGameOver(true);
@@ -309,14 +375,6 @@ function App() {
         
         // Ensure fuzzy match positions are always cleared for correct guesses
         setFuzzyMatchPositions([]);
-        
-        // Also update the currentGuessIndex and all previous indices to be 'correct'
-        // This ensures no previous guesses remain marked as fuzzy
-        const newGuessResults = [...guessResults];
-        for (let i = 0; i <= currentGuessIndex; i++) {
-          newGuessResults[i] = 'correct';
-        }
-        setGuessResults(newGuessResults);
         
         // Store leaderboard rank if provided
         if (data.leaderboardRank) {
@@ -333,6 +391,9 @@ function App() {
           setShowConfetti(false);
         }, 5000);
       } else {
+        // Only mark the current guess index as incorrect for wrong guesses
+        newGuessResults[currentGuessIndex] = 'incorrect';
+        
         if (newRemainingGuesses <= 0) {
           setMessage(`Game Over! The word was: ${data.correctWord}`);
           setIsGameOver(true);
@@ -341,28 +402,14 @@ function App() {
           setMessage(`Not quite right. ${newRemainingGuesses} guesses remaining!`);
         }
       }
-      setGuess('');
+      
+      // Set the updated guessResults AFTER API response processing
+      setGuessResults(newGuessResults);
     } catch (error) {
       console.error('Error submitting guess:', error);
       setMessage('Error processing your guess. Please try again.');
     }
   };
-
-  useEffect(() => {
-    fetchNewWord();
-  }, []);
-
-  // Convert from array-based hints to object-based hints for legacy code
-  useEffect(() => {
-    // Update hintsState based on hints array
-    const updatedHintsState: Hint = {
-      letterCount: hints.includes('partOfSpeech'),
-      alternateDefinition: hints.includes('alternateDefinition'),
-      synonyms: hints.includes('synonyms')
-    };
-    
-    setHintsState(updatedHintsState);
-  }, [hints]);
 
   // Modify the DefineBoxes component to only apply fuzzy styling to guessed positions
   const DefineBoxes = () => {
@@ -397,22 +444,29 @@ function App() {
           // Get the current guess index (0-5) - any position beyond this hasn't been guessed yet
           const currentGuessIndex = 6 - remainingGuesses;
           
+          // For correct guesses, show all boxes as correct
+          if (isCorrect) {
+            return (
+              <div 
+                key={index} 
+                className="define-box correct"
+              >
+                {letter}
+              </div>
+            );
+          }
+          
           // Only apply fuzzy match styling if:
-          // 1. The game isn't in a correct state
-          // 2. This box position isn't already correct
-          // 3. This position is in the fuzzy match positions array
-          // 4. There are actual fuzzy positions to highlight
-          // 5. We've actually made a guess for this position (index <= currentGuessIndex)
-          const isFuzzyMatch = !isCorrect && 
-                               guessResults[index] !== 'correct' && 
+          // 1. The box position isn't already marked as correct
+          // 2. This position is in the fuzzy match positions array
+          // 3. There are actual fuzzy positions to highlight
+          // 4. We've actually made a guess for this position (index is current guess position)
+          const isFuzzyMatch = guessResults[index] !== 'correct' && 
                                fuzzyMatchPositions.includes(index) && 
                                fuzzyMatchPositions.length > 0 &&
-                               index === currentGuessIndex;
+                               index <= currentGuessIndex;
           
-          // For debugging
-          if (isFuzzyMatch) {
-            console.log(`Box ${index} (${letter}) marked as fuzzy match`);
-          }
+          console.log(`Box ${index}: guessResult=${guessResults[index]}, currentGuessIndex=${currentGuessIndex}, isFuzzy=${isFuzzyMatch}`);
           
           // Build the class string based on conditions
           let boxClass = `define-box`;
@@ -456,14 +510,12 @@ function App() {
     setGuessResults([null, null, null, null, null, null]);
     setFuzzyMatchPositions([]);
     
-    // Update this to match the Hint interface expected elsewhere
-    setHintsState({
+    setHints({
       letterCount: false,
       alternateDefinition: false,
       synonyms: false
     });
     
-    setHints([]);
     setHintCount(0);
     fetchNewWord();
     setIsGameOver(false);
@@ -478,6 +530,43 @@ function App() {
         numberOfPieces={200}
         gravity={0.2}
       />}
+      
+      {/* Add a loading indicator and error message */}
+      {loading && (
+        <div className="loading-indicator">
+          <div className="spinner"></div>
+          <p>Loading word data...</p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="error-message">
+          <h3>Error Loading Game</h3>
+          <p>{error}</p>
+          <button onClick={() => {
+            setError('');
+            fetchNewWord();
+          }}>
+            Retry
+          </button>
+          <p className="debug-info">
+            <small>API URL: {window.API_BASE_URL || 'http://localhost:3001'}</small>
+            <br />
+            <small>
+              <a href="#" onClick={(e) => {
+                e.preventDefault();
+                if (window.testApiConnection) {
+                  window.testApiConnection();
+                } else {
+                  console.log('Test function not available');
+                }
+              }}>
+                Run API Connection Test
+              </a>
+            </small>
+          </p>
+        </div>
+      )}
       
       <div className="timer-container">
         <div className="timer">{formatTime(timer)}</div>
@@ -502,65 +591,96 @@ function App() {
             autoCorrect="off"
             spellCheck="false"
           />
+          
+          {/* Display floating guesses here, between input and submit button */}
+          {guessHistory.length > 0 && (
+            <div className="floating-guesses">
+              {guessHistory.map((guess, index) => (
+                <span 
+                  key={index} 
+                  className={`floating-guess ${guess.isCorrect ? 'correct' : (guess.isFuzzy ? 'fuzzy' : 'incorrect')}`}
+                >
+                  {guess.word}
+                  {guess.isCorrect && <span className="guess-emoji">✓</span>}
+                </span>
+              ))}
+            </div>
+          )}
+          
+          {/* Display remaining guesses counter */}
+          <div className="remaining-guesses">
+            {!isGameOver && (
+              <span>Guesses remaining: <strong>{remainingGuesses}</strong></span>
+            )}
+            {isGameOver && !isCorrect && (
+              <span className="game-over-message">Game Over! The word was: <strong>{correctWord}</strong></span>
+            )}
+            {isGameOver && isCorrect && (
+              <span className="success-message">Correct! Well done!</span>
+            )}
+          </div>
+          
           <button type="submit" disabled={isGameOver || !guess.trim()}>
             Submit Guess
           </button>
         </form>
 
         <div className="hints-container">
-          <button
+          <button 
             className="hint-button"
             onClick={() => revealHint('partOfSpeech')}
-            disabled={isGameOver || hints.includes('partOfSpeech')}
+            disabled={isGameOver || hints.letterCount}
             data-hint-type="partOfSpeech"
           >
-            <span className="hint-emoji">🔤</span>
-            <span className="hint-label"># of letters</span>
+            <div className="hint-icon">🔢</div>
+            <div className="hint-label"># of letters</div>
           </button>
-
+          
           <button
             className="hint-button"
             onClick={() => revealHint('alternateDefinition')}
-            disabled={isGameOver || hints.includes('alternateDefinition') || !wordData?.alternateDefinition}
+            disabled={isGameOver || hints.alternateDefinition || !wordData?.alternateDefinition}
             data-hint-type="alternateDefinition"
           >
-            <span className="hint-emoji">📖</span>
-            <span className="hint-label">Alternate Definition</span>
+            <div className="hint-icon">📖</div>
+            <div className="hint-label">Alternate Definition</div>
           </button>
-
+          
           <button
             className="hint-button"
             onClick={() => revealHint('synonyms')}
-            disabled={isGameOver || hints.includes('synonyms') || !wordData?.synonyms}
+            disabled={isGameOver || hints.synonyms || !wordData?.synonyms}
             data-hint-type="synonyms"
           >
-            <span className="hint-emoji">🔄</span>
-            <span className="hint-label">Synonyms</span>
+            <div className="hint-icon">🔄</div>
+            <div className="hint-label">Synonyms</div>
           </button>
         </div>
         
         {/* Hints Display Area */}
-        <div className={`hints-content-wrapper ${hints.length > 0 ? 'has-active-hint' : ''}`}>
-          {hints.includes('partOfSpeech') && wordData && (
+        <div className={`hints-content-wrapper ${Object.values(hints).some(v => v) ? 'has-active-hint' : ''}`}>
+          {hints.letterCount && wordData && (
             <div className="hint-display">
               <div className="hint-title">Letters</div>
               <div className="hint-content">
-                This word has {wordData.word.length} letters.
+                This word has {wordData.word?.length || 0} letters.
               </div>
             </div>
           )}
 
-          {hints.includes('alternateDefinition') && wordData?.alternateDefinition && (
+          {hints.alternateDefinition && wordData?.alternateDefinition && (
             <div className="hint-display">
               <div className="hint-title">Alternate Definition</div>
-              <div className="hint-content">{wordData.alternateDefinition}</div>
+              <div className="hint-content">
+                {wordData.alternateDefinition}
+              </div>
             </div>
           )}
 
-          {hints.includes('synonyms') && wordData?.synonyms && (
+          {hints.synonyms && wordData?.synonyms && (
             <div className="hint-display">
               <div className="hint-title">Synonyms</div>
-              <div className="hint-content">
+              <div className="hint-content synonyms-content">
                 {wordData.synonyms?.split(',').map((syn: string, i: number) => (
                   <span key={i} className="synonym-tag">
                     {syn.trim()}
@@ -570,32 +690,6 @@ function App() {
             </div>
           )}
         </div>
-
-        {guessHistory.length > 0 && (
-          <div className="guess-history">
-            <h3>Previous Guesses:</h3>
-            <div className="guess-list">
-              {guessHistory.map((guess, index) => (
-                <div key={index} className="guess-item">
-                  <div className="guess-content">
-                    <span className="guess-word">{guess.word}</span>
-                    {!guess.isCorrect && guess.isFuzzy && (
-                      <span className="fuzzy-alert">
-                        You were close
-                        <span className="fuzzy-tooltip">
-                          A fuzzy match means your guess was similar to the correct word, often with the same root or meaning.
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                  <span className="guess-icon">
-                    {guess.isCorrect ? '✅' : (guess.isFuzzy ? '🤏' : '❌')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {isGameOver && (
           <button onClick={handleNextWord} className="next-word-btn">
