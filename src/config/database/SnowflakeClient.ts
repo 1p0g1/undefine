@@ -785,4 +785,182 @@ export class SnowflakeClient implements DatabaseClient {
       await this.connection.releaseConnection(connection);
     }
   }
+
+  // Add a general query method for direct SQL execution
+  async executeQuery<T = any>(query: string, params: any[] = [], useConnection?: Connection): Promise<T[]> {
+    const connection = useConnection || await this.connection.getConnection();
+    const shouldRelease = !useConnection;
+    try {
+      return await this.connection.executeQuery<T>(query, params, connection);
+    } finally {
+      if (shouldRelease) {
+        await this.connection.releaseConnection(connection);
+      }
+    }
+  }
+
+  // Record a game metric
+  async saveGameMetric(metric: {
+    gameId: string;
+    userId: string;
+    wordId: string;
+    guess: string;
+    isCorrect: boolean;
+    isFuzzy: boolean;
+    guessNumber: number;
+    guessTimeSeconds: number;
+    hintsUsed: number;
+  }): Promise<void> {
+    const connection = await this.connection.getConnection();
+    try {
+      await this.connection.executeQuery(`
+        INSERT INTO GAME_METRICS (
+          ID, GAME_ID, USER_ID, WORD_ID, GUESS, IS_CORRECT, IS_FUZZY, 
+          GUESS_NUMBER, GUESS_TIME_SECONDS, HINTS_USED, CREATED_AT
+        ) VALUES (UUID_STRING(), ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
+      `, [
+        metric.gameId,
+        metric.userId,
+        metric.wordId,
+        metric.guess,
+        metric.isCorrect,
+        metric.isFuzzy,
+        metric.guessNumber,
+        metric.guessTimeSeconds,
+        metric.hintsUsed
+      ], connection);
+    } finally {
+      await this.connection.releaseConnection(connection);
+    }
+  }
+
+  // Get fuzzy guess metrics for a given word
+  async getFuzzyGuessMetrics(wordId: string): Promise<{
+    totalFuzzyGuesses: number;
+    avgGuessNumber: number;
+    uniqueUsers: number;
+  }> {
+    const connection = await this.connection.getConnection();
+    try {
+      const result = await this.connection.executeQuery<{
+        TOTAL_FUZZY_GUESSES: number;
+        AVG_GUESS_NUMBER: number;
+        UNIQUE_USERS: number;
+      }>(`
+        SELECT 
+          TOTAL_FUZZY_GUESSES,
+          AVG_GUESS_NUMBER,
+          UNIQUE_USERS
+        FROM FUZZY_GUESS_ANALYSIS
+        WHERE WORD_ID = ?
+      `, [wordId], connection);
+
+      if (!result.length) {
+        return {
+          totalFuzzyGuesses: 0,
+          avgGuessNumber: 0,
+          uniqueUsers: 0
+        };
+      }
+
+      return {
+        totalFuzzyGuesses: result[0].TOTAL_FUZZY_GUESSES,
+        avgGuessNumber: result[0].AVG_GUESS_NUMBER,
+        uniqueUsers: result[0].UNIQUE_USERS
+      };
+    } finally {
+      await this.connection.releaseConnection(connection);
+    }
+  }
+
+  // Get performance metrics for all players
+  async getPlayerPerformanceMetrics(): Promise<{
+    fastestPlayers: { username: string; avgTimeSeconds: number; gamesPlayed: number }[];
+    fewestGuessesPlayers: { username: string; avgGuesses: number; gamesPlayed: number }[];
+    leastHintsPlayers: { username: string; avgHintsUsed: number; gamesPlayed: number }[];
+  }> {
+    const connection = await this.connection.getConnection();
+    try {
+      // Get fastest players
+      const fastestPlayers = await this.connection.executeQuery<{
+        USERNAME: string;
+        AVG_TIME: number;
+        GAMES_PLAYED: number;
+      }>(`
+        SELECT 
+          USERNAME,
+          AVG(COMPLETION_TIME_SECONDS) AS AVG_TIME,
+          COUNT(*) AS GAMES_PLAYED
+        FROM LEADERBOARD
+        WHERE COMPLETED = TRUE
+        GROUP BY USERNAME
+        HAVING COUNT(*) >= 5
+        ORDER BY AVG_TIME ASC
+        LIMIT 10
+      `, [], connection);
+
+      // Get players with fewest guesses
+      const fewestGuessesPlayers = await this.connection.executeQuery<{
+        USERNAME: string;
+        AVG_GUESSES: number;
+        GAMES_PLAYED: number;
+      }>(`
+        SELECT 
+          USERNAME,
+          AVG(GUESSES) AS AVG_GUESSES,
+          COUNT(*) AS GAMES_PLAYED
+        FROM LEADERBOARD
+        WHERE COMPLETED = TRUE
+        GROUP BY USERNAME
+        HAVING COUNT(*) >= 5
+        ORDER BY AVG_GUESSES ASC
+        LIMIT 10
+      `, [], connection);
+
+      // Get players who use fewest hints
+      const leastHintsPlayers = await this.connection.executeQuery<{
+        USERNAME: string;
+        AVG_HINTS: number;
+        GAMES_PLAYED: number;
+      }>(`
+        WITH user_hints AS (
+          SELECT 
+            USER_ID AS USERNAME,
+            GAME_ID,
+            MAX(HINTS_USED) AS HINTS_USED
+          FROM GAME_METRICS
+          GROUP BY USER_ID, GAME_ID
+        )
+        SELECT
+          USERNAME,
+          AVG(HINTS_USED) AS AVG_HINTS,
+          COUNT(DISTINCT GAME_ID) AS GAMES_PLAYED
+        FROM user_hints
+        GROUP BY USERNAME
+        HAVING COUNT(DISTINCT GAME_ID) >= 5
+        ORDER BY AVG_HINTS ASC
+        LIMIT 10
+      `, [], connection);
+
+      return {
+        fastestPlayers: fastestPlayers.map(p => ({
+          username: p.USERNAME,
+          avgTimeSeconds: p.AVG_TIME,
+          gamesPlayed: p.GAMES_PLAYED
+        })),
+        fewestGuessesPlayers: fewestGuessesPlayers.map(p => ({
+          username: p.USERNAME,
+          avgGuesses: p.AVG_GUESSES,
+          gamesPlayed: p.GAMES_PLAYED
+        })),
+        leastHintsPlayers: leastHintsPlayers.map(p => ({
+          username: p.USERNAME,
+          avgHintsUsed: p.AVG_HINTS,
+          gamesPlayed: p.GAMES_PLAYED
+        }))
+      };
+    } finally {
+      await this.connection.releaseConnection(connection);
+    }
+  }
 } 

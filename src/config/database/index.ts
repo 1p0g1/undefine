@@ -61,6 +61,30 @@ export interface DailyLeaderboardResponse {
   userRank?: number;
 }
 
+export interface GameMetric {
+  gameId: string;
+  userId: string;
+  wordId: string;
+  guess: string;
+  isCorrect: boolean;
+  isFuzzy: boolean;
+  guessNumber: number;
+  guessTimeSeconds: number;
+  hintsUsed: number;
+}
+
+export interface FuzzyGuessMetrics {
+  totalFuzzyGuesses: number;
+  avgGuessNumber: number;
+  uniqueUsers: number;
+}
+
+export interface PlayerPerformanceMetrics {
+  fastestPlayers: { username: string; avgTimeSeconds: number; gamesPlayed: number }[];
+  fewestGuessesPlayers: { username: string; avgGuesses: number; gamesPlayed: number }[];
+  leastHintsPlayers: { username: string; avgHintsUsed: number; gamesPlayed: number }[];
+}
+
 export interface DatabaseClient {
   // Connection methods
   connect(): Promise<void>;
@@ -88,6 +112,12 @@ export interface DatabaseClient {
   getDailyStats(): Promise<DailyStatsResponse>;
   getTodayMetrics(): Promise<DailyMetrics>;
   getTopStreaks(limit: number): Promise<StreakLeader[]>;
+
+  // Game metrics methods
+  executeQuery?<T = any>(query: string, params?: any[], useConnection?: any): Promise<T[]>;
+  saveGameMetric?(metric: GameMetric): Promise<void>;
+  getFuzzyGuessMetrics?(wordId: string): Promise<FuzzyGuessMetrics>;
+  getPlayerPerformanceMetrics?(): Promise<PlayerPerformanceMetrics>;
 
   // Auth methods
   authenticateUser(credentials: { email: string; password: string }): Promise<{ token: string; user: { email: string; id: string } }>;
