@@ -61,6 +61,7 @@ function App() {
   const [leaderboardRank, setLeaderboardRank] = useState<number | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [hintCount, setHintCount] = useState<number>(0);
+  const [gameId, setGameId] = useState<string>('');
 
   // Temporary fix for the screenshot example - set F and I as fuzzy matches
   useEffect(() => {
@@ -118,10 +119,47 @@ function App() {
 
   const fetchNewWord = async () => {
     try {
+      console.log('Calling /api/word endpoint...');
       const response = await fetch('/api/word');
-      const data: WordData = await response.json();
-      setDefinition(data.definition);
-      setWordData(data);
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`API error: ${response.status} ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Received data from /api/word:', data);
+      
+      // Store the gameId from the response
+      if (data.gameId) {
+        console.log('Game ID received:', data.gameId);
+        setGameId(data.gameId);
+      } else {
+        console.warn('No gameId found in response');
+      }
+      
+      // Handle the response based on its structure
+      if (data.word) {
+        // Handle new response format with word object
+        setDefinition(data.word.definition);
+        setWordData({
+          definition: data.word.definition,
+          totalGuesses: 0,
+          partOfSpeech: data.word.partOfSpeech,
+          letterCount: data.word.letterCount || null
+        });
+      } else if (data.definition) {
+        // Handle legacy response format (direct properties)
+        setDefinition(data.definition);
+        setWordData(data);
+      } else {
+        console.error('Unexpected response structure:', data);
+        throw new Error('Unexpected response format from API');
+      }
+      
+      // Reset game state
       setIsCorrect(false);
       setMessage('');
       setGuess('');
@@ -141,7 +179,17 @@ function App() {
       setHintCount(0);
     } catch (error) {
       console.error('Error fetching word:', error);
-      setMessage('Error fetching word. Please try again.');
+      setMessage('Error fetching word. Using fallback data.');
+      
+      // Fallback to hardcoded data for development/demo purposes
+      console.log('FALLING BACK TO HARDCODED DATA due to API error');
+      const fallbackData = {
+        definition: "To reason, argue, or think carefully and thoroughly.",
+        partOfSpeech: "verb",
+        totalGuesses: 0
+      };
+      setDefinition(fallbackData.definition);
+      setWordData(fallbackData);
     }
   };
 
@@ -157,24 +205,41 @@ function App() {
       return;
     }
     
+    console.log('Submitting guess:', guess);
+    console.log('Game ID being sent:', gameId);
+    
     try {
+      const payload = { 
+        gameId, // Include gameId in the request
+        guess, 
+        remainingGuesses,
+        timer,
+        userId,
+        fuzzyCount,
+        userName,
+        hintCount
+      };
+      
+      console.log('Sending payload to /api/guess:', payload);
+      
       const response = await fetch('/api/guess', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          guess, 
-          remainingGuesses,
-          timer,
-          userId,
-          fuzzyCount,
-          userName,
-          hintCount
-        }),
+        body: JSON.stringify(payload),
       });
       
+      console.log('Response status from /api/guess:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response from /api/guess:', errorText);
+        throw new Error(`API error: ${response.status} ${errorText}`);
+      }
+      
       const data: GuessResponse = await response.json();
+      console.log('Received data from /api/guess:', data);
       
       // Add to guess history
       setGuessHistory(prev => [
@@ -243,6 +308,7 @@ function App() {
       setGuess('');
     } catch (error) {
       console.error('Error submitting guess:', error);
+      setMessage('Error processing your guess. Please try again.');
     }
   };
 

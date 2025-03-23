@@ -9,9 +9,10 @@
     "build:client": "tsc -p tsconfig.client.json",
     "build": "npm run build:server && npm run build:client",
     "start": "node dist/index.js",
-    "dev:server": "node --import 'data:text/javascript,import { register } from \"node:module\"; import { pathToFileURL } from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' src/index.ts",
+    "dev:server": "NODE_ENV=development node --import 'data:text/javascript,import { register } from \"node:module\"; import { pathToFileURL } from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' src/index.ts",
     "dev:client": "cd client && npm run dev",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "debug:dev": "NODE_ENV=development PORT=3001 DB_PROVIDER=mock DEBUG=1 concurrently \"npm run dev:server\" \"cd client && BACKEND_URL=http://localhost:3001 npm run dev\"",
     "test": "jest"
   },
   "dependencies": {
