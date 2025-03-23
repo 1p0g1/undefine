@@ -153,17 +153,36 @@ export class SnowflakeClient implements DatabaseClient {
       connection = await this.connection.getConnection();
       console.log('[SnowflakeClient.getRandomWord] Successfully obtained database connection');
 
-      const result = await this.connection.executeQuery<Word>(`
-        SELECT 
-          ID as wordId,
-          WORD as word,
-          DEFINITION as definition,
-          PART_OF_SPEECH as partOfSpeech
-        FROM WORDS
-        WHERE DATE(CREATED_AT) = CURRENT_DATE()
-        ORDER BY RANDOM()
-        LIMIT 1;
-      `, [], connection);
+      // Check if we're in testing mode
+      const isTestingMode = process.env.TESTING_MODE === 'true';
+      
+      // Use a different query based on testing mode
+      const query = isTestingMode
+        ? `
+          SELECT 
+            ID as wordId,
+            WORD as word,
+            DEFINITION as definition,
+            PART_OF_SPEECH as partOfSpeech
+          FROM WORDS
+          ORDER BY RANDOM()
+          LIMIT 1;
+        `
+        : `
+          SELECT 
+            ID as wordId,
+            WORD as word,
+            DEFINITION as definition,
+            PART_OF_SPEECH as partOfSpeech
+          FROM WORDS
+          WHERE DATE(CREATED_AT) = CURRENT_DATE()
+          ORDER BY RANDOM()
+          LIMIT 1;
+        `;
+
+      console.log(`[SnowflakeClient.getRandomWord] Running in ${isTestingMode ? 'TESTING' : 'PRODUCTION'} mode`);
+      
+      const result = await this.connection.executeQuery<Word>(query, [], connection);
 
       console.log('[SnowflakeClient.getRandomWord] Query executed:', {
         resultCount: result.length,
@@ -171,8 +190,27 @@ export class SnowflakeClient implements DatabaseClient {
       });
 
       if (!result.length) {
-        console.error('[SnowflakeClient.getRandomWord] No words found for today');
-        throw new Error('No words available for today');
+        // If no words found for today in production mode, fall back to any random word
+        if (!isTestingMode) {
+          console.log('[SnowflakeClient.getRandomWord] No words found for today, falling back to any random word');
+          const fallbackResult = await this.connection.executeQuery<Word>(`
+            SELECT 
+              ID as wordId,
+              WORD as word,
+              DEFINITION as definition,
+              PART_OF_SPEECH as partOfSpeech
+            FROM WORDS
+            ORDER BY RANDOM()
+            LIMIT 1;
+          `, [], connection);
+          
+          if (fallbackResult.length) {
+            return fallbackResult[0];
+          }
+        }
+        
+        console.error('[SnowflakeClient.getRandomWord] No words found');
+        throw new Error('No words available');
       }
 
       console.log('[SnowflakeClient.getRandomWord] Successfully fetched word:', {

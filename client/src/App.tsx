@@ -358,7 +358,7 @@ function App() {
     setHintsState(updatedHintsState);
   }, [hints]);
 
-  // Modify the DefineBoxes component to handle fuzzy matching better
+  // Modify the DefineBoxes component to only apply fuzzy styling to guessed positions
   const DefineBoxes = () => {
     const defineLetters = ['D', 'E', 'F', 'I', 'N', 'E'];
     const [animatedBoxes, setAnimatedBoxes] = useState<boolean[]>([false, false, false, false, false, false]);
@@ -388,11 +388,20 @@ function App() {
         <div className="un-prefix">Un</div>
         <div className="central-dot">·</div>
         {defineLetters.map((letter, index) => {
-          // Only apply fuzzy match styling if the box is not already correct
+          // Get the current guess index (0-5) - any position beyond this hasn't been guessed yet
+          const currentGuessIndex = 6 - remainingGuesses;
+          
+          // Only apply fuzzy match styling if:
+          // 1. The game isn't in a correct state
+          // 2. This box position isn't already correct
+          // 3. This position is in the fuzzy match positions array
+          // 4. There are actual fuzzy positions to highlight
+          // 5. We've actually made a guess for this position (index <= currentGuessIndex)
           const isFuzzyMatch = !isCorrect && 
                                guessResults[index] !== 'correct' && 
                                fuzzyMatchPositions.includes(index) && 
-                               fuzzyMatchPositions.length > 0;
+                               fuzzyMatchPositions.length > 0 &&
+                               index <= currentGuessIndex;
           
           // For debugging
           if (isFuzzyMatch) {

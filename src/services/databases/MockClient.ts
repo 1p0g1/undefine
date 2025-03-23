@@ -159,7 +159,15 @@ export class MockClient implements DatabaseClient {
 
   async getRandomWord(): Promise<Word> {
     console.log('MockClient: getRandomWord called');
-    return this.words[Math.floor(Math.random() * this.words.length)];
+    
+    // In testing mode, just return a completely random word
+    // In production mode, we would filter by date
+    const allWords = Object.values(this.words);
+    const randomIndex = Math.floor(Math.random() * allWords.length);
+    const word = allWords[randomIndex];
+    
+    console.log(`MockClient: getRandomWord returned word "${word.word}" (${word.wordId})`);
+    return word;
   }
 
   /**
