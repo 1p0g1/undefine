@@ -258,6 +258,19 @@ app.post('/api/guess', async (req, res) => {
 
 // Get leaderboard data
 app.get('/api/leaderboard', (req, res) => {
+  console.log('[/api/leaderboard] Request received');
+  
+  // For early user testing, conditionally disable the leaderboard
+  const isLeaderboardEnabled = process.env.NODE_ENV === 'production' && process.env.DISABLE_LEADERBOARD !== 'true';
+  
+  if (!isLeaderboardEnabled) {
+    console.log('[/api/leaderboard] Leaderboard temporarily disabled for early user testing');
+    return res.json({
+      message: 'Leaderboard temporarily disabled for early user testing',
+      entries: []
+    });
+  }
+  
   console.log('[/api/leaderboard] Returning mock leaderboard data');
   
   // Create mock leaderboard data
@@ -360,6 +373,47 @@ app.get('/api/hint/:gameId', async (req, res) => {
   // ... existing code ...
 });
 
+// Simple API endpoint to check streak status for a user
+app.get('/api/streak-status', async (req, res) => {
+  const username = req.query.username;
+  
+  if (!username) {
+    return res.status(400).json({ error: 'Username parameter required' });
+  }
+  
+  console.log(`[/api/streak-status] Checking streak status for user: ${username}`);
+  
+  try {
+    const stats = await db.getUserStats(username);
+    
+    console.log(`[/api/streak-status] User streak info:`, {
+      currentStreak: stats.current_streak,
+      longestStreak: stats.longest_streak,
+      username
+    });
+    
+    return res.json({
+      status: 'success',
+      streakInfo: {
+        currentStreak: stats.current_streak,
+        longestStreak: stats.longest_streak,
+        lastUpdated: stats.last_updated
+      }
+    });
+  } catch (error) {
+    console.error('[/api/streak-status] Error details:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      username
+    });
+    
+    return res.status(500).json({ 
+      error: 'Could not retrieve streak information',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Shutdown handler
 process.on('SIGINT', async () => {
   console.log('Shutting down...');
@@ -382,4 +436,5 @@ app.listen(port, () => {
   console.log(`  GET  /api/word - Get a random word`);
   console.log(`  POST /api/guess - Submit a guess`);
   console.log(`  GET  /api/leaderboard - Get leaderboard`);
+  console.log(`  GET  /api/streak-status?username=<email> - Check streak status`);
 }); 

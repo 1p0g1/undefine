@@ -2,14 +2,11 @@
 export interface WordEntry {
   word: string;
   partOfSpeech: string;
-  synonyms?: string[];
   definition: string;
   alternateDefinition?: string;
-  dateAdded?: string; // Date when this word will be the daily word (DD/MM/YY)
-  letterCount: {
-    count: number;
-    display: string;
-  };
+  synonyms?: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Form and state types
@@ -57,7 +54,7 @@ export interface WordsResponse {
   pagination?: PaginationInfo;
 }
 
-// Query parameters for admin operations
+// Query parameters for API operations
 export interface WordsQueryParams {
   page?: number;
   limit?: number;
@@ -142,4 +139,52 @@ export enum ActionType {
   SET_SORT = 'SET_SORT',
   SET_FILTER = 'SET_FILTER',
   RESET_STATE = 'RESET_STATE',
+}
+
+export interface GameState {
+  word: WordEntry;
+  startTime: Date;
+  guessCount: number;
+  fuzzyCount: number;
+  hintCount: number;
+}
+
+export interface GuessResult {
+  isCorrect: boolean;
+  correctWord?: string;
+  guessedWord: string;
+  isFuzzy: boolean;
+  fuzzyPositions: number[];
+  remainingGuesses: number;
+  leaderboardRank?: number;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  userName: string;
+  time: number;
+  guessCount: number;
+  fuzzyCount: number;
+  hintCount: number;
+}
+
+export interface UserStats {
+  gamesPlayed: number;
+  averageGuesses: number;
+  averageTime: number;
+  bestTime: number;
+  currentStreak: number;
+  longestStreak: number;
+  topTenCount: number;
+}
+
+export interface UserCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthResult {
+  success: boolean;
+  token?: string;
+  error?: string;
 } 

@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { connectDB } from '../config/database.js';
+import { initializeDatabase } from '../config/database.js';
 import { Word } from '../models/Word.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,7 +12,7 @@ const wordsFilePath = path.join(__dirname, '..', 'data', 'words.json');
 async function migrateData() {
   try {
     // Connect to MongoDB
-    await connectDB();
+    await initializeDatabase();
     console.log('Connected to MongoDB');
 
     // Read the words file

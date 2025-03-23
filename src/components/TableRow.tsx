@@ -17,8 +17,8 @@ const TableRow: React.FC<TableRowProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Format the synonyms for display
-  const formatSynonyms = (synonyms: string[]): string => {
-    if (!synonyms || synonyms.length === 0) return '-';
+  const formatSynonyms = (synonyms: string[] | undefined): string => {
+    if (!synonyms || synonyms.length === 0) return 'None';
     return synonyms.join(', ');
   };
   

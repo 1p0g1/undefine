@@ -1,18 +1,53 @@
+import dotenv from 'dotenv';
+// Load environment variables before any other imports
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { connectDB } from './config/database.js';
-import { WordService } from './services/WordService.js';
+import { initializeDatabase } from './config/database.js';
 import promClient from 'prom-client';
-import dotenv from 'dotenv';
-import { authenticateAdmin } from './auth/authMiddleware.js';
 import { login } from './auth/authController.js';
-// Load environment variables
-dotenv.config();
+import { GameService } from './services/GameService.js';
+import { StatsService } from './services/StatsService.js';
+import { authenticateUser } from './auth/authMiddleware.js';
+// Environment variable validation
+function validateEnvironmentVariables() {
+    var _a;
+    const requiredVars = [
+        'PORT',
+        'NODE_ENV',
+        'REDIS_URI',
+        'SNOWFLAKE_ACCOUNT',
+        'SNOWFLAKE_USERNAME',
+        'SNOWFLAKE_PASSWORD',
+        'SNOWFLAKE_DATABASE',
+        'SNOWFLAKE_WAREHOUSE',
+        'SNOWFLAKE_POOL_SIZE',
+        'SNOWFLAKE_CONNECTION_TIMEOUT',
+        'JWT_SECRET',
+        'DB_PROVIDER'
+    ];
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    if (missingVars.length > 0) {
+        console.error('❌ Missing required environment variables:');
+        missingVars.forEach(varName => console.error(`   - ${varName}`));
+        throw new Error('Missing required environment variables. Please check your .env file.');
+    }
+    const dbProvider = (_a = process.env.DB_PROVIDER) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+    if (dbProvider && !['snowflake', 'mongodb'].includes(dbProvider)) {
+        throw new Error(`Unsupported database provider: ${dbProvider}. Must be either 'snowflake' or 'mongodb'`);
+    }
+    console.log('✅ All environment variables validated. Server starting...');
+}
 // Debug logging
 console.log('Starting server initialization...');
+// Validate environment variables before proceeding
+validateEnvironmentVariables();
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT;
+if (!port) {
+    throw new Error('Missing PORT environment variable. Please check your .env file.');
+}
 // Prometheus metrics
 const collectDefaultMetrics = promClient.collectDefaultMetrics;
 collectDefaultMetrics();
@@ -79,17 +114,22 @@ app.use((req, res, next) => {
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
+const activeGames = new Map();
 // Get a random word and its definition
-app.get('/api/word', async (req, res) => {
+app.get('/api/word', authenticateUser, async (req, res) => {
+    var _a, _b;
     try {
-        const word = await WordService.getRandomWord();
-        if (!word) {
-            return res.status(404).json({ error: 'No words available' });
-        }
-        res.json(word);
+        console.log('[/api/word] Starting request for user:', (_a = req.user) === null || _a === void 0 ? void 0 : _a.email);
+        const gameResponse = await GameService.startGame(req.user.email);
+        console.log('[/api/word] Successfully created game:', gameResponse.gameId);
+        res.json(gameResponse);
     }
     catch (error) {
-        console.error('Error getting random word:', error);
+        console.error('[/api/word] Error details:', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            user: (_b = req.user) === null || _b === void 0 ? void 0 : _b.email
+        });
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -130,175 +170,60 @@ function generateDummyLeaderboardData(word, count = 20) {
     });
 }
 // Check if a guess is correct
-app.post('/api/guess', async (req, res) => {
+app.post('/api/guess', authenticateUser, async (req, res) => {
     try {
-        const { guess, remainingGuesses, timer, userId } = req.body;
-        const currentWord = await WordService.getRandomWord();
-        if (!currentWord) {
-            console.error('No word selected!');
-            res.status(500).json({ error: 'No word selected' });
-            return;
-        }
-        console.log('Current word:', currentWord);
-        console.log('Received guess:', guess);
-        const isCorrect = guess.toLowerCase() === currentWord.word.toLowerCase();
-        const isFuzzy = !isCorrect && isFuzzyMatch(guess, currentWord.word);
-        const isGameOver = isCorrect || remainingGuesses <= 1;
-        const fuzzyPositions = [];
-        if (isFuzzy) {
-            const guessLetters = guess.toLowerCase().split('');
-            const correctLetters = currentWord.word.toLowerCase().split('');
-            guessLetters.forEach((letter, index) => {
-                if (index < correctLetters.length && letter === correctLetters[index]) {
-                    fuzzyPositions.push(index);
-                }
-            });
-            if (fuzzyPositions.length === 0) {
-                fuzzyPositions.push(0);
-            }
-        }
-        console.log('Guess attempt:', {
-            guess,
-            correctWord: currentWord.word,
-            isCorrect,
-            isFuzzy,
-            isGameOver,
-            fuzzyPositions
-        });
-        if (isCorrect) {
-            const guessCount = 6 - remainingGuesses + 1;
-            const entry = {
-                id: userId || `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                time: timer || 0,
-                guessCount,
-                fuzzyCount: req.body.fuzzyCount || 0,
-                hintCount: req.body.hintCount || 0,
-                date: new Date().toISOString(),
-                word: currentWord.word,
-                name: req.body.userName || 'You'
-            };
-            leaderboard.push(entry);
-            console.log('Added to leaderboard:', entry);
-            leaderboard = leaderboard
-                .filter(entry => entry.word === currentWord.word)
-                .sort((a, b) => {
-                if (a.time !== b.time)
-                    return a.time - b.time;
-                if (a.guessCount !== b.guessCount)
-                    return a.guessCount - b.guessCount;
-                return b.fuzzyCount - a.fuzzyCount;
-            });
-        }
-        res.json({
-            isCorrect,
-            correctWord: isGameOver ? currentWord.word : undefined,
-            guessedWord: guess,
-            isFuzzy,
-            fuzzyPositions,
-            leaderboardRank: isCorrect ? leaderboard.findIndex(e => e.id === (userId || `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`)) + 1 : undefined
-        });
+        const { guess, gameId } = req.body;
+        const result = await GameService.processGuess(gameId, guess);
+        res.json(result);
     }
     catch (error) {
         console.error('Error in /api/guess:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+// Clean up old game sessions periodically
+setInterval(() => {
+    GameService.cleanupOldGames();
+}, 15 * 60 * 1000); // Run every 15 minutes
 // Add basic test routes
 app.get('/', (req, res) => {
     res.send('Server is running!');
 });
 app.get('/test', (req, res) => {
+    const NODE_ENV = process.env.NODE_ENV;
+    if (!NODE_ENV) {
+        throw new Error('Missing NODE_ENV environment variable. Please check your .env file.');
+    }
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        env: process.env.NODE_ENV || 'development'
+        env: NODE_ENV
     });
 });
 // Authentication routes
 app.post('/api/auth/login', login);
 // Validate token endpoint
-app.get('/api/auth/validate', authenticateAdmin, (req, res) => {
+app.get('/api/auth/validate', (req, res) => {
     res.json({ valid: true });
 });
-// Get all words - no auth required for now
-app.get('/api/admin/words', async (req, res) => {
+// Get daily statistics
+app.get('/api/stats/daily', async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 50;
-        const result = await WordService.getWords(page, limit);
-        res.json(result);
+        const stats = await StatsService.getDailyStats();
+        res.json(stats);
     }
     catch (error) {
-        console.error('Error getting words:', error);
+        console.error('Error getting daily stats:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-// Add a new word - no auth required for now
-app.post('/api/admin/words', async (req, res) => {
-    try {
-        const { word, partOfSpeech, definition } = req.body;
-        if (!word || !partOfSpeech || !definition) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-        const newWord = await WordService.addWord({
-            word,
-            partOfSpeech,
-            definition
-        });
-        res.status(201).json(newWord);
-    }
-    catch (error) {
-        console.error('Error adding word:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-// Function to check if words are similar using fuzzy matching
-function isFuzzyMatch(guess, correct) {
-    try {
-        const normalizedGuess = guess.toLowerCase();
-        const normalizedCorrect = correct.toLowerCase();
-        if (normalizedCorrect.startsWith(normalizedGuess) || normalizedGuess.startsWith(normalizedCorrect)) {
-            return true;
-        }
-        const minLength = Math.min(normalizedGuess.length, normalizedCorrect.length);
-        const commonPrefixLength = [...Array(minLength)].findIndex((_, i) => normalizedGuess[i] !== normalizedCorrect[i]);
-        if (commonPrefixLength > 4) {
-            return true;
-        }
-        const matrix = [];
-        for (let i = 0; i <= normalizedGuess.length; i++) {
-            matrix[i] = [i];
-        }
-        for (let j = 0; j <= normalizedCorrect.length; j++) {
-            matrix[0][j] = j;
-        }
-        for (let i = 1; i <= normalizedGuess.length; i++) {
-            for (let j = 1; j <= normalizedCorrect.length; j++) {
-                if (normalizedGuess[i - 1] === normalizedCorrect[j - 1]) {
-                    matrix[i][j] = matrix[i - 1][j - 1];
-                }
-                else {
-                    matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
-                }
-            }
-        }
-        const distance = matrix[normalizedGuess.length][normalizedCorrect.length];
-        const maxLength = Math.max(normalizedGuess.length, normalizedCorrect.length);
-        const threshold = Math.max(2, Math.floor(maxLength * 0.3));
-        return distance <= threshold;
-    }
-    catch (error) {
-        console.error('Error in fuzzy matching:', error);
-        return false;
-    }
-}
 // Start server
 const startServer = async () => {
     console.log('Starting server initialization...');
     try {
-        await connectDB();
-        const serverPort = typeof port === 'string' ? parseInt(port) : port;
-        server = app.listen(serverPort, 'localhost', () => {
+        await initializeDatabase();
+        const serverPort = parseInt(process.env.PORT || '3001', 10);
+        server = app.listen(serverPort, () => {
             console.log('\n=== Server Status ===');
             console.log(`Time: ${new Date().toISOString()}`);
             console.log(`Port: ${serverPort}`);

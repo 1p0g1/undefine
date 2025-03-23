@@ -64,6 +64,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     longestStreak: 1,
     topTenCount: 1
   });
+  // Flag to indicate leaderboard is disabled
+  const [isLeaderboardDisabled] = useState<boolean>(
+    process.env.NODE_ENV !== 'production' || process.env.DISABLE_LEADERBOARD === 'true'
+  );
 
   // Format time as mm:ss
   const formatTime = (timeInSeconds: number): string => {
@@ -205,13 +209,25 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         
         <div className="leaderboard-section">
           <h3>Today's Leaderboard</h3>
-          <p className="no-entries">Leaderboard data will be available soon!</p>
+          {isLeaderboardDisabled ? (
+            <p className="no-entries">
+              Leaderboard is temporarily disabled for early user testing.<br/>
+              Your stats and streaks are still being tracked!
+            </p>
+          ) : (
+            <p className="no-entries">Leaderboard data will be available soon!</p>
+          )}
         </div>
         
         <div className="leaderboard-actions">
           <button className="share-button" onClick={handleShareResults}>
             Share Results
           </button>
+          {userStats && userStats.currentStreak > 0 && (
+            <div className="streak-notification">
+              🔥 Your streak has been updated: {userStats.currentStreak} days!
+            </div>
+          )}
         </div>
       </div>
     </div>

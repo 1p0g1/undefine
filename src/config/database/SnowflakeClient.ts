@@ -153,11 +153,12 @@ export class SnowflakeClient implements DatabaseClient {
       connection = await this.connection.getConnection();
       console.log('[SnowflakeClient.getRandomWord] Successfully obtained database connection');
 
-      // Check if we're in testing mode
-      const isTestingMode = process.env.TESTING_MODE === 'true';
+      // For early user testing, we will always use the testing mode behavior
+      // unless we are explicitly in production mode
+      const isProductionMode = process.env.NODE_ENV === 'production' && process.env.TESTING_MODE !== 'true';
       
-      // Use a different query based on testing mode
-      const query = isTestingMode
+      // Use a different query based on mode
+      const query = !isProductionMode
         ? `
           SELECT 
             ID as wordId,
@@ -180,7 +181,7 @@ export class SnowflakeClient implements DatabaseClient {
           LIMIT 1;
         `;
 
-      console.log(`[SnowflakeClient.getRandomWord] Running in ${isTestingMode ? 'TESTING' : 'PRODUCTION'} mode`);
+      console.log(`[SnowflakeClient.getRandomWord] Running in ${!isProductionMode ? 'TESTING' : 'PRODUCTION'} mode`);
       
       const result = await this.connection.executeQuery<Word>(query, [], connection);
 
@@ -191,7 +192,7 @@ export class SnowflakeClient implements DatabaseClient {
 
       if (!result.length) {
         // If no words found for today in production mode, fall back to any random word
-        if (!isTestingMode) {
+        if (isProductionMode) {
           console.log('[SnowflakeClient.getRandomWord] No words found for today, falling back to any random word');
           const fallbackResult = await this.connection.executeQuery<Word>(`
             SELECT 

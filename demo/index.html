@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>ReverseDefine API Test</h1>
+    
+    <div>
+        <button id="healthCheck">Health Check</button>
+        <button id="getWord">Get Word</button>
+    </div>
+    
+    <div id="result">Results will appear here...</div>
+
+    <script>
+        const API_URL = 'http://localhost:3001';
+        const resultDiv = document.getElementById('result');
+
+        // Health check
+        document.getElementById('healthCheck').addEventListener('click', async () => {
+            try {
+                resultDiv.innerHTML = 'Checking health...';
+                resultDiv.className = '';
+                
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `Health Check Result:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+                resultDiv.className = 'error';
+                console.error('Health check error:', error);
+            }
+        });
+
+        // Get word
+        document.getElementById('getWord').addEventListener('click', async () => {
+            try {
+                resultDiv.innerHTML = 'Fetching word...';
+                resultDiv.className = '';
+                
+                const response = await fetch(`${API_URL}/api/word`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `Word Data:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+                resultDiv.className = 'error';
+                console.error('Get word error:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

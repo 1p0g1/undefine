@@ -1,0 +1,16 @@
+-- Index for USER_STATS streak queries
+CREATE OR REPLACE INDEX USER_STATS_STREAK_IDX ON USER_STATS (current_streak DESC, longest_streak DESC);
+
+-- Index for LEADERBOARD date-based queries
+CREATE OR REPLACE INDEX LEADERBOARD_DATE_IDX ON LEADERBOARD (created_at);
+
+-- Index for PLATFORM_METRICS date and timezone queries
+CREATE OR REPLACE INDEX PLATFORM_METRICS_DATE_TZ_IDX ON PLATFORM_METRICS (date, timezone);
+
+-- Index for WORDS search optimization
+CREATE OR REPLACE INDEX WORDS_SEARCH_IDX ON WORDS (word);
+
+-- Enable search optimization on relevant columns
+ALTER TABLE WORDS ADD SEARCH OPTIMIZATION ON (word);
+ALTER TABLE LEADERBOARD ADD SEARCH OPTIMIZATION ON (username);
+ALTER TABLE USER_STATS ADD SEARCH OPTIMIZATION ON (username); 

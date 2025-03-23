@@ -13,11 +13,10 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "src/server/**/*",
-    "src/config/**/*",
-    "src/scripts/**/*"
+    "src/**/*"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/client/**/*"
   ]
 } 

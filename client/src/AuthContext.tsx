@@ -1,75 +1,51 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { AuthResult, UserCredentials } from './types';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  token: string | null;
-  login: (token: string) => void;
+  userEmail: string | null;
+  login: (token: string, email: string) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!token);
-
-  // Check if token is valid on mount
   useEffect(() => {
-    const validateToken = async () => {
-      if (!token) {
-        setIsAuthenticated(false);
-        return;
-      }
+    const token = localStorage.getItem('token');
+    const email = localStorage.getItem('userEmail');
+    
+    if (token && email) {
+      setIsAuthenticated(true);
+      setUserEmail(email);
+    }
+  }, []);
 
-      try {
-        // Call the API to validate the token
-        const response = await fetch('/api/auth/validate', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Invalid token');
-        }
-
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Token validation error:', error);
-        // If token is invalid, clear it
-        setIsAuthenticated(false);
-        localStorage.removeItem('adminToken');
-        setToken(null);
-      }
-    };
-
-    validateToken();
-  }, [token]);
-
-  const login = (newToken: string) => {
-    localStorage.setItem('adminToken', newToken);
-    setToken(newToken);
+  const login = (token: string, email: string) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('userEmail', email);
     setIsAuthenticated(true);
+    setUserEmail(email);
   };
 
   const logout = () => {
-    localStorage.removeItem('adminToken');
-    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('userEmail');
     setIsAuthenticated(false);
+    setUserEmail(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, userEmail, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

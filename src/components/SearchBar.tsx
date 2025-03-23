@@ -1,19 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { SearchBarProps } from '../types';
 import { debounce } from '../utils/helpers';
 import './SearchBar.css';
 
+export interface SearchBarHandle {
+  focus: () => void;
+}
+
 /**
  * Reusable search bar component with debounced input
  */
-const SearchBar: React.FC<SearchBarProps> = ({
-  value,
-  onChange,
-  onClear,
-  placeholder = 'Search...',
-  debounceTime = 300,
-  autoFocus = false
-}) => {
+const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>((props, ref) => {
+  const {
+    value,
+    onChange,
+    onClear,
+    placeholder = 'Search...',
+    debounceTime = 300,
+    autoFocus = false
+  } = props;
+
   const [localValue, setLocalValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -61,12 +67,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, [autoFocus]);
   
   // Expose focus method to parent components
-  React.useImperativeHandle(
-    React.forwardRef((props, ref) => ref),
-    () => ({
-      focus: focusInput
-    })
-  );
+  useImperativeHandle(ref, () => ({
+    focus: focusInput
+  }));
   
   return (
     <div className="search-bar">
@@ -122,6 +125,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
       </div>
     </div>
   );
-};
+});
+
+SearchBar.displayName = 'SearchBar';
 
 export default SearchBar; 

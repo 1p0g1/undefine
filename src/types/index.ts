@@ -7,7 +7,7 @@ export interface WordEntry {
   /** The part of speech (noun, verb, etc.) */
   partOfSpeech: string;
   /** A list of synonyms for the word */
-  synonyms: string[];
+  synonyms?: string[];
   /** The primary definition of the word */
   definition: string;
   /** An optional alternate definition */
@@ -19,6 +19,8 @@ export interface WordEntry {
     count: number;
     display: string;
   };
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -116,12 +118,14 @@ export interface WordFormProps {
  * Props for the pagination component
  */
 export interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
   onPageChange: (page: number) => void;
-  pageSize: number;
-  totalItems: number;
-  onPageSizeChange?: (pageSize: number) => void;
+  onLimitChange: (limit: number) => void;
   pageSizeOptions?: number[];
 }
 
@@ -133,6 +137,9 @@ export interface SearchBarProps {
   onChange: (value: string) => void;
   onSearch: () => void;
   placeholder?: string;
+  onClear?: () => void;
+  debounceTime?: number;
+  autoFocus?: boolean;
   clearable?: boolean;
 }
 
@@ -211,4 +218,66 @@ export interface KeyboardShortcutsHelpProps {
     form?: Array<{ key: string; description: string }>;
     table?: Array<{ key: string; description: string }>;
   };
+}
+
+export interface WordQuery {
+  word?: string;
+  partOfSpeech?: string;
+  definition?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface WordResult {
+  word: WordEntry;
+  total: number;
+}
+
+export interface DailyStats {
+  date: string;
+  totalPlays: number;
+  uniqueUsers: number;
+  averageGuesses: number;
+  averageTime: number;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+  lastLoginAt: string;
+}
+
+export interface UserCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthResult {
+  success: boolean;
+  token?: string;
+  error?: string;
+}
+
+export interface DatabaseClient {
+  // Connection management
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+
+  // Word operations
+  getWords(page: number, limit: number): Promise<WordEntry[]>;
+  getWord(id: string): Promise<WordEntry | null>;
+  addWord(word: Omit<WordEntry, 'id'>): Promise<WordEntry>;
+  updateWord(id: string, word: Partial<WordEntry>): Promise<WordEntry>;
+  deleteWord(id: string): Promise<boolean>;
+  searchWords(query: string): Promise<WordEntry[]>;
+  
+  // Stats operations
+  getDailyStats(): Promise<DailyStats>;
+  
+  // Authentication methods
+  authenticateUser(credentials: UserCredentials): Promise<AuthResult>;
+  getUserByEmail(email: string): Promise<User | null>;
+  updateLastLogin(userId: string): Promise<void>;
 } 
