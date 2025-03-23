@@ -32,6 +32,9 @@ interface WordData {
   };
 }
 
+// Add this type at the top with other type definitions
+type GuessResult = 'correct' | 'incorrect' | null;
+
 function App() {
   const [definition, setDefinition] = useState<string>('');
   const [guess, setGuess] = useState<string>('');
@@ -41,7 +44,7 @@ function App() {
   const [remainingGuesses, setRemainingGuesses] = useState<number>(6);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [timer, setTimer] = useState<number>(0);
-  const [guessResults, setGuessResults] = useState<Array<'correct' | 'incorrect' | null>>([null, null, null, null, null, null]);
+  const [guessResults, setGuessResults] = useState<GuessResult[]>([null, null, null, null, null, null]);
   const [fuzzyMatchPositions, setFuzzyMatchPositions] = useState<number[]>([]);
   const [hints, setHints] = useState<{
     letterCount: boolean;
@@ -267,8 +270,9 @@ function App() {
           // If the server provides specific fuzzy positions, use those
           setFuzzyMatchPositions(data.fuzzyPositions);
         } else {
-          // Otherwise, fall back to the current guess index
-          setFuzzyMatchPositions(prev => [...prev, currentGuessIndex]);
+          // Otherwise, fall back to the current guess index - but don't add it to fuzzy positions
+          // This was causing all boxes to turn orange
+          console.log('No specific fuzzy positions provided by server');
         }
         
         // Increment fuzzy count
@@ -346,12 +350,25 @@ function App() {
         <div className="un-prefix">Un</div>
         <div className="central-dot">·</div>
         {defineLetters.map((letter, index) => {
-          // Check if this letter should be a fuzzy match based on the fuzzyMatchPositions state
+          // Check if this specific letter position should be marked as a fuzzy match
           const isFuzzyMatch = fuzzyMatchPositions.includes(index);
           
-          // Add 'animated' class to prevent repeated animation
-          // Add 'fuzzy' class for orange coloring when there's a fuzzy match at this position
-          const boxClass = `define-box ${guessResults[index] ? guessResults[index] : ''} ${animatedBoxes[index] ? 'animated' : ''} ${isFuzzyMatch ? 'fuzzy' : ''}`;
+          // For debugging
+          if (isFuzzyMatch) {
+            console.log(`Box ${index} (${letter}) marked as fuzzy match`);
+          }
+          
+          // Build the class string based on conditions
+          let boxClass = `define-box`;
+          if (guessResults[index]) {
+            boxClass += ` ${guessResults[index]}`;
+          }
+          if (animatedBoxes[index]) {
+            boxClass += ` animated`;
+          }
+          if (isFuzzyMatch) {
+            boxClass += ` fuzzy`;
+          }
           
           return (
             <div 

@@ -150,10 +150,31 @@ app.post('/api/guess', async (req, res) => {
   );
   
   // Calculate fuzzy positions if it's a fuzzy match
-  const fuzzyPositions = isFuzzy ? 
-    guess.split('').map((char, i) => 
-      gameState.word.toLowerCase()[i] === char.toLowerCase() ? i : null
-    ).filter(pos => pos !== null) : [];
+  const fuzzyPositions = [];
+  
+  if (isFuzzy) {
+    console.log(`[/api/guess] Fuzzy match detected: ${guess} vs ${gameState.word}`);
+    
+    // Compare the guess with the target word and find matching positions
+    const guessLower = guess.toLowerCase();
+    const wordLower = gameState.word.toLowerCase();
+    
+    // For letter-by-letter matching
+    for (let i = 0; i < Math.min(guessLower.length, wordLower.length); i++) {
+      if (guessLower[i] === wordLower[i]) {
+        fuzzyPositions.push(i);
+        console.log(`[/api/guess] Match at position ${i}: ${guessLower[i]}`);
+      }
+    }
+    
+    // If no positions matched, add the first character position to indicate some kind of match
+    if (fuzzyPositions.length === 0 && 
+        (guessLower.includes(wordLower.substring(0, 3)) || 
+         wordLower.includes(guessLower.substring(0, 3)))) {
+      fuzzyPositions.push(0);
+      console.log(`[/api/guess] Adding default position 0 for substring match`);
+    }
+  }
 
   // Store this guess
   gameState.guesses.push({
@@ -170,9 +191,11 @@ app.post('/api/guess', async (req, res) => {
     correctWord: isCorrect || gameState.guessCount >= 6 ? gameState.word : undefined,
     guessedWord: guess,
     isFuzzy,
-    fuzzyPositions: fuzzyPositions.length > 0 ? fuzzyPositions : [0],
+    fuzzyPositions: fuzzyPositions,
     remainingGuesses: 6 - gameState.guessCount,
   };
+  
+  console.log(`[/api/guess] Response: isFuzzy=${isFuzzy}, fuzzyPositions=${JSON.stringify(fuzzyPositions)}`);
   
   // If game is over or correct answer, save metrics to database
   if (isCorrect || gameState.guessCount >= 6) {
