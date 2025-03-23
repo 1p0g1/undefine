@@ -261,45 +261,108 @@ app.post('/api/guess', async (req, res) => {
   res.json(response);
 });
 
-// Get leaderboard
-app.get('/api/leaderboard', async (req, res) => {
-  console.log('[/api/leaderboard] Fetching leaderboard');
+// Get leaderboard data
+app.get('/api/leaderboard', (req, res) => {
+  console.log('[/api/leaderboard] Returning mock leaderboard data');
   
-  try {
-    if (process.env.DB_PROVIDER !== 'mock') {
-      const leaderboard = await db.getDailyLeaderboard();
-      return res.json(leaderboard);
-    } else {
-      // Return mock leaderboard
-      return res.json({
-        entries: [
-          {
-            id: '1',
-            username: 'fastest_player',
-            word: 'ponder',
-            guesses: 2,
-            completion_time_seconds: 15,
-            used_hint: false,
-            completed: true,
-            created_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            username: 'second_place',
-            word: 'ponder',
-            guesses: 3,
-            completion_time_seconds: 25,
-            used_hint: false,
-            completed: true,
-            created_at: new Date().toISOString()
-          }
-        ]
-      });
+  // Create mock leaderboard data
+  const mockEntries = [
+    {
+      userId: 'user-123',
+      userName: 'WordMaster42',
+      time: 45,
+      guessCount: 2,
+      fuzzyCount: 0,
+      hintCount: 0
+    },
+    {
+      userId: 'user-456',
+      userName: 'CleverGuesser81',
+      time: 78,
+      guessCount: 3,
+      fuzzyCount: 1,
+      hintCount: 1
+    },
+    {
+      userId: 'user-789',
+      userName: 'VocabWhiz99',
+      time: 120,
+      guessCount: 4,
+      fuzzyCount: 2,
+      hintCount: 1
     }
-  } catch (error) {
-    console.error('[/api/leaderboard] Error fetching leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  ];
+  
+  // Add the current user to the leaderboard if they've correctly guessed a word
+  const userEmail = req.query.userEmail;
+  if (userEmail) {
+    console.log(`[/api/leaderboard] Including user: ${userEmail} in leaderboard`);
+    
+    // Look for an active game for this user that was correctly guessed
+    let userGame = null;
+    for (const [gameId, game] of activeGames.entries()) {
+      const lastGuess = game.guesses.length > 0 ? game.guesses[game.guesses.length - 1] : null;
+      if (game.userId && lastGuess && lastGuess.isCorrect) {
+        userGame = game;
+        break;
+      }
+    }
+    
+    if (userGame) {
+      const userEntry = {
+        userId: userGame.userId,
+        userName: userEmail,
+        time: Math.floor((new Date() - userGame.startTime) / 1000),
+        guessCount: userGame.guessCount,
+        fuzzyCount: userGame.guesses.filter(g => g.isFuzzy).length,
+        hintCount: userGame.hintsUsed || 0
+      };
+      
+      // Add user to entries if not already there
+      if (!mockEntries.some(entry => entry.userId === userEntry.userId)) {
+        mockEntries.push(userEntry);
+      }
+    }
   }
+  
+  // Sort entries by time ascending, then by guesses ascending
+  mockEntries.sort((a, b) => {
+    if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
+    return a.time - b.time;
+  });
+  
+  // Find user rank
+  let userRank = null;
+  if (userEmail) {
+    const userIndex = mockEntries.findIndex(entry => entry.userName === userEmail);
+    if (userIndex !== -1) {
+      userRank = userIndex + 1;
+    }
+  }
+  
+  // Create mock user stats
+  const userStats = {
+    gamesPlayed: 12,
+    averageGuesses: 3.5,
+    averageTime: 95,
+    bestTime: 32,
+    currentStreak: 3,
+    longestStreak: 7,
+    topTenCount: 5
+  };
+  
+  // Return the leaderboard data
+  res.json({
+    entries: mockEntries,
+    userRank,
+    userStats,
+    totalPlayers: mockEntries.length
+  });
+});
+
+// Get hint for a word
+app.get('/api/hint/:gameId', async (req, res) => {
+  // ... existing code ...
 });
 
 // Shutdown handler
