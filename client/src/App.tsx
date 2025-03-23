@@ -215,6 +215,12 @@ function App() {
       return;
     }
     
+    // Reset fuzzy match positions for this new guess
+    // This ensures we don't carry over fuzzy matches from previous guesses
+    if (guess.toLowerCase() !== correctWord) {
+      setFuzzyMatchPositions([]);
+    }
+    
     console.log('Submitting guess:', guess);
     console.log('Game ID being sent:', gameId);
     
@@ -293,6 +299,9 @@ function App() {
         setShowConfetti(true);
         setCorrectWord(data.correctWord);
         
+        // Clear fuzzy match positions when the correct word is guessed
+        setFuzzyMatchPositions([]);
+        
         // Store leaderboard rank if provided
         if (data.leaderboardRank) {
           setLeaderboardRank(data.leaderboardRank);
@@ -339,7 +348,7 @@ function App() {
     setHintsState(updatedHintsState);
   }, [hints]);
 
-  // Define letter boxes component
+  // Modify the DefineBoxes component to handle fuzzy matching better
   const DefineBoxes = () => {
     const defineLetters = ['D', 'E', 'F', 'I', 'N', 'E'];
     const [animatedBoxes, setAnimatedBoxes] = useState<boolean[]>([false, false, false, false, false, false]);
@@ -369,8 +378,8 @@ function App() {
         <div className="un-prefix">Un</div>
         <div className="central-dot">·</div>
         {defineLetters.map((letter, index) => {
-          // Check if this specific letter position should be marked as a fuzzy match
-          const isFuzzyMatch = fuzzyMatchPositions.includes(index);
+          // Only apply fuzzy match styling if the box is not already correct
+          const isFuzzyMatch = !isCorrect && guessResults[index] !== 'correct' && fuzzyMatchPositions.includes(index);
           
           // For debugging
           if (isFuzzyMatch) {
