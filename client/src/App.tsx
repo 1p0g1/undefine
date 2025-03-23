@@ -66,12 +66,6 @@ function App() {
   const [hintCount, setHintCount] = useState<number>(0);
   const [gameId, setGameId] = useState<string>('');
 
-  // Temporary fix for the screenshot example - set F and I as fuzzy matches
-  useEffect(() => {
-    // Set F (index 2) and I (index 3) as fuzzy matches
-    setFuzzyMatchPositions([2, 3]);
-  }, []);
-
   useEffect(() => {
     let interval: number | undefined;
     if (!isGameOver) {
@@ -546,10 +540,11 @@ function App() {
           fuzzyCount={fuzzyCount}
           hintCount={hintCount}
           word={correctWord}
-          guessResults={guessResults}
+          guessResults={guessResults as any}
           fuzzyMatchPositions={fuzzyMatchPositions}
           hints={hints}
           onClose={() => setShowLeaderboard(false)}
+          userEmail={userName}
         />
       )}
 
