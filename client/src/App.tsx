@@ -284,12 +284,14 @@ function App() {
           setFuzzyMatchPositions(data.fuzzyPositions);
         } else {
           // Otherwise, fall back to the current guess index - but don't add it to fuzzy positions
-          // This was causing all boxes to turn orange
           console.log('No specific fuzzy positions provided by server');
         }
         
         // Increment fuzzy count
         setFuzzyCount(prev => prev + 1);
+      } else {
+        // If it's not a fuzzy match, clear any fuzzy positions
+        setFuzzyMatchPositions([]);
       }
       
       if (data.isCorrect) {
@@ -299,8 +301,16 @@ function App() {
         setShowConfetti(true);
         setCorrectWord(data.correctWord);
         
-        // Clear fuzzy match positions when the correct word is guessed
+        // Ensure fuzzy match positions are always cleared for correct guesses
         setFuzzyMatchPositions([]);
+        
+        // Also update the currentGuessIndex and all previous indices to be 'correct'
+        // This ensures no previous guesses remain marked as fuzzy
+        const newGuessResults = [...guessResults];
+        for (let i = 0; i <= currentGuessIndex; i++) {
+          newGuessResults[i] = 'correct';
+        }
+        setGuessResults(newGuessResults);
         
         // Store leaderboard rank if provided
         if (data.leaderboardRank) {
@@ -379,7 +389,10 @@ function App() {
         <div className="central-dot">·</div>
         {defineLetters.map((letter, index) => {
           // Only apply fuzzy match styling if the box is not already correct
-          const isFuzzyMatch = !isCorrect && guessResults[index] !== 'correct' && fuzzyMatchPositions.includes(index);
+          const isFuzzyMatch = !isCorrect && 
+                               guessResults[index] !== 'correct' && 
+                               fuzzyMatchPositions.includes(index) && 
+                               fuzzyMatchPositions.length > 0;
           
           // For debugging
           if (isFuzzyMatch) {

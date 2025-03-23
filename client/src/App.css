@@ -52,6 +52,10 @@
   --shadow-color: rgba(0, 0, 0, 0.1);
   --paper-color: #faf7f2;
   --paper-shadow: rgba(0, 0, 0, 0.05);
+  --fuzzy-orange: #ff9800;
+  --fuzzy-border: #ff9800;
+  --correct-green: #e8f5e9;
+  --correct-border: #2e7d32;
 }
 
 body {
@@ -604,10 +608,10 @@ button:disabled {
 }
 
 .define-box.correct {
-  background-color: #e8f5e9;
-  border-color: #2e7d32;
-  color: #2e7d32;
-  animation: pulse-green 0.5s;
+  background-color: var(--correct-green);
+  border-color: var(--correct-border);
+  color: white;
+  z-index: 2;
 }
 
 /* Remove the dots for correct boxes */
@@ -628,10 +632,12 @@ button:disabled {
 }
 
 /* Style for fuzzy matches - orange color scheme */
-.define-box.incorrect.fuzzy {
-  background-color: #fff3e0;
-  border-color: #ff9800;
-  color: #ff9800;
+.define-box.fuzzy {
+  background-color: var(--fuzzy-orange);
+  animation: pulseOrange 1s ease-in-out;
+  border-color: var(--fuzzy-border);
+  /* Ensure fuzzy highlighting doesn't override correct box styling */
+  z-index: 1;
 }
 
 /* Prevent animation for boxes that have already been animated */
@@ -649,18 +655,18 @@ button:disabled {
   color: #ff9800;
 }
 
-@keyframes pulse-green {
+@keyframes pulseOrange {
   0% {
     transform: scale(1);
-    box-shadow: 0 2px 4px var(--shadow-color);
+    background-color: white;
   }
   50% {
     transform: scale(1.05);
-    box-shadow: 0 4px 8px var(--shadow-color);
+    background-color: var(--fuzzy-orange);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 2px 4px var(--shadow-color);
+    background-color: var(--fuzzy-orange);
   }
 }
 
