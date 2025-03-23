@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import Confetti from 'react-confetti'
-import { Link } from 'react-router-dom'
 import Leaderboard from './Leaderboard'
 
 interface GuessHistory {
@@ -551,7 +550,6 @@ function App() {
       <footer className="app-footer">
         <div className="footer-content">
           <p>© {new Date().getFullYear()} Reverse Define Game</p>
-          <Link to="/admin" className="admin-link">Admin Panel</Link>
         </div>
       </footer>
     </div>

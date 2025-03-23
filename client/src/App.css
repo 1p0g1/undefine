@@ -1235,14 +1235,12 @@ button:disabled {
 }
 
 .admin-link {
-  color: var(--primary-blue);
+  margin-left: 1rem;
+  color: var(--primary-color);
   text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.3s ease;
 }
 
 .admin-link:hover {
-  color: var(--accent-blue);
   text-decoration: underline;
 }
 

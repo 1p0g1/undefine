@@ -21,6 +21,12 @@ interface UserStats {
   topTenCount: number;
 }
 
+interface Hint {
+  letterCount: boolean;
+  alternateDefinition: boolean;
+  synonyms: boolean;
+}
+
 interface LeaderboardProps {
   userId: string;
   time: number;
@@ -28,14 +34,11 @@ interface LeaderboardProps {
   fuzzyCount: number;
   hintCount: number;
   word: string;
-  guessResults: Array<'correct' | 'incorrect' | null>;
+  guessResults: string[];
   fuzzyMatchPositions: number[];
-  hints: {
-    letterCount: boolean;
-    alternateDefinition: boolean;
-    synonyms: boolean;
-  };
+  hints: Hint;
   onClose: () => void;
+  userEmail: string;
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
@@ -48,7 +51,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   guessResults,
   fuzzyMatchPositions,
   hints,
-  onClose
+  onClose,
+  userEmail
 }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
@@ -69,17 +73,30 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       setLoading(true);
       setError(null);
       
-      const response = await fetch(buildApiUrl(`/api/leaderboard?userId=${userId}`));
+      // Check if we have a valid userEmail before making the request
+      if (!userEmail) {
+        console.log('No userEmail provided, using anonymous leaderboard data');
+      }
+      
+      // Fetch the leaderboard data
+      const url = buildApiUrl(`/api/leaderboard`); // Remove the userEmail parameter that's causing 404s
+      console.log('Fetching leaderboard from:', url);
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch leaderboard');
+        console.error('Leaderboard API error:', response.status, response.statusText);
+        throw new Error(`Failed to fetch leaderboard: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('Leaderboard data received:', data);
+      
+      // Handle the response data, providing defaults
       setEntries(data.entries || []);
       setUserRank(data.userRank || null);
       setUserStats(data.userStats || null);
-      setTotalPlayers(data.totalPlayers || 0);
+      setTotalPlayers(data.entries ? data.entries.length : 0);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       setError('Failed to load leaderboard. Please try again later.');
@@ -94,8 +111,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   };
 
   useEffect(() => {
-    fetchLeaderboard();
-  }, [userId]);
+    if (userEmail) {
+      fetchLeaderboard();
+    }
+  }, [userEmail]);
 
   // Render the DEFINE boxes to show the user's performance
   const renderDefineBoxes = () => {
@@ -233,8 +252,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   };
 
   return (
-    <div className="leaderboard-overlay">
-      <div className="leaderboard-container">
+    <div className="leaderboard-modal">
+      <div className="leaderboard-content">
         <button className="close-button" onClick={onClose}>×</button>
         
         <h2>Today's Challenge Results</h2>
@@ -300,7 +319,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               </div>
               <div className="leaderboard-entries">
                 {entries.map((entry, index) => (
-                  <div key={entry.userId} className={`leaderboard-entry ${entry.userId === userId ? 'current-user' : ''}`}>
+                  <div key={entry.userId} className={`leaderboard-entry ${entry.userName === userEmail ? 'current-user' : ''}`}>
                     <span className="rank">#{index + 1}</span>
                     <span className="name">{entry.userName}</span>
                     <span className="time">{formatTime(entry.time)}</span>
