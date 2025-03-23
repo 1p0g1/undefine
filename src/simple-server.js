@@ -155,24 +155,19 @@ app.post('/api/guess', async (req, res) => {
   if (isFuzzy) {
     console.log(`[/api/guess] Fuzzy match detected: ${guess} vs ${gameState.word}`);
     
-    // Compare the guess with the target word and find matching positions
-    const guessLower = guess.toLowerCase();
-    const wordLower = gameState.word.toLowerCase();
+    // DEFINE boxes are always 6 letters (D, E, F, I, N, E)
+    // We need to map our fuzzy matches to these 6 positions
+    // For simplicity, we'll just use the current guess count to determine
+    // which DEFINE box position to mark as fuzzy
     
-    // For letter-by-letter matching
-    for (let i = 0; i < Math.min(guessLower.length, wordLower.length); i++) {
-      if (guessLower[i] === wordLower[i]) {
-        fuzzyPositions.push(i);
-        console.log(`[/api/guess] Match at position ${i}: ${guessLower[i]}`);
-      }
-    }
+    // Get the current DEFINE position based on the guess count (1-indexed)
+    // We subtract 1 to make it 0-indexed for the array
+    const currentDefinePosition = gameState.guessCount - 1;
     
-    // If no positions matched, add the first character position to indicate some kind of match
-    if (fuzzyPositions.length === 0 && 
-        (guessLower.includes(wordLower.substring(0, 3)) || 
-         wordLower.includes(guessLower.substring(0, 3)))) {
-      fuzzyPositions.push(0);
-      console.log(`[/api/guess] Adding default position 0 for substring match`);
+    // Only add a position if it's within the DEFINE boxes (0-5)
+    if (currentDefinePosition >= 0 && currentDefinePosition < 6) {
+      fuzzyPositions.push(currentDefinePosition);
+      console.log(`[/api/guess] Marking DEFINE position ${currentDefinePosition} as fuzzy`);
     }
   }
 

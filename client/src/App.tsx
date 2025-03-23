@@ -280,11 +280,17 @@ function App() {
       // If this is a fuzzy match, store the positions and update fuzzy count
       if (data.isFuzzy) {
         if (data.fuzzyPositions && data.fuzzyPositions.length > 0) {
-          // If the server provides specific fuzzy positions, use those
-          setFuzzyMatchPositions(data.fuzzyPositions);
+          // The server now correctly sends the DEFINE box position to mark as fuzzy
+          // This should correspond to the current guess index
+          const validPositions = data.fuzzyPositions.filter(
+            pos => pos <= currentGuessIndex && pos >= 0 && pos < 6
+          );
+          console.log(`Filtered fuzzy positions: ${JSON.stringify(validPositions)}`);
+          setFuzzyMatchPositions(validPositions);
         } else {
-          // Otherwise, fall back to the current guess index - but don't add it to fuzzy positions
+          // No specific fuzzy positions provided, don't mark any positions
           console.log('No specific fuzzy positions provided by server');
+          setFuzzyMatchPositions([]);
         }
         
         // Increment fuzzy count
@@ -401,7 +407,7 @@ function App() {
                                guessResults[index] !== 'correct' && 
                                fuzzyMatchPositions.includes(index) && 
                                fuzzyMatchPositions.length > 0 &&
-                               index <= currentGuessIndex;
+                               index === currentGuessIndex;
           
           // For debugging
           if (isFuzzyMatch) {
