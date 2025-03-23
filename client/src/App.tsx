@@ -19,20 +19,31 @@ interface GuessResponse {
 }
 
 interface WordData {
+  wordId: string;
+  word: string;
   definition: string;
-  totalGuesses: number;
-  partOfSpeech?: string;
+  partOfSpeech: string;
   alternateDefinition?: string;
-  synonyms?: string[];
-  correctWord?: string;
+  synonyms?: string;
   letterCount?: {
     count: number;
     display: string;
   };
+  totalGuesses?: number;
 }
 
 // Add this type at the top with other type definitions
 type GuessResult = 'correct' | 'incorrect' | null;
+
+// Update or add the Hint interface
+interface Hint {
+  letterCount: boolean;
+  alternateDefinition: boolean;
+  synonyms: boolean;
+}
+
+// Define a type for hint types
+type HintType = 'partOfSpeech' | 'alternateDefinition' | 'synonyms';
 
 function App() {
   const [definition, setDefinition] = useState<string>('');
@@ -45,15 +56,7 @@ function App() {
   const [timer, setTimer] = useState<number>(0);
   const [guessResults, setGuessResults] = useState<GuessResult[]>([null, null, null, null, null, null]);
   const [fuzzyMatchPositions, setFuzzyMatchPositions] = useState<number[]>([]);
-  const [hints, setHints] = useState<{
-    letterCount: boolean;
-    alternateDefinition: boolean;
-    synonyms: boolean;
-  }>({
-    letterCount: false,
-    alternateDefinition: false,
-    synonyms: false,
-  });
+  const [hints, setHints] = useState<HintType[]>([]);
   const [wordData, setWordData] = useState<WordData | null>(null);
   const [correctWord, setCorrectWord] = useState<string>('');
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
@@ -64,6 +67,11 @@ function App() {
   const [userName, setUserName] = useState<string>('');
   const [hintCount, setHintCount] = useState<number>(0);
   const [gameId, setGameId] = useState<string>('');
+  const [hintsState, setHintsState] = useState<Hint>({
+    letterCount: false,
+    alternateDefinition: false,
+    synonyms: false
+  });
 
   useEffect(() => {
     let interval: number | undefined;
@@ -140,18 +148,13 @@ function App() {
       if (data.word) {
         // Handle new response format with word object
         setDefinition(data.word.definition);
-        setWordData({
-          definition: data.word.definition,
-          totalGuesses: 0,
-          partOfSpeech: data.word.partOfSpeech,
-          alternateDefinition: data.word.alternateDefinition,
-          synonyms: data.word.synonyms,
-          letterCount: data.word.letterCount || null
-        });
+        setWordData(data.word);
+        setCorrectWord(data.word.word.toLowerCase());
       } else if (data.definition) {
         // Handle legacy response format (direct properties)
         setDefinition(data.definition);
         setWordData(data);
+        setCorrectWord(data.word.toLowerCase());
       } else {
         console.error('Unexpected response structure:', data);
         throw new Error('Unexpected response format from API');
@@ -167,13 +170,13 @@ function App() {
       setTimer(0);
       setGuessResults([null, null, null, null, null, null]);
       setFuzzyMatchPositions([]);
-      setCorrectWord('');
       
-      setHints({
+      setHintsState({
         letterCount: false,
         alternateDefinition: false,
-        synonyms: false,
+        synonyms: false
       });
+      setHints([]);
       setHintCount(0);
     } catch (error) {
       console.error('Error fetching word:', error);
@@ -181,25 +184,28 @@ function App() {
       
       // Fallback to hardcoded data for development/demo purposes
       console.log('FALLING BACK TO HARDCODED DATA due to API error');
-      const fallbackData = {
+      const fallbackData: WordData = {
+        wordId: '123',
+        word: 'cogitate',
         definition: "To reason, argue, or think carefully and thoroughly.",
         partOfSpeech: "verb",
-        alternateDefinition: "To weigh in the mind with thorough consideration or deliberation.",
-        synonyms: ["contemplate", "consider", "reflect", "meditate", "ruminate", "deliberate"],
-        letterCount: { 
-          count: 6, 
-          display: "6 letters" 
-        },
-        totalGuesses: 0
+        alternateDefinition: "To ponder or meditate on something deeply.",
+        synonyms: "think, ponder, contemplate, meditate, reflect"
       };
       setDefinition(fallbackData.definition);
       setWordData(fallbackData);
+      setCorrectWord(fallbackData.word.toLowerCase());
     }
   };
 
-  const revealHint = (hintType: keyof typeof hints) => {
-    setHints(prev => ({ ...prev, [hintType]: true }));
-    setHintCount(prev => prev + 1);
+  const revealHint = (hintType: HintType) => {
+    if (isGameOver) return;
+    
+    // Add the hint to the array if it's not already there
+    if (!hints.includes(hintType)) {
+      setHints([...hints, hintType]);
+      setHintCount(prev => prev + 1);
+    }
   };
 
   const handleGuess = async (e: React.FormEvent) => {
@@ -321,6 +327,18 @@ function App() {
     fetchNewWord();
   }, []);
 
+  // Convert from array-based hints to object-based hints for legacy code
+  useEffect(() => {
+    // Update hintsState based on hints array
+    const updatedHintsState: Hint = {
+      letterCount: hints.includes('partOfSpeech'),
+      alternateDefinition: hints.includes('alternateDefinition'),
+      synonyms: hints.includes('synonyms')
+    };
+    
+    setHintsState(updatedHintsState);
+  }, [hints]);
+
   // Define letter boxes component
   const DefineBoxes = () => {
     const defineLetters = ['D', 'E', 'F', 'I', 'N', 'E'];
@@ -395,9 +413,23 @@ function App() {
     );
   };
 
-  const handleNewWord = () => {
+  const handleNextWord = () => {
+    setGuess('');
+    setGuessHistory([]);
+    setGuessResults([null, null, null, null, null, null]);
+    setFuzzyMatchPositions([]);
+    
+    // Update this to match the Hint interface expected elsewhere
+    setHintsState({
+      letterCount: false,
+      alternateDefinition: false,
+      synonyms: false
+    });
+    
+    setHints([]);
+    setHintCount(0);
     fetchNewWord();
-    setShowLeaderboard(false);
+    setIsGameOver(false);
   };
 
   return (
@@ -439,34 +471,30 @@ function App() {
         </form>
 
         <div className="hints-container">
-          <button 
-            onClick={() => revealHint('letterCount')} 
-            disabled={hints.letterCount || isGameOver}
-            className={`hint-button ${hints.letterCount ? 'active' : ''}`}
-            data-hint-type="letterCount"
+          <button
+            className="hint-button"
+            onClick={() => revealHint('partOfSpeech')}
+            disabled={isGameOver || hints.includes('partOfSpeech')}
+            data-hint-type="partOfSpeech"
           >
-            <span className="hint-emoji">🔢</span>
+            <span className="hint-emoji">🔤</span>
             <span className="hint-label"># of letters</span>
           </button>
-          
-          <div className="hint-arrow">→</div>
-          
-          <button 
-            onClick={() => revealHint('alternateDefinition')} 
-            disabled={!hints.letterCount || hints.alternateDefinition || isGameOver}
-            className={`hint-button ${hints.alternateDefinition ? 'active' : ''}`}
+
+          <button
+            className="hint-button"
+            onClick={() => revealHint('alternateDefinition')}
+            disabled={isGameOver || hints.includes('alternateDefinition') || !wordData?.alternateDefinition}
             data-hint-type="alternateDefinition"
           >
             <span className="hint-emoji">📖</span>
             <span className="hint-label">Alternate Definition</span>
           </button>
-          
-          <div className="hint-arrow">→</div>
-          
-          <button 
-            onClick={() => revealHint('synonyms')} 
-            disabled={!hints.alternateDefinition || hints.synonyms || isGameOver || !wordData?.synonyms?.length}
-            className={`hint-button ${hints.synonyms ? 'active' : ''}`}
+
+          <button
+            className="hint-button"
+            onClick={() => revealHint('synonyms')}
+            disabled={isGameOver || hints.includes('synonyms') || !wordData?.synonyms}
             data-hint-type="synonyms"
           >
             <span className="hint-emoji">🔄</span>
@@ -474,32 +502,33 @@ function App() {
           </button>
         </div>
         
-        {/* Expandable content wrapper for hints */}
-        <div className={`hints-content-wrapper ${hints.letterCount || hints.alternateDefinition || hints.synonyms ? 'has-active-hint' : ''}`}>
-          {/* Show all revealed hints in order */}
-          {hints.letterCount && wordData?.letterCount && (
+        {/* Hints Display Area */}
+        <div className={`hints-content-wrapper ${hints.length > 0 ? 'has-active-hint' : ''}`}>
+          {hints.includes('partOfSpeech') && wordData && (
             <div className="hint-display">
-              <div className="hint-title"># of letters</div>
+              <div className="hint-title">Letters</div>
               <div className="hint-content">
-                {wordData.letterCount.display}
+                This word has {wordData.word.length} letters.
               </div>
             </div>
           )}
-          
-          {hints.alternateDefinition && wordData?.alternateDefinition && (
+
+          {hints.includes('alternateDefinition') && wordData?.alternateDefinition && (
             <div className="hint-display">
               <div className="hint-title">Alternate Definition</div>
-              <div className="hint-content">
-                {wordData.alternateDefinition}
-              </div>
+              <div className="hint-content">{wordData.alternateDefinition}</div>
             </div>
           )}
-          
-          {hints.synonyms && wordData?.synonyms && (
+
+          {hints.includes('synonyms') && wordData?.synonyms && (
             <div className="hint-display">
               <div className="hint-title">Synonyms</div>
               <div className="hint-content">
-                {wordData.synonyms.join(', ')}
+                {wordData.synonyms?.split(',').map((syn: string, i: number) => (
+                  <span key={i} className="synonym-tag">
+                    {syn.trim()}
+                  </span>
+                ))}
               </div>
             </div>
           )}
@@ -532,7 +561,7 @@ function App() {
         )}
 
         {isGameOver && (
-          <button onClick={handleNewWord} className="next-word-btn">
+          <button onClick={handleNextWord} className="next-word-btn">
             Next Word
           </button>
         )}
