@@ -17,6 +17,12 @@ import { AuthRequest } from './auth/authTypes.js';
 
 // Environment variable validation
 function validateEnvironmentVariables(): void {
+  // For debug/development mode, don't validate all env vars
+  if (process.env.DEBUG === '1') {
+    console.log('Running in DEBUG mode - skipping full environment variable validation');
+    return;
+  }
+
   const requiredVars = [
     'PORT',
     'NODE_ENV',
@@ -41,8 +47,8 @@ function validateEnvironmentVariables(): void {
   }
 
   const dbProvider = process.env.DB_PROVIDER?.toLowerCase();
-  if (dbProvider && !['snowflake', 'mongodb'].includes(dbProvider)) {
-    throw new Error(`Unsupported database provider: ${dbProvider}. Must be either 'snowflake' or 'mongodb'`);
+  if (dbProvider && !['snowflake', 'mongodb', 'mock'].includes(dbProvider)) {
+    throw new Error(`Unsupported database provider: ${dbProvider}. Must be either 'snowflake', 'mongodb', or 'mock'`);
   }
 
   console.log('✅ All environment variables validated. Server starting...');
