@@ -19,7 +19,13 @@ app.use((req, res, next) => {
 const wordData = {
   word: "ponder",
   definition: "To reason, argue, or think carefully and thoroughly.",
-  partOfSpeech: "verb"
+  partOfSpeech: "verb",
+  alternateDefinition: "To weigh in the mind with thorough consideration or deliberation.",
+  letterCount: { 
+    count: 6, 
+    display: "6 letters" 
+  },
+  synonyms: ["contemplate", "consider", "reflect", "meditate", "ruminate", "deliberate"]
 };
 
 // Store active games
@@ -55,7 +61,10 @@ app.get('/api/word', (req, res) => {
     word: {
       id: '12345',
       definition: wordData.definition,
-      partOfSpeech: wordData.partOfSpeech
+      partOfSpeech: wordData.partOfSpeech,
+      alternateDefinition: wordData.alternateDefinition,
+      letterCount: wordData.letterCount,
+      synonyms: wordData.synonyms
     }
   });
 });
