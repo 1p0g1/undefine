@@ -144,6 +144,8 @@ function App() {
           definition: data.word.definition,
           totalGuesses: 0,
           partOfSpeech: data.word.partOfSpeech,
+          alternateDefinition: data.word.alternateDefinition,
+          synonyms: data.word.synonyms,
           letterCount: data.word.letterCount || null
         });
       } else if (data.definition) {
@@ -182,6 +184,12 @@ function App() {
       const fallbackData = {
         definition: "To reason, argue, or think carefully and thoroughly.",
         partOfSpeech: "verb",
+        alternateDefinition: "To weigh in the mind with thorough consideration or deliberation.",
+        synonyms: ["contemplate", "consider", "reflect", "meditate", "ruminate", "deliberate"],
+        letterCount: { 
+          count: 6, 
+          display: "6 letters" 
+        },
         totalGuesses: 0
       };
       setDefinition(fallbackData.definition);
