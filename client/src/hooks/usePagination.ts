@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PaginationInfo } from '../types';
+import { PaginationInfo } from '../types/index.js';
 import { getFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
 
 interface UsePaginationProps {

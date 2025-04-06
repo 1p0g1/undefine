@@ -1,76 +1,138 @@
-export interface Word {
-  id: string;
-  word: string;
-  partOfSpeech: string;
-  definition: string;
-  alternateDefinition?: string;
-  dateAdded: string;
+// Import shared types
+import type { 
+  WordEntry, 
+  User as SharedUser, 
+  UserCredentials as SharedUserCredentials, 
+  AuthResult as SharedAuthResult,
+  Word as SharedWord,
+  LeaderboardEntry as SharedLeaderboardEntry,
+  UserStats as SharedUserStats,
+  DailyMetrics as SharedDailyMetrics,
+  StreakLeader as SharedStreakLeader
+} from '@reversedefine/shared-types';
+
+// Re-export shared types
+export type { 
+  SharedUserCredentials as UserCredentials, 
+  SharedAuthResult as AuthResult,
+  SharedWord as Word,
+  SharedLeaderboardEntry as LeaderboardEntry,
+  SharedUserStats as UserStats,
+  SharedDailyMetrics as DailyMetrics,
+  SharedStreakLeader as StreakLeader
+};
+
+// Database-specific types
+export interface DbWord extends SharedWord {
+  wordId: string;
+  etymology?: string;
+  firstLetter: string;
+  exampleSentence?: string;
+  numLetters: number;
+  difficulty?: string;
+  timesUsed: number;
+  lastUsedAt: Date | null;
+  isPlural?: boolean;
+  numSyllables?: number;
 }
 
-export interface WordQuery {
-  page?: number;
-  limit?: number;
-  search?: string;
-}
-
-export interface WordResult {
-  words: Word[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-export interface DailyStats {
-  date: string;
-  totalGames: number;
-  averageTime: number;
-  averageGuesses: number;
-  uniquePlayers: number;
-}
-
-export interface User {
+export interface User extends SharedUser {
   id: string;
   email: string;
-  passwordHash: string;
+  username: string;
   createdAt: string;
-  lastLoginAt: string | null;
 }
 
-export interface UserCredentials {
-  email: string;
-  password: string;
+export interface DbLeaderboardEntry extends SharedLeaderboardEntry {
+  id: string;
+  username: string;
+  wordId: string;
+  word: string;
+  timeTaken: number;
+  guessesUsed: number;
+  fuzzyMatches: number;
+  hintsUsed: number;
+  createdAt: string;
 }
 
-export interface AuthResult {
-  user: Omit<User, 'passwordHash'>;
-  token: string;
+export interface DailyLeaderboardResponse {
+  entries: DbLeaderboardEntry[];
+  userRank: number;
+}
+
+export interface DbUserStats extends SharedUserStats {
+  username: string;
+  gamesPlayed: number;
+  gamesWon: number;
+  averageGuesses: number;
+  averageTime: number;
+  bestTime: number;
+  currentStreak: number;
+  longestStreak: number;
+  topTenCount: number;
+  lastPlayedAt: string;
+}
+
+export interface DailyStatsResponse {
+  date: string;
+  totalPlays: number;
+  uniqueUsers: number;
+  averageGuesses: number;
+  averageTime: number;
+}
+
+export interface GameSession {
+  id: string;
+  wordId: string;
+  word: string;
+  startTime: string;
+  endTime?: string;
+  guessesUsed: number;
+  hintsUsed: number;
+  fuzzyMatches: number;
+  isComplete: boolean;
+  isWon: boolean;
+  userEmail?: string;
 }
 
 export interface DatabaseClient {
-  // Word operations
-  getWords(query: WordQuery): Promise<WordResult>;
-  getWord(id: string): Promise<Word | null>;
-  addWord(word: Omit<Word, 'id'>): Promise<Word>;
-  updateWord(id: string, word: Partial<Word>): Promise<Word>;
-  deleteWord(id: string): Promise<boolean>;
-  searchWords(query: string): Promise<Word[]>;
-
-  // Stats operations
-  getDailyStats(): Promise<DailyStats>;
-  addGameStats(stats: {
-    time: number;
-    guessCount: number;
-    fuzzyCount: number;
-    hintCount: number;
-    word: string;
-  }): Promise<void>;
-
-  // Connection management
+  // Connection methods
   connect(): Promise<void>;
   disconnect(): Promise<void>;
-
+  
+  // Word operations
+  getWords(page?: number, limit?: number): Promise<{ words: DbWord[], total: number }>;
+  getWord(wordId: string): Promise<DbWord | null>;
+  addWord(word: Omit<DbWord, 'wordId' | 'timesUsed' | 'lastUsedAt' | 'createdAt' | 'updatedAt'>): Promise<DbWord>;
+  updateWord(wordId: string, word: Partial<DbWord>): Promise<DbWord>;
+  deleteWord(wordId: string): Promise<boolean>;
+  searchWords(query: string): Promise<DbWord[]>;
+  getRandomWord(): Promise<DbWord | null>;
+  getDailyWord(date?: string): Promise<DbWord | null>;
+  checkGuess(wordId: string, guess: string): Promise<boolean>;
+  
+  // Stats operations
+  getDailyStats(): Promise<DailyStatsResponse>;
+  getTodayMetrics(): Promise<SharedDailyMetrics>;
+  getTopStreaks(limit?: number): Promise<SharedStreakLeader[]>;
+  getUserStats(username: string): Promise<DbUserStats | null>;
+  updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<void>;
+  
   // Authentication methods
-  authenticateUser(credentials: UserCredentials): Promise<AuthResult>;
   getUserByEmail(email: string): Promise<User | null>;
-  updateLastLogin(userId: string): Promise<void>;
+  getUserByUsername(username: string): Promise<User | null>;
+  createUser(user: Omit<User, 'id' | 'createdAt'>, password: string): Promise<User>;
+  verifyPassword(email: string, password: string): Promise<boolean>;
+  
+  // Leaderboard operations
+  getDailyLeaderboard(): Promise<DailyLeaderboardResponse>;
+  getAllTimeLeaderboard(): Promise<DbLeaderboardEntry[]>;
+  getUserRank(username: string): Promise<number>;
+  addLeaderboardEntry(entry: Omit<DbLeaderboardEntry, 'id' | 'createdAt'>): Promise<DbLeaderboardEntry>;
+  
+  // Game operations
+  startGame(userEmail?: string): Promise<GameSession>;
+  processGuess(gameId: string, guess: string, userEmail?: string): Promise<{ isCorrect: boolean; gameOver: boolean }>;
+  getGameSession(gameId: string): Promise<GameSession | null>;
+  endGame(gameId: string, won: boolean): Promise<void>;
 } 

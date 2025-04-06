@@ -156,28 +156,28 @@ describe('App', () => {
     mockFetch.mockResolvedValueOnce({
       json: () => Promise.resolve({
         definition: 'A test definition',
-        totalGuesses: 6,
-        partOfSpeech: 'noun',
-        letterCount: { count: 5, display: '5 letters' },
-        alternateDefinition: 'Another definition',
-        synonyms: ['synonym1', 'synonym2']
+        etymology: 'Test etymology',
+        firstLetter: 't',
+        isPlural: false,
+        numSyllables: 3,
+        exampleSentence: 'This is a test sentence.'
       })
     });
 
     render(<App />);
 
     // Find and click hint buttons
-    const letterCountHint = screen.getByRole('button', { name: /letter count/i });
-    const alternateDefHint = screen.getByRole('button', { name: /alternate definition/i });
-    const synonymsHint = screen.getByRole('button', { name: /synonyms/i });
+    const etymologyHint = screen.getByRole('button', { name: /etymology/i });
+    const firstLetterHint = screen.getByRole('button', { name: /first letter/i });
+    const pluralHint = screen.getByRole('button', { name: /plural/i });
 
-    await userEvent.click(letterCountHint);
-    await userEvent.click(alternateDefHint);
-    await userEvent.click(synonymsHint);
+    await userEvent.click(etymologyHint);
+    await userEvent.click(firstLetterHint);
+    await userEvent.click(pluralHint);
 
     // Verify hints are displayed
-    expect(screen.getByText(/5 letters/i)).toBeInTheDocument();
-    expect(screen.getByText(/another definition/i)).toBeInTheDocument();
-    expect(screen.getByText(/synonym1/i)).toBeInTheDocument();
+    expect(screen.getByText(/test etymology/i)).toBeInTheDocument();
+    expect(screen.getByText(/first letter: t/i)).toBeInTheDocument();
+    expect(screen.getByText(/this word is singular/i)).toBeInTheDocument();
   });
 }); 

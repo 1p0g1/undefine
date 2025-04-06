@@ -917,6 +917,7 @@ export class SnowflakeClient implements DatabaseClient {
     fastestPlayers: { username: string; avgTimeSeconds: number; gamesPlayed: number }[];
     fewestGuessesPlayers: { username: string; avgGuesses: number; gamesPlayed: number }[];
     leastHintsPlayers: { username: string; avgHintsUsed: number; gamesPlayed: number }[];
+    hintTypeUsage: { hintType: string; usageCount: number }[];
   }> {
     const connection = await this.connection.getConnection();
     try {
@@ -981,6 +982,20 @@ export class SnowflakeClient implements DatabaseClient {
         LIMIT 10
       `, [], connection);
 
+      // Get hint type usage statistics
+      const hintTypeUsage = await this.connection.executeQuery<{
+        HINT_TYPE: string;
+        USAGE_COUNT: number;
+      }>(`
+        SELECT
+          HINT_TYPE,
+          COUNT(*) AS USAGE_COUNT
+        FROM GAME_METRICS
+        WHERE HINT_TYPE IS NOT NULL
+        GROUP BY HINT_TYPE
+        ORDER BY USAGE_COUNT DESC
+      `, [], connection);
+
       return {
         fastestPlayers: fastestPlayers.map(p => ({
           username: p.USERNAME,
@@ -996,6 +1011,10 @@ export class SnowflakeClient implements DatabaseClient {
           username: p.USERNAME,
           avgHintsUsed: p.AVG_HINTS,
           gamesPlayed: p.GAMES_PLAYED
+        })),
+        hintTypeUsage: hintTypeUsage.map(h => ({
+          hintType: h.HINT_TYPE,
+          usageCount: h.USAGE_COUNT
         }))
       };
     } finally {

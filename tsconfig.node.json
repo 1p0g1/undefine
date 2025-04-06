@@ -1,10 +1,18 @@
 {
-  "compilerOptions": {
-    "composite": true,
-    "skipLibCheck": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+  "extends": "./tsconfig.json",
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+    "moduleTypes": {
+      "src/**/*": "esm"
+    }
   },
-  "include": ["vite.config.ts"]
+  "compilerOptions": {
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "allowJs": true,
+    "resolveJsonModule": true
+  }
 } 

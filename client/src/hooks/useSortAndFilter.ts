@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { SortDirection, WordEntry } from '../types';
+import { SortDirection, WordEntry } from '../types/index.js';
 import { getFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
 
 type SortableField = keyof WordEntry;

@@ -2,6 +2,9 @@ import Redis from 'ioredis';
 import dotenv from 'dotenv';
 import { connectionManager } from './snowflake.js';
 import { db } from './database/index.js';
+import { DatabaseClient, Word, LeaderboardEntry, DailyLeaderboardResponse, UserStats } from './database/types';
+
+export type { DatabaseClient, Word, LeaderboardEntry, DailyLeaderboardResponse, UserStats };
 
 dotenv.config();
 

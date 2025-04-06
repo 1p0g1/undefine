@@ -1,4 +1,4 @@
-import { FormState, ValidationError } from '../types';
+import { FormState, ValidationError } from '../types/index.js';
 
 /**
  * Validates a word form for required fields and formats

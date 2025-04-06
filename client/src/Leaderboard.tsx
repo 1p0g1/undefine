@@ -1,47 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Leaderboard.css';
+import { getApiUrl } from './config';
+import { useLocalGameState } from './hooks/useLocalGameState';
 
 interface LeaderboardEntry {
-  userId: string;
-  userName: string;
-  time: number;
-  guessCount: number;
-  fuzzyCount: number;
-  hintCount: number;
-}
-
-interface UserStats {
-  gamesPlayed: number;
-  averageGuesses: number;
-  averageTime: number;
-  bestTime: number;
-  currentStreak: number;
-  longestStreak: number;
-  topTenCount: number;
-}
-
-interface Hint {
-  letterCount: boolean;
-  alternateDefinition: boolean;
-  synonyms: boolean;
-}
-
-interface LeaderboardProps {
-  userId: string;
+  username: string;
   time: number;
   guessCount: number;
   fuzzyCount: number;
   hintCount: number;
   word: string;
-  guessResults: string[];
+  createdAt: string;
+}
+
+interface LeaderboardProps {
+  time: number;
+  guessCount: number;
+  fuzzyCount: number;
+  hintCount: number;
+  word: string;
+  guessResults: ('correct' | 'incorrect' | null)[];
   fuzzyMatchPositions: number[];
-  hints: Hint;
+  hints: Record<string, boolean>;
   onClose: () => void;
-  userEmail: string;
+  username: string;
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
-  userId,
   time,
   guessCount,
   fuzzyCount,
@@ -51,184 +36,97 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   fuzzyMatchPositions,
   hints,
   onClose,
-  userEmail
+  username
 }) => {
-  // Static mock data instead of API calls
-  const [userRank] = useState<number>(1);
-  const [userStats] = useState<UserStats>({
-    gamesPlayed: 1,
-    averageGuesses: guessCount,
-    averageTime: time,
-    bestTime: time,
-    currentStreak: 1,
-    longestStreak: 1,
-    topTenCount: 1
-  });
-  // Flag to indicate leaderboard is disabled
-  const [isLeaderboardDisabled] = useState<boolean>(
-    process.env.NODE_ENV !== 'production' || process.env.DISABLE_LEADERBOARD === 'true'
-  );
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { state: gameState } = useLocalGameState();
 
-  // Format time as mm:ss
-  const formatTime = (timeInSeconds: number): string => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = timeInSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Render the DEFINE boxes to show the user's performance
-  const renderDefineBoxes = () => {
-    const defineLetters = ['D', 'E', 'F', 'I', 'N', 'E'];
-    
-    return (
-      <div className="leaderboard-define-boxes">
-        {defineLetters.map((letter, index) => {
-          let boxClass = 'define-box';
-          
-          // First check if this position has a guess result
-          if (guessResults && guessResults[index]) {
-            boxClass += ` ${guessResults[index]}`;
-          }
-          
-          // Then check if this position is a fuzzy match
-          // If it is, add the fuzzy class regardless of the guess result
-          if (fuzzyMatchPositions && fuzzyMatchPositions.includes(index)) {
-            boxClass += ' fuzzy';
-          }
-          
-          return (
-            <div key={index} className={boxClass}>
-              {letter}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Render hint usage icons
-  const renderHintIcons = (count: number) => {
-    if (count === 0) return <span className="no-hints">None</span>;
-    
-    const icons = [];
-    
-    // Add icons based on which hints were used
-    if (hints.letterCount) {
-      icons.push(<span key="letter" className="hint-icon" title="# of letters">🔢</span>);
-    }
-    
-    if (hints.alternateDefinition) {
-      icons.push(<span key="alt" className="hint-icon" title="Alternate Definition">📖</span>);
-    }
-    
-    if (hints.synonyms) {
-      icons.push(<span key="syn" className="hint-icon" title="Synonyms">🔄</span>);
-    }
-    
-    return <div className="hint-icons">{icons}</div>;
-  };
-
-  // Function to handle sharing results
-  const handleShareResults = () => {
-    // Create the share text
-    const shareText = `🎯 Reverse Define\n\n` +
-      `Solved in ${formatTime(time)}\n` +
-      `Guesses: ${guessCount}/6\n` +
-      `Hints: ${hintCount}\n\n` +
-      `I found the word "${word}"\n\n` +
-      `Play at: https://reversedefine.com`;
-    
-    // Copy to clipboard
-    navigator.clipboard.writeText(shareText)
-      .then(() => {
-        // Show a temporary success message
-        const shareButton = document.querySelector('.share-button');
-        if (shareButton) {
-          const originalText = shareButton.textContent;
-          shareButton.textContent = 'Copied!';
-          setTimeout(() => {
-            shareButton.textContent = originalText;
-          }, 2000);
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch(getApiUrl('/api/leaderboard'));
+        if (!response.ok) {
+          throw new Error('Failed to fetch leaderboard');
         }
-      })
-      .catch(err => {
-        console.error('Failed to copy text: ', err);
-        alert('Failed to copy to clipboard. Please try again.');
-      });
+        const data = await response.json();
+        setEntries(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch leaderboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  if (loading) {
+    return <div className="leaderboard-loading">Loading leaderboard...</div>;
+  }
+
+  if (error) {
+    return <div className="leaderboard-error">{error}</div>;
+  }
 
   return (
-    <div className="leaderboard-modal">
-      <div className="leaderboard-content">
-        <button className="close-button" onClick={onClose}>×</button>
-        
-        <h2>Today's Challenge Results</h2>
-        
-        <div className="user-performance">
-          {renderDefineBoxes()}
-          <p className="performance-summary">
-            You guessed <strong>{word}</strong> in <strong>{formatTime(time)}</strong>
-          </p>
-          <p className="performance-details">
-            Guesses used: <strong>{guessCount}/6</strong> • 
-            Fuzzy matches: <strong>{fuzzyCount}</strong> •
-            Hints used: {renderHintIcons(hintCount)}
-          </p>
+    <div className="leaderboard-container">
+      <div className="leaderboard-header">
+        <h2>Today's Leaderboard</h2>
+        <button onClick={onClose} className="close-button">×</button>
+      </div>
+
+      <div className="leaderboard-stats">
+        <div className="stat">
+          <span className="stat-label">Current Streak:</span>
+          <span className="stat-value">{gameState.currentStreak}</span>
         </div>
-        
-        <div className="user-stats">
-          <div className="stats-row">
-            <div className="stat-box">
-              <div className="stat-value">{userStats?.currentStreak || 0}</div>
-              <div className="stat-label">Current Streak</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-value">{userStats?.longestStreak || 0}</div>
-              <div className="stat-label">Longest Streak</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-value">{userStats?.topTenCount || 0}</div>
-              <div className="stat-label">Top 10 Finishes</div>
-            </div>
-          </div>
-          <div className="stats-row">
-            <div className="stat-box">
-              <div className="stat-value">{userStats?.gamesPlayed || 0}</div>
-              <div className="stat-label">Games Played</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-value">{userStats?.averageGuesses?.toFixed(1) || '0.0'}</div>
-              <div className="stat-label">Avg. Guesses</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-value">{formatTime(userStats?.bestTime || 0)}</div>
-              <div className="stat-label">Best Time</div>
-            </div>
-          </div>
+        <div className="stat">
+          <span className="stat-label">Longest Streak:</span>
+          <span className="stat-value">{gameState.longestStreak}</span>
         </div>
-        
-        <div className="leaderboard-section">
-          <h3>Today's Leaderboard</h3>
-          {isLeaderboardDisabled ? (
-            <p className="no-entries">
-              Leaderboard is temporarily disabled for early user testing.<br/>
-              Your stats and streaks are still being tracked!
-            </p>
-          ) : (
-            <p className="no-entries">Leaderboard data will be available soon!</p>
-          )}
+        <div className="stat">
+          <span className="stat-label">Games Played:</span>
+          <span className="stat-value">{gameState.gamesPlayed}</span>
         </div>
-        
-        <div className="leaderboard-actions">
-          <button className="share-button" onClick={handleShareResults}>
-            Share Results
-          </button>
-          {userStats && userStats.currentStreak > 0 && (
-            <div className="streak-notification">
-              🔥 Your streak has been updated: {userStats.currentStreak} days!
-            </div>
-          )}
+        <div className="stat">
+          <span className="stat-label">Games Won:</span>
+          <span className="stat-value">{gameState.gamesWon}</span>
         </div>
+      </div>
+
+      <div className="leaderboard-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Time</th>
+              <th>Guesses</th>
+              <th>Fuzzy</th>
+              <th>Hints</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry, index) => (
+              <tr key={index} className={entry.username === username ? 'current-user' : ''}>
+                <td>{index + 1}</td>
+                <td>{entry.username}</td>
+                <td>{formatTime(entry.time)}</td>
+                <td>{entry.guessCount}</td>
+                <td>{entry.fuzzyCount}</td>
+                <td>{entry.hintCount}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

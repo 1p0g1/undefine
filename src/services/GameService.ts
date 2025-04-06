@@ -1,4 +1,4 @@
-import { db } from '../config/database/index.js';
+import { db } from '../config/database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface GameState {
@@ -8,6 +8,14 @@ export interface GameState {
   fuzzyCount: number;
   hintCount: number;
   userEmail: string;
+  hints: {
+    D: boolean;  // Definition (always revealed)
+    E: boolean;  // Etymology
+    F: boolean;  // First Letter
+    I: boolean;  // Is Plural
+    N: boolean;  // Number of Syllables
+    E2: boolean; // Example Sentence
+  };
 }
 
 export interface Word {
@@ -37,9 +45,9 @@ export interface GameResponse {
 }
 
 export class GameService {
-  private static activeGames = new Map<string, GameState>();
+  static activeGames = new Map();
 
-  static async getRandomWord(): Promise<Word> {
+  static async getRandomWord() {
     try {
       console.log('[GameService.getRandomWord] Attempting to fetch random word from database');
       const word = await db.getRandomWord();
@@ -54,7 +62,7 @@ export class GameService {
     }
   }
 
-  static async startGame(userEmail: string): Promise<GameResponse> {
+  static async startGame(userEmail: string) {
     try {
       console.log('[GameService.startGame] Starting new game for user:', userEmail);
       const word = await this.getRandomWord();
@@ -72,7 +80,15 @@ export class GameService {
         guessCount: 0,
         fuzzyCount: 0,
         hintCount: 0,
-        userEmail
+        userEmail,
+        hints: {
+          D: true,
+          E: false,
+          F: false,
+          I: false,
+          N: false,
+          E2: false
+        }
       });
 
       console.log('[GameService.startGame] Game successfully created');
@@ -94,7 +110,7 @@ export class GameService {
     }
   }
 
-  static async processGuess(gameId: string, guess: string): Promise<GuessResult> {
+  static async processGuess(gameId: string, guess: string) {
     const gameState = this.activeGames.get(gameId);
     if (!gameState) {
       throw new Error('Game not found');
@@ -133,7 +149,7 @@ export class GameService {
               word: currentWord.word,
               guesses: gameState.guessCount,
               completion_time_seconds: Math.floor(timeTaken / 1000),
-              used_hint: gameState.hintCount > 0,
+              used_hint: Object.values(gameState.hints).some(hint => hint),
               completed: isCorrect,
               created_at: new Date().toISOString()
             });
@@ -183,7 +199,7 @@ export class GameService {
     };
   }
 
-  private static isFuzzyMatch(guess: string, correct: string): boolean {
+  static isFuzzyMatch(guess: string, correct: string) {
     const normalizedGuess = guess.toLowerCase();
     const normalizedCorrect = correct.toLowerCase();
 
@@ -200,7 +216,7 @@ export class GameService {
       return true;
     }
 
-    const matrix: number[][] = [];
+    const matrix = [];
     for (let i = 0; i <= normalizedGuess.length; i++) {
       matrix[i] = [i];
     }
@@ -229,12 +245,12 @@ export class GameService {
     return distance <= threshold;
   }
 
-  private static calculateFuzzyPositions(guess: string, correct: string): number[] {
+  static calculateFuzzyPositions(guess: string, correct: string) {
     const guessLetters = guess.toLowerCase().split('');
     const correctLetters = correct.toLowerCase().split('');
-    const positions: number[] = [];
+    const positions = [];
     
-    guessLetters.forEach((letter: string, index: number) => {
+    guessLetters.forEach((letter, index) => {
       if (index < correctLetters.length && letter === correctLetters[index]) {
         positions.push(index);
       }
@@ -243,7 +259,7 @@ export class GameService {
     return positions.length > 0 ? positions : [0];
   }
 
-  static cleanupOldGames(): void {
+  static cleanupOldGames() {
     const now = Date.now();
     for (const [gameId, gameState] of this.activeGames.entries()) {
       if (now - gameState.startTime.getTime() > 24 * 60 * 60 * 1000) {
@@ -257,24 +273,26 @@ export class GameService {
    * This is typically used for the daily word challenge feature
    * @returns The word of the day with its definition and part of speech
    */
-  static async getTodayWord(): Promise<Word> {
+  static async getTodayWord(date?: string) {
     try {
-      console.log('[GameService.getTodayWord] Fetching today\'s word');
+      const targetDate = date || new Date().toISOString().split('T')[0];
       
-      // Fetch a random word for today
-      const word = await this.getRandomWord();
+      // Try to get today's word
+      let word = await db.getDailyWord(targetDate);
       
-      // Mark it as used immediately
-      await db.markAsUsed(word.wordId);
+      // If no word is set for today, select one and mark it
+      if (!word) {
+        word = await db.getNextUnusedWord();
+        if (!word) {
+          throw new Error('No unused words available');
+        }
+        await db.setDailyWord(word.id, targetDate);
+      }
       
-      console.log('[GameService.getTodayWord] Successfully fetched and marked today\'s word');
       return word;
     } catch (error) {
-      console.error('[GameService.getTodayWord] Error fetching today\'s word:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      throw new Error(`Failed to get today's word: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error getting today\'s word:', error);
+      throw error;
     }
   }
 } 

@@ -1,3 +1,9 @@
+// Import shared types
+import type { WordEntry, FormState, ValidationError, ApiResponse, PaginationParams, PaginationInfo } from '@reversedefine/shared-types';
+
+// Re-export shared types
+export type { WordEntry, FormState, ValidationError, ApiResponse, PaginationParams, PaginationInfo };
+
 // Word-related types
 export interface WordEntry {
   word: string;
@@ -28,6 +34,7 @@ export interface ValidationError {
   message: string;
 }
 
+// Client-specific types
 export interface PaginationParams {
   page: number;
   limit: number;
@@ -142,11 +149,12 @@ export enum ActionType {
 }
 
 export interface GameState {
-  word: WordEntry;
+  currentWord: string;
+  guesses: string[];
+  hints: string[];
+  isComplete: boolean;
   startTime: Date;
-  guessCount: number;
-  fuzzyCount: number;
-  hintCount: number;
+  endTime?: Date;
 }
 
 export interface GuessResult {
@@ -160,7 +168,7 @@ export interface GuessResult {
 }
 
 export interface LeaderboardEntry {
-  userId: string;
+  userEmail: string;
   userName: string;
   time: number;
   guessCount: number;
@@ -178,13 +186,17 @@ export interface UserStats {
   topTenCount: number;
 }
 
-export interface UserCredentials {
-  email: string;
-  password: string;
+export interface UserPreferences {
+  theme: 'light' | 'dark';
+  notifications: boolean;
+  sound: boolean;
 }
 
-export interface AuthResult {
-  success: boolean;
-  token?: string;
-  error?: string;
+export interface GameStats {
+  gamesPlayed: number;
+  gamesWon: number;
+  averageGuesses: number;
+  fastestTime: number;
+  longestStreak: number;
+  topTenCount: number;
 } 

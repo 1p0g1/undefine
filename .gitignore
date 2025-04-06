@@ -1,34 +1,64 @@
 # Dependencies
 node_modules/
-/.pnp
+.pnp/
 .pnp.js
 
-# Testing
-/coverage
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
 
-# Production
-/build
-/dist
-
-# Environment files
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
 
 # Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.log
+pnpm-debug.log*
+lerna-debug.log*
 
-# IDE
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
 .idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
 .DS_Store
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Database
+*.sqlite
+*.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+.vite/
+
+# Client specific
+client/dist/
+client/coverage/
+
+# Server specific
+src/dist/

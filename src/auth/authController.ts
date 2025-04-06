@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import { db } from '../config/database/index.js';
+import { db, User } from '../config/database/index.js';
 import jwt from 'jsonwebtoken';
 
 dotenv.config();
@@ -25,14 +25,6 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 // After validation, we can safely assert this value is defined
 const validatedJWT_SECRET = JWT_SECRET as string;
-
-// Find the interface definition for User and update it to include createdAt and lastLoginAt
-interface User {
-  id: string;
-  email: string;
-  createdAt?: string; // Make these optional to avoid TypeScript errors
-  lastLoginAt?: string;
-}
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -107,8 +99,8 @@ export const refreshToken = async (req: Request, res: Response) => {
       user: {
         id: user.id,
         email: user.email,
-        createdAt: user.createdAt || new Date().toISOString(), // Use default values if not present
-        lastLoginAt: user.lastLoginAt || new Date().toISOString()
+        username: user.username,
+        createdAt: user.createdAt
       }
     });
   } catch (error) {

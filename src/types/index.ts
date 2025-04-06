@@ -244,6 +244,7 @@ export interface DailyStats {
 export interface User {
   id: string;
   email: string;
+  username: string;
   passwordHash: string;
   createdAt: string;
   lastLoginAt: string;
@@ -258,6 +259,18 @@ export interface AuthResult {
   success: boolean;
   token?: string;
   error?: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  username: string;
+  wordId: string;
+  word: string;
+  timeTaken: number;
+  guessesUsed: number;
+  fuzzyMatches: number;
+  hintsUsed: number;
+  createdAt: string;
 }
 
 export interface DatabaseClient {
@@ -280,4 +293,32 @@ export interface DatabaseClient {
   authenticateUser(credentials: UserCredentials): Promise<AuthResult>;
   getUserByEmail(email: string): Promise<User | null>;
   updateLastLogin(userId: string): Promise<void>;
+
+  // Leaderboard operations
+  addLeaderboardEntry(entry: Omit<LeaderboardEntry, 'id'>): Promise<LeaderboardEntry>;
+  updateUserStats(username: string): Promise<void>;
+}
+
+// Server-specific types
+export interface ServerConfig {
+  port: number;
+  env: string;
+  dbProvider: string;
+  redisUrl: string;
+  jwtSecret: string;
+}
+
+export interface DatabaseConfig {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+  ssl: boolean;
+}
+
+export interface CacheConfig {
+  url: string;
+  ttl: number;
+  prefix: string;
 } 

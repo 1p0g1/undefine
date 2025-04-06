@@ -5,7 +5,7 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { initializeDatabase } from './config/database.js';
+import { initializeDatabase } from './config/database/index.js';
 import { WordService } from './services/WordService.js';
 import promClient from 'prom-client';
 import { login } from './auth/authController.js';

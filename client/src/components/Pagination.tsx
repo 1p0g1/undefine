@@ -1,5 +1,5 @@
 import React from 'react';
-import { PaginationProps } from '../types';
+import { PaginationProps } from '../types/index.js';
 import './Pagination.css';
 
 /**

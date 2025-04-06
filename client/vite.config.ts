@@ -29,5 +29,14 @@ export default defineConfig({
   },
   preview: {
     strictPort: false
+  },
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    alias: {
+      '@': '/src'
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom']
   }
 })

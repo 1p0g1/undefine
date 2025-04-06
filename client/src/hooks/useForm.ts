@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { FormState, ValidationError } from '../types';
+import { FormState, ValidationError } from '../types/index.js';
 
 interface UseFormProps<T> {
   initialValues: T;

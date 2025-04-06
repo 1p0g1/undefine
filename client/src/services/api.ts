@@ -4,7 +4,7 @@ import {
   WordsResponse,
   ApiResponse,
   FormState
-} from '../types';
+} from '../types/index.js';
 
 /**
  * Base API URL

@@ -56,6 +56,9 @@
   --fuzzy-border: #ff9800;
   --correct-green: #e8f5e9;
   --correct-border: #2e7d32;
+  --hint-revealed-bg: #e3f2fd;
+  --hint-revealed-border: #90caf9;
+  --hint-revealed-text: #1976d2;
 }
 
 body {
@@ -612,6 +615,29 @@ button:disabled {
   margin: 0 0.2rem;
 }
 
+/* Style for hint-revealed boxes */
+.define-box.hint-revealed {
+  background-color: var(--hint-revealed-bg, #e3f2fd);
+  border-color: var(--hint-revealed-border, #90caf9);
+  color: var(--hint-revealed-text, #1976d2);
+  animation: revealHint 0.5s ease-out;
+}
+
+@keyframes revealHint {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* Remove the dots at the bottom of the boxes */
 .define-box::after {
   display: none;
@@ -663,42 +689,6 @@ button:disabled {
   background-color: #fff3e0;
   border-color: #ff9800;
   color: #ff9800;
-}
-
-@keyframes pulseOrange {
-  0% {
-    transform: scale(1);
-    background-color: white;
-  }
-  50% {
-    transform: scale(1.05);
-    background-color: var(--fuzzy-orange);
-  }
-  100% {
-    transform: scale(1);
-    background-color: var(--fuzzy-orange);
-  }
-}
-
-@keyframes shake {
-  0% {
-    transform: translateX(0);
-  }
-  20% {
-    transform: translateX(-5px);
-  }
-  40% {
-    transform: translateX(5px);
-  }
-  60% {
-    transform: translateX(-3px);
-  }
-  80% {
-    transform: translateX(3px);
-  }
-  100% {
-    transform: translateX(0);
-  }
 }
 
 /* Ensure fuzzy styling persists even when correct boxes are shown */
