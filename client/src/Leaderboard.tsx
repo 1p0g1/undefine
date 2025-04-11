@@ -14,30 +14,10 @@ interface LeaderboardEntry {
 }
 
 interface LeaderboardProps {
-  time: number;
-  guessCount: number;
-  fuzzyCount: number;
-  hintCount: number;
-  word: string;
-  guessResults: ('correct' | 'incorrect' | null)[];
-  fuzzyMatchPositions: number[];
-  hints: Record<string, boolean>;
-  onClose: () => void;
-  username: string;
+  gameId: string;
 }
 
-const Leaderboard: React.FC<LeaderboardProps> = ({
-  time,
-  guessCount,
-  fuzzyCount,
-  hintCount,
-  word,
-  guessResults,
-  fuzzyMatchPositions,
-  hints,
-  onClose,
-  username
-}) => {
+const Leaderboard: React.FC<LeaderboardProps> = ({ gameId }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +26,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const response = await fetch(getApiUrl('/api/leaderboard'));
+        const response = await fetch(getApiUrl(`/api/leaderboard/${gameId}`));
         if (!response.ok) {
           throw new Error('Failed to fetch leaderboard');
         }
@@ -59,8 +39,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       }
     };
 
-    fetchLeaderboard();
-  }, []);
+    if (gameId) {
+      fetchLeaderboard();
+    }
+  }, [gameId]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -80,7 +62,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     <div className="leaderboard-container">
       <div className="leaderboard-header">
         <h2>Today's Leaderboard</h2>
-        <button onClick={onClose} className="close-button">×</button>
       </div>
 
       <div className="leaderboard-stats">
@@ -116,7 +97,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           </thead>
           <tbody>
             {entries.map((entry, index) => (
-              <tr key={index} className={entry.username === username ? 'current-user' : ''}>
+              <tr key={index} className={entry.username === gameState.nickname ? 'current-user' : ''}>
                 <td>{index + 1}</td>
                 <td>{entry.username}</td>
                 <td>{formatTime(entry.time)}</td>

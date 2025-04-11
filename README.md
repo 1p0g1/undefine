@@ -72,6 +72,56 @@ This will start both the backend server and the frontend development server.
    - Guess the word correctly, OR
    - Use all 6 guesses
 
+## Styling
+
+The game uses a carefully selected typography and visual design system:
+
+### Typography
+- Primary Font: **Libre Baskerville** (Google Fonts)
+  - A classic serif font with excellent readability
+  - Used for all main text, headings, and UI elements
+  - Weights: 400, 700 (normal and italic variants)
+  - CSS Variable: `--font-primary`
+
+- Monospace Font: **Special Elite** (Google Fonts)
+  - Used for special text elements
+  - CSS Variable: `--font-monospace`
+
+### Color Palette
+- Primary Colors:
+  - Primary Blue: `#1a237e` - Used for main UI elements and headings
+  - Game Over Red: `#dc2626` - Used for game over states and revealed letters
+  - Paper Background: `#faf7f2` - Subtle off-white for the main container
+
+### Visual Elements
+- Letter Boxes:
+  - Size: 3.5rem × 3.5rem
+  - Red border and light red background for revealed state
+  - Large serif letters (Libre Baskerville) for an elegant look
+
+- Input Field:
+  - Clean, borderless design with only bottom border
+  - Centered text with italic placeholder
+  - Larger font size (1.4rem) for better visibility
+
+- Timer:
+  - Large, elegant display (2rem)
+  - Uses tabular numbers for stable display
+  - Minimal styling without decorative elements
+
+To modify the design:
+1. Update the Google Fonts import in `client/src/App.css`
+2. Modify the CSS variables in `:root`:
+```css
+:root {
+  --font-primary: 'Libre Baskerville', serif;
+  --font-monospace: 'Special Elite', monospace;
+  --primary-blue: #1a237e;
+  --game-over-red: #dc2626;
+  /* ... other variables ... */
+}
+```
+
 ## License
 
 [MIT](LICENSE)

@@ -10,7 +10,8 @@ import {
   AuthResult,
   StreakLeader,
   GameSession,
-  ClueStatus
+  ClueStatus,
+  GuessResult
 } from './types.js';
 
 /**
@@ -22,22 +23,18 @@ export class MockClient implements DatabaseClient {
   private words: Word[] = [
     {
       wordId: '1',
-      word: 'undefine',
-      definition: 'The act of removing a definition or making something undefined',
-      etymology: 'From un- + define',
-      firstLetter: 'u',
-      exampleSentence: 'The programmer tried to undefine the variable.',
-      numLetters: 8,
-      synonyms: ['remove definition', 'make undefined'],
+      word: 'disseminate',
+      definition: 'To spread or disperse something, especially information, widely.',
+      etymology: 'From Latin disseminare meaning to scatter.',
+      first_letter: 'd',
+      in_a_sentence: 'The internet allows users to disseminate ideas instantly.',
+      number_of_letters: 11,
+      equivalents: 'spread, distribute, circulate',
       difficulty: 'medium',
       timesUsed: 0,
       lastUsedAt: null,
       partOfSpeech: 'verb',
       dateAdded: '2024-03-20',
-      letterCount: {
-        count: 8,
-        display: '8 letters'
-      },
       createdAt: '2024-03-20T00:00:00Z',
       updatedAt: '2024-03-20T00:00:00Z'
     },
@@ -360,25 +357,72 @@ export class MockClient implements DatabaseClient {
     gameId: string,
     guess: string,
     session: GameSession
-  ): Promise<{ isCorrect: boolean; gameOver: boolean; updatedSession: GameSession }> {
+  ): Promise<GuessResult> {
+    // Case-insensitive comparison
     const isCorrect = guess.toLowerCase() === session.word.toLowerCase();
-    session.guesses.push(guess);
-    session.guesses_used += 1;
+    const gameOver = isCorrect || session.guesses.length >= 5;
     
-    if (isCorrect) {
-      session.is_complete = true;
-      session.is_won = true;
-    } else if (session.guesses_used >= 6) {
-      session.is_complete = true;
-    }
+    // Update session with proper state
+    const updatedSession = {
+      ...session,
+      guesses: [...session.guesses, guess],
+      guesses_used: session.guesses.length + 1,
+      is_complete: gameOver,
+      is_won: isCorrect,
+      end_time: gameOver ? new Date().toISOString() : undefined,
+      // Update clue status
+      clue_status: {
+        ...session.clue_status,
+        [String.fromCharCode(68 + session.guesses.length)]: isCorrect ? 'green' : 'red'
+      }
+    };
+    
+    this.gameSessions[gameId] = updatedSession;
 
-    this.gameSessions[gameId] = session;
-    
+    // Calculate fuzzy match
+    const isFuzzy = !isCorrect && this.calculateFuzzyMatch(guess, session.word);
+    const fuzzyPositions = isFuzzy ? this.getFuzzyPositions(guess, session.word) : [];
+
     return {
       isCorrect,
-      gameOver: session.is_complete,
-      updatedSession: session
+      correctWord: session.word,
+      guessedWord: guess,
+      isFuzzy,
+      fuzzyPositions,
+      gameOver,
+      updatedSession,
+      leaderboardRank: isCorrect ? 1 : null
     };
+  }
+
+  private calculateFuzzyMatch(guess: string, word: string): boolean {
+    // Simple fuzzy match: allow one character difference
+    if (Math.abs(guess.length - word.length) > 1) return false;
+    
+    let differences = 0;
+    const maxLength = Math.max(guess.length, word.length);
+    
+    for (let i = 0; i < maxLength; i++) {
+      if (guess[i]?.toLowerCase() !== word[i]?.toLowerCase()) {
+        differences++;
+        if (differences > 1) return false;
+      }
+    }
+    
+    return differences === 1;
+  }
+
+  private getFuzzyPositions(guess: string, word: string): number[] {
+    const positions: number[] = [];
+    const maxLength = Math.max(guess.length, word.length);
+    
+    for (let i = 0; i < maxLength; i++) {
+      if (guess[i]?.toLowerCase() !== word[i]?.toLowerCase()) {
+        positions.push(i);
+      }
+    }
+    
+    return positions;
   }
 
   async getGameSession(gameId: string): Promise<GameSession | null> {

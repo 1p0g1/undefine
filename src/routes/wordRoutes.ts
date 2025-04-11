@@ -49,8 +49,12 @@ router.post('/guess', async (req, res) => {
     
     const result = await db.processGuess(gameId, guess, session);
     res.json({
-      correct: result.isCorrect,
-      gameState: result.updatedSession
+      isCorrect: result.isCorrect,
+      correctWord: result.correctWord,
+      guessedWord: guess,
+      isFuzzy: result.isFuzzy || false,
+      fuzzyPositions: result.fuzzyPositions || [],
+      leaderboardRank: result.leaderboardRank
     });
   } catch (error) {
     console.error('Error processing guess:', error);

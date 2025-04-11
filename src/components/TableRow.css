@@ -44,12 +44,14 @@
   display: block;
   margin-bottom: 0.25rem;
   color: #333;
+  font-family: 'Libre Baskerville', serif;
 }
 
 .word-cell .secondary-text {
   font-size: 0.8rem;
   color: #666;
   font-style: italic;
+  font-family: 'Libre Baskerville', serif;
 }
 
 .definition-cell {

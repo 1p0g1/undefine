@@ -47,6 +47,17 @@ export interface GameSession {
   is_won: boolean;
 }
 
+export interface GuessResult {
+  isCorrect: boolean;
+  correctWord: string;
+  guessedWord: string;
+  isFuzzy: boolean;
+  fuzzyPositions?: number[];
+  leaderboardRank?: number;
+  gameOver: boolean;
+  updatedSession: GameSession;
+}
+
 export interface DatabaseClient {
   // Connection methods
   connect(): Promise<void>;

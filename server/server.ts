@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { SupabaseClient } from './services/SupabaseClient.js';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -32,6 +33,31 @@ app.get('/api/word', async (req, res) => {
       return;
     }
     res.json({ word });
+  } catch (error) {
+    console.error('Error fetching word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get random word endpoint (alias for daily word)
+app.get('/api/word/random', async (req, res) => {
+  try {
+    const session = await db.startGame();
+    if (!session) {
+      res.status(404).json({ error: 'Failed to create game session' });
+      return;
+    }
+    
+    const word = await db.getDailyWord();
+    if (!word) {
+      res.status(404).json({ error: 'No word found for today' });
+      return;
+    }
+    
+    res.json({ 
+      word,
+      gameId: session.id
+    });
   } catch (error) {
     console.error('Error fetching word:', error);
     res.status(500).json({ error: 'Internal server error' });
