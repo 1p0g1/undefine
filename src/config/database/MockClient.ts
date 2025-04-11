@@ -8,7 +8,9 @@ import {
   User,
   UserCredentials,
   AuthResult,
-  StreakLeader
+  StreakLeader,
+  GameSession,
+  ClueStatus
 } from './types.js';
 
 /**
@@ -119,6 +121,8 @@ export class MockClient implements DatabaseClient {
     averageGuesses: 4.5,
     averageTime: 120
   };
+
+  private gameSessions: Record<string, GameSession> = {};
 
   // Connection methods
   async connect(): Promise<void> {
@@ -322,5 +326,67 @@ export class MockClient implements DatabaseClient {
     }
     // In a real implementation, this would update the user's last login time
     // For mock purposes, we'll just return void
+  }
+
+  async startGame(): Promise<GameSession> {
+    const word = await this.getDailyWord();
+    const gameId = Math.random().toString(36).substring(2, 15);
+    
+    const session: GameSession = {
+      id: gameId,
+      word_id: word.wordId,
+      word: word.word,
+      start_time: new Date().toISOString(),
+      guesses: [],
+      guesses_used: 0,
+      revealed_clues: ['D'],
+      clue_status: {
+        D: 'neutral',
+        E: 'grey',
+        F: 'grey',
+        I: 'grey',
+        N: 'grey',
+        E2: 'grey'
+      },
+      is_complete: false,
+      is_won: false
+    };
+
+    this.gameSessions[gameId] = session;
+    return session;
+  }
+
+  async processGuess(
+    gameId: string,
+    guess: string,
+    session: GameSession
+  ): Promise<{ isCorrect: boolean; gameOver: boolean; updatedSession: GameSession }> {
+    const isCorrect = guess.toLowerCase() === session.word.toLowerCase();
+    session.guesses.push(guess);
+    session.guesses_used += 1;
+    
+    if (isCorrect) {
+      session.is_complete = true;
+      session.is_won = true;
+    } else if (session.guesses_used >= 6) {
+      session.is_complete = true;
+    }
+
+    this.gameSessions[gameId] = session;
+    
+    return {
+      isCorrect,
+      gameOver: session.is_complete,
+      updatedSession: session
+    };
+  }
+
+  async getGameSession(gameId: string): Promise<GameSession | null> {
+    return this.gameSessions[gameId] || null;
+  }
+
+  async checkGuess(wordId: string, guess: string): Promise<boolean> {
+    const word = await this.getWord(wordId);
+    return word ? word.word.toLowerCase() === guess.toLowerCase() : false;
   }
 } 

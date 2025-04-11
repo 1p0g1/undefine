@@ -52,11 +52,30 @@ export class SupabaseClient implements DatabaseClient {
   async getDailyWord(date?: string): Promise<DbWord | null> {
     try {
       console.log('Attempting to get a random word from Supabase...');
-      // Get a random word using ORDER BY RANDOM()
+      
+      // First, get the total count of words
+      const { count, error: countError } = await this.client
+        .from('words')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('Error getting word count:', countError);
+        return null;
+      }
+
+      if (!count) {
+        console.log('No words found in database');
+        return null;
+      }
+
+      // Get a random offset
+      const offset = Math.floor(Math.random() * count);
+
+      // Get the word at that offset
       const { data, error } = await this.client
         .from('words')
         .select('id, word, definition, etymology, first_letter, in_a_sentence, number_of_letters, equivalents, difficulty')
-        .order('RANDOM()')
+        .range(offset, offset)
         .limit(1)
         .single();
 
@@ -288,5 +307,93 @@ export class SupabaseClient implements DatabaseClient {
 
     if (error) throw error;
     return data as User;
+  }
+
+  async getNextHint(session: GameSession): Promise<{ hint: string; type: ClueType }> {
+    const word = await this.client
+      .from('words')
+      .select('*')
+      .eq('id', session.word_id)
+      .single();
+
+    if (!word.data) throw new Error('Word not found');
+
+    const hintOrder: ClueType[] = ['D', 'E', 'F', 'I', 'N', 'E2'];
+    const nextHintType = hintOrder.find(type => !session.revealed_clues.includes(type));
+
+    if (!nextHintType) {
+      throw new Error('All hints have been revealed');
+    }
+
+    let hint: string;
+    switch (nextHintType) {
+      case 'D': hint = word.data.definition; break;
+      case 'E': hint = word.data.etymology; break;
+      case 'F': hint = word.data.first_letter; break;
+      case 'I': hint = word.data.in_a_sentence; break;
+      case 'N': hint = word.data.number_of_letters.toString(); break;
+      case 'E2': hint = word.data.equivalents; break;
+      default: throw new Error('Invalid hint type');
+    }
+
+    // Update session with new revealed clue
+    await this.client
+      .from('game_sessions')
+      .update({
+        revealed_clues: [...session.revealed_clues, nextHintType]
+      })
+      .eq('id', session.id);
+
+    return { hint, type: nextHintType };
+  }
+
+  async submitScore(score: {
+    playerId: string;
+    word: string;
+    guessesUsed: number;
+    usedHint: boolean;
+    completionTime: number;
+    nickname?: string;
+  }): Promise<void> {
+    const { data: existingStats } = await this.client
+      .from('user_stats')
+      .select('*')
+      .eq('player_id', score.playerId)
+      .single();
+
+    // Insert score
+    await this.client
+      .from('scores')
+      .insert({
+        player_id: score.playerId,
+        nickname: score.nickname,
+        word: score.word,
+        guesses_used: score.guessesUsed,
+        used_hint: score.usedHint,
+        completion_time_seconds: score.completionTime
+      });
+
+    // Update user stats
+    const { data: scores } = await this.client
+      .from('scores')
+      .select('*')
+      .eq('player_id', score.playerId)
+      .order('completion_time_seconds', { ascending: true })
+      .limit(1);
+
+    const bestTime = scores?.[0]?.completion_time_seconds;
+
+    await this.client
+      .from('user_stats')
+      .upsert({
+        player_id: score.playerId,
+        best_rank: existingStats?.best_rank || null,
+        current_streak: (existingStats?.current_streak || 0) + 1,
+        longest_streak: Math.max((existingStats?.longest_streak || 0), (existingStats?.current_streak || 0) + 1),
+        average_completion_time: existingStats 
+          ? ((existingStats.average_completion_time * (existingStats.current_streak || 0)) + score.completionTime) / ((existingStats.current_streak || 0) + 1)
+          : score.completionTime,
+        last_played_word: score.word
+      });
   }
 } 

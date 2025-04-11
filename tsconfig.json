@@ -14,18 +14,8 @@
     "rootDir": "src",
     "baseUrl": ".",
     "paths": {
-      "*": ["src/*"]
+      "@/*": ["src/*"]
     },
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@reversedefine/shared-types": ["packages/shared-types/src"]
-    },
-    "resolveJsonModule": true,
     "checkJs": true,
     "sourceMap": true,
     "declaration": true,
@@ -51,9 +41,6 @@
     "esm": true,
     "experimentalSpecifierResolution": "node"
   },
-  "references": [
-    { "path": "./packages/shared-types" }
-  ],
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "client", "packages"]
+  "exclude": ["node_modules", "dist", "client"]
 } 

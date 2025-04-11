@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import wordRoutes from './routes/wordRoutes.js';
-import { db } from './config/database/db.ts';
+import { db } from './config/database/db.js';
 
 // Load environment variables
 dotenv.config();

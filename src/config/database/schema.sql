@@ -4,34 +4,62 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Words table
 CREATE TABLE IF NOT EXISTS words (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  word VARCHAR(255) NOT NULL,
+  word TEXT NOT NULL,
   definition TEXT NOT NULL,
   etymology TEXT,
-  first_letter CHAR(1),
+  first_letter TEXT,
   in_a_sentence TEXT,
   number_of_letters INTEGER,
   equivalents TEXT,
-  difficulty VARCHAR(50),
-  date DATE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  difficulty TEXT
 );
 
 -- Game sessions table
 CREATE TABLE IF NOT EXISTS game_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   word_id UUID REFERENCES words(id),
-  word VARCHAR(255) NOT NULL,
-  start_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  end_time TIMESTAMP WITH TIME ZONE,
-  guesses TEXT[] DEFAULT ARRAY[]::TEXT[],
-  guesses_used INTEGER DEFAULT 0,
-  revealed_clues TEXT[] DEFAULT ARRAY['D']::TEXT[],
-  clue_status JSONB NOT NULL,
-  is_complete BOOLEAN DEFAULT FALSE,
-  is_won BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  guesses TEXT[],
+  revealed_clues TEXT[],
+  clue_status JSONB,
+  is_complete BOOLEAN,
+  is_won BOOLEAN,
+  start_time TIMESTAMP,
+  end_time TIMESTAMP
+);
+
+-- Scores table
+CREATE TABLE IF NOT EXISTS scores (
+  id UUID PRIMARY KEY,
+  player_id TEXT NOT NULL,
+  nickname TEXT,
+  word TEXT NOT NULL,
+  guesses_used INTEGER,
+  used_hint BOOLEAN,
+  completion_time_seconds INTEGER,
+  submitted_at TIMESTAMP DEFAULT now()
+);
+
+-- Leaderboard summary table
+CREATE TABLE IF NOT EXISTS leaderboard_summary (
+  id UUID PRIMARY KEY,
+  player_id TEXT NOT NULL,
+  word TEXT NOT NULL,
+  rank INTEGER,
+  was_top_10 BOOLEAN,
+  best_time INTEGER,
+  guesses_used INTEGER,
+  date DATE DEFAULT current_date
+);
+
+-- User stats table
+CREATE TABLE IF NOT EXISTS user_stats (
+  player_id TEXT PRIMARY KEY,
+  top_10_count INTEGER DEFAULT 0,
+  best_rank INTEGER,
+  longest_streak INTEGER,
+  current_streak INTEGER,
+  average_completion_time FLOAT,
+  last_played_word TEXT
 );
 
 -- Users table
@@ -41,19 +69,6 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_login_at TIMESTAMP
-);
-
--- User stats table
-CREATE TABLE IF NOT EXISTS user_stats (
-  user_email VARCHAR(255) PRIMARY KEY,
-  games_played INTEGER DEFAULT 0,
-  games_won INTEGER DEFAULT 0,
-  current_streak INTEGER DEFAULT 0,
-  longest_streak INTEGER DEFAULT 0,
-  average_time INTEGER DEFAULT 0,
-  average_guesses FLOAT DEFAULT 0,
-  last_played_at TIMESTAMP WITH TIME ZONE,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Leaderboard table
@@ -86,9 +101,13 @@ CREATE TABLE IF NOT EXISTS error_logs (
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_words_word ON words(word);
+CREATE INDEX IF NOT EXISTS idx_scores_player_id ON scores(player_id);
+CREATE INDEX IF NOT EXISTS idx_scores_submitted_at ON scores(submitted_at);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_summary_date ON leaderboard_summary(date);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_summary_player_id ON leaderboard_summary(player_id);
+CREATE INDEX IF NOT EXISTS idx_user_stats_streaks ON user_stats(current_streak DESC, longest_streak DESC);
 CREATE INDEX IF NOT EXISTS idx_leaderboard_created_at ON leaderboard(created_at);
 CREATE INDEX IF NOT EXISTS idx_leaderboard_user_email ON leaderboard(user_email);
-CREATE INDEX IF NOT EXISTS idx_user_stats_streak ON user_stats(current_streak DESC, longest_streak DESC);
 CREATE INDEX IF NOT EXISTS idx_error_logs_created_at ON error_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_error_logs_error_type ON error_logs(error_type);
 
@@ -106,8 +125,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Insert some sample words
-INSERT INTO words (word, definition, etymology, first_letter, in_a_sentence, number_of_letters, equivalents, difficulty, date)
+-- Insert sample words
+INSERT INTO words (word, definition, etymology, first_letter, in_a_sentence, number_of_letters, equivalents, difficulty)
 VALUES 
   (
     'example',
@@ -117,8 +136,7 @@ VALUES
     'This is an example sentence.',
     7,
     'sample, instance, illustration',
-    'easy',
-    CURRENT_DATE
+    'easy'
   ),
   (
     'define',
@@ -128,8 +146,7 @@ VALUES
     'Can you define what this word means?',
     6,
     'explain, specify, establish',
-    'medium',
-    CURRENT_DATE + INTERVAL '1 day'
+    'medium'
   ),
   (
     'reverse',
@@ -139,7 +156,6 @@ VALUES
     'The car began to reverse out of the driveway.',
     7,
     'invert, flip, switch',
-    'medium',
-    CURRENT_DATE + INTERVAL '2 days'
+    'medium'
   )
 ON CONFLICT (id) DO NOTHING; 

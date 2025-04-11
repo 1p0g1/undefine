@@ -1541,3 +1541,164 @@ button:disabled {
   }
 }
 
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.timer {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.game-header {
+  margin-bottom: 2rem;
+}
+
+.define-boxes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.un-prefix {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.central-dot {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0 0.2rem;
+}
+
+.define-box {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background: #f5f5f5;
+  transition: all 0.3s ease;
+}
+
+.define-box.correct {
+  background: #4CAF50;
+  color: white;
+  border-color: #45a049;
+}
+
+.define-box.incorrect {
+  background: #f44336;
+  color: white;
+  border-color: #da190b;
+}
+
+.define-box.hint-revealed {
+  background: #2196F3;
+  color: white;
+  border-color: #1976D2;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.game-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.guess-form {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.guess-form input {
+  flex: 1;
+  padding: 0.8rem;
+  font-size: 1.1rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+.guess-form input:focus {
+  border-color: #2196F3;
+}
+
+.guess-form button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.guess-form button:hover:not(:disabled) {
+  background: #1976D2;
+}
+
+.guess-form button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.message {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #f5f5f5;
+  color: #333;
+}
+
+.hint-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.hint-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+.hint-type {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #333;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.hint-text {
+  flex: 1;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #444;
+}
+

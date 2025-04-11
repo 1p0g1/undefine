@@ -13,7 +13,7 @@
     "dev:client": "cd client && npm run dev",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "debug:dev": "NODE_ENV=development PORT=3001 DB_PROVIDER=supabase DEBUG=1 concurrently \"npm run dev:server\" \"cd client && BACKEND_URL=http://localhost:3001 npm run dev\"",
-    "simple:dev": "NODE_ENV=development PORT=3001 node --loader ts-node/esm src/simple-server.ts",
+    "simple:dev": "NODE_ENV=development PORT=3001 tsx watch src/simple-server.ts",
     "test:api": "ts-node src/tests/api-test.ts"
   },
   "ts-node": {
