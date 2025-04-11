@@ -1,17 +1,18 @@
 // Database-specific types
 export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
-export type ClueStatus = Record<ClueType, 'grey' | 'red' | 'green' | 'neutral'>;
+export type ClueStatus = Record<ClueType, 'neutral' | 'grey' | 'red' | 'green'>;
 
 export interface DbWord {
   id: string;
   word: string;
   definition: string;      // D: First hint (shown at start)
-  etymology: string | null;      // E: Second hint
-  first_letter: string | null;   // F: Third hint
-  in_a_sentence: string | null;  // I: Fourth hint
-  number_of_letters: number | null; // N: Fifth hint
-  equivalents: string | null;    // E2: Sixth hint
-  difficulty: string | null;     // Optional difficulty rating
+  etymology: string;       // E: Second hint
+  first_letter: string;    // F: Third hint
+  in_a_sentence: string;   // I: Fourth hint
+  number_of_letters: number; // N: Fifth hint
+  equivalents: string;     // E: Sixth hint
+  difficulty: string;
+  date?: string;          // The date this word is scheduled for
 }
 
 export interface User {
@@ -67,5 +68,4 @@ export interface DatabaseClient {
     updatedSession: GameSession;
   }>;
   getGameSession(gameId: string): Promise<GameSession | null>;
-  checkGuess(wordId: string, guess: string): Promise<boolean>;
 } 

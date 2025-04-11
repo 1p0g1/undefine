@@ -1,0 +1,16 @@
+-- Game sessions table
+CREATE TABLE IF NOT EXISTS game_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  word_id UUID REFERENCES words(id),
+  word VARCHAR(255) NOT NULL,
+  start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_time TIMESTAMP WITH TIME ZONE,
+  guesses TEXT[] DEFAULT ARRAY[]::TEXT[],
+  guesses_used INTEGER DEFAULT 0,
+  revealed_clues TEXT[] DEFAULT ARRAY['D']::TEXT[],
+  clue_status JSONB NOT NULL,
+  is_complete BOOLEAN DEFAULT FALSE,
+  is_won BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+); 

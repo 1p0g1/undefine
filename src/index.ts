@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 // Load environment variables before any other imports
-dotenv.config();
+dotenv.config({ path: '.env.development' });
 
 import express from 'express';
 import cors from 'cors';
@@ -14,6 +14,7 @@ import { GameService } from './services/GameService.js';
 import { StatsService } from './services/StatsService.js';
 import { authenticateUser } from './auth/authMiddleware.js';
 import { AuthRequest } from './auth/authTypes.js';
+import { SupabaseClient } from './config/database/SupabaseClient.js';
 
 // Environment variable validation
 function validateEnvironmentVariables(): void {
@@ -61,10 +62,7 @@ console.log('Starting server initialization...');
 validateEnvironmentVariables();
 
 const app = express();
-const port = process.env.PORT;
-if (!port) {
-  throw new Error('Missing PORT environment variable. Please check your .env file.');
-}
+const port = process.env.PORT || 3001;
 
 // Prometheus metrics
 const collectDefaultMetrics = promClient.collectDefaultMetrics;
@@ -143,155 +141,58 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// API test endpoint that doesn't require authentication
+// Initialize Supabase client
+const db = SupabaseClient.getInstance();
+
+// Test endpoint
 app.get('/api/test', (req, res) => {
-  console.log('[/api/test] Received test request');
-  res.json({ 
-    status: 'ok',
-    environment: process.env.NODE_ENV,
-    message: 'API is accessible',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ message: 'Backend server is running!' });
 });
 
-// In-memory game state storage
-interface GameState {
-  word: {
-    wordId: string;
-    word: string;
-    definition: string;
-    partOfSpeech: string;
-  };
-  startTime: Date;
-  guessCount: number;
-  fuzzyCount: number;
-  hintCount: number;
-}
-
-const activeGames = new Map<string, GameState>();
-
-// Get a random word and its definition
-app.get('/api/word', authenticateUser, async (req: AuthRequest, res) => {
+// Get word endpoint
+app.get('/api/word', async (req, res) => {
   try {
-    console.log('[/api/word] Starting request for user:', req.user?.email);
-    
-    // Use the new getTodayWord method which marks the word as used automatically
-    const word = await GameService.getTodayWord();
-    
-    // Create a game with this word
-    const gameResponse = await GameService.startGame(req.user!.email);
-    
-    console.log('[/api/word] Successfully created game:', {
-      gameId: gameResponse.gameId,
-      wordDefinition: gameResponse.word.definition.substring(0, 30) + '...'
+    const dailyWord = await db.getDailyWord();
+    if (!dailyWord) {
+      return res.status(404).json({ error: 'No word available for today' });
+    }
+    res.json({
+      gameId: 'game-' + Date.now(),
+      word: {
+        id: dailyWord.id,
+        definition: dailyWord.definition,
+        partOfSpeech: 'verb',
+        etymology: dailyWord.etymology,
+        firstLetter: dailyWord.first_letter,
+        inASentence: dailyWord.in_a_sentence,
+        numberOfLetters: dailyWord.number_of_letters,
+        equivalents: dailyWord.equivalents
+      }
     });
-    
-    res.json(gameResponse);
   } catch (error) {
-    console.error('[/api/word] Error details:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      user: req.user?.email
-    });
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error fetching word:', error);
+    res.status(500).json({ error: 'Failed to fetch word' });
   }
 });
 
-// Define the leaderboard entry interface
-interface LeaderboardEntry {
-  id: string;
-  time: number;
-  guessCount: number;
-  fuzzyCount: number;
-  hintCount?: number;
-  date: string;
-  word: string;
-  name?: string;
-}
-
-// In-memory leaderboard storage
-let leaderboard: LeaderboardEntry[] = [];
-
-// Function to generate dummy leaderboard data
-function generateDummyLeaderboardData(word: string, count: number = 20): LeaderboardEntry[] {
-  const dummyNames = [
-    'SpeedyGuesser', 'WordWizard', 'LexiconMaster', 'QuickThinker', 
-    'BrainiacPlayer', 'WordNinja', 'VocabVirtuoso', 'MindReader',
-    'ThesaurusRex', 'DictionaryDiva', 'WordSmith', 'LinguistPro',
-    'GuessingGuru', 'DefineDevil', 'SyntaxSage', 'EtymologyExpert',
-    'PuzzlePro', 'VerbalVirtuoso', 'WordWanderer', 'LexicalLegend'
-  ];
-  
-  const dummyEntries: LeaderboardEntry[] = [];
-  
-  for (let i = 0; i < count; i++) {
-    const time = 20 + Math.floor(Math.random() * 120);
-    const guessCount = 1 + Math.floor(Math.random() * 6);
-    const fuzzyCount = Math.floor(Math.random() * 3);
-    const hintCount = Math.floor(Math.random() * 4);
-    
-    dummyEntries.push({
-      id: `dummy-${i}-${Date.now()}`,
-      time,
-      guessCount,
-      fuzzyCount,
-      hintCount,
-      date: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(),
-      word,
-      name: dummyNames[i % dummyNames.length]
-    });
-  }
-  
-  return dummyEntries.sort((a, b) => {
-    if (a.time !== b.time) return a.time - b.time;
-    if (a.guessCount !== b.guessCount) return a.guessCount - b.guessCount;
-    return b.fuzzyCount - a.fuzzyCount;
-  });
-}
-
-// Check if a guess is correct
-app.post('/api/guess', authenticateUser, async (req: AuthRequest, res) => {
+// Submit guess endpoint
+app.post('/api/guess', async (req, res) => {
   try {
-    const { guess, gameId } = req.body;
-    
-    console.log('[/api/guess] Processing guess:', {
-      gameId: gameId,
-      guess: guess,
-      user: req.user?.email
-    });
-    
-    if (!gameId) {
-      console.error('[/api/guess] Missing gameId in request');
-      return res.status(400).json({ error: 'Missing gameId parameter' });
+    const { gameId, guess } = req.body;
+    if (!gameId || !guess) {
+      return res.status(400).json({ error: 'Missing gameId or guess' });
     }
-    
-    if (!guess) {
-      console.error('[/api/guess] Missing guess in request');
-      return res.status(400).json({ error: 'Missing guess parameter' });
+
+    const session = await db.getGameSession(gameId);
+    if (!session) {
+      return res.status(404).json({ error: 'Game session not found' });
     }
-    
-    const result = await GameService.processGuess(gameId, guess);
-    
-    console.log('[/api/guess] Processed guess result:', {
-      gameId: gameId,
-      guess: guess,
-      isCorrect: result.isCorrect,
-      isFuzzy: result.isFuzzy
-    });
-    
+
+    const result = await db.processGuess(gameId, guess, session);
     res.json(result);
-  } catch (error: unknown) {
-    console.error('[/api/guess] Error details:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      body: req.body
-    });
-    
-    if (error instanceof Error && error.message === 'Game not found') {
-      return res.status(404).json({ error: 'Game not found' });
-    }
-    
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (error) {
+    console.error('Error processing guess:', error);
+    res.status(500).json({ error: 'Failed to process guess' });
   }
 });
 

@@ -1,10 +1,8 @@
-import { PostgresClient } from './PostgresClient.js';
-import type { DatabaseClient } from './types.js';
+import { SupabaseClient } from './SupabaseClient.ts';
+import type { DatabaseClient } from './types.ts';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize the database client based on environment
-const db: DatabaseClient = new PostgresClient();
-
-export { db }; 
+// Export the singleton instance
+export const db = SupabaseClient.getInstance(); 

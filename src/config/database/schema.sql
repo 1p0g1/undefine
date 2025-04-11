@@ -3,17 +3,33 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Words table
 CREATE TABLE IF NOT EXISTS words (
-  word_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   word VARCHAR(255) NOT NULL,
   definition TEXT NOT NULL,
-  part_of_speech VARCHAR(50) NOT NULL,
   etymology TEXT,
   first_letter CHAR(1),
-  is_plural BOOLEAN,
-  num_syllables INTEGER,
-  example_sentence TEXT,
-  times_used INTEGER DEFAULT 0,
-  last_used_at TIMESTAMP WITH TIME ZONE,
+  in_a_sentence TEXT,
+  number_of_letters INTEGER,
+  equivalents TEXT,
+  difficulty VARCHAR(50),
+  date DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Game sessions table
+CREATE TABLE IF NOT EXISTS game_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  word_id UUID REFERENCES words(id),
+  word VARCHAR(255) NOT NULL,
+  start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_time TIMESTAMP WITH TIME ZONE,
+  guesses TEXT[] DEFAULT ARRAY[]::TEXT[],
+  guesses_used INTEGER DEFAULT 0,
+  revealed_clues TEXT[] DEFAULT ARRAY['D']::TEXT[],
+  clue_status JSONB NOT NULL,
+  is_complete BOOLEAN DEFAULT FALSE,
+  is_won BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -44,7 +60,7 @@ CREATE TABLE IF NOT EXISTS user_stats (
 CREATE TABLE IF NOT EXISTS leaderboard (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_email VARCHAR(255) NOT NULL,
-  word_id UUID REFERENCES words(word_id),
+  word_id UUID REFERENCES words(id),
   word VARCHAR(255) NOT NULL,
   time_taken INTEGER NOT NULL,
   guesses_used INTEGER NOT NULL,
@@ -90,37 +106,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Sample word data
-INSERT INTO words (word, definition, etymology, first_letter, example_sentence, num_letters, synonyms, difficulty)
+-- Insert some sample words
+INSERT INTO words (word, definition, etymology, first_letter, in_a_sentence, number_of_letters, equivalents, difficulty, date)
 VALUES 
   (
-    'example', 
+    'example',
     'A representative form or pattern',
-    'From Latin exemplum, from eximere "take out, remove"',
+    'From Latin exemplum "sample, pattern"',
     'e',
     'This is an example sentence.',
     7,
-    ARRAY['instance', 'sample', 'illustration', 'case'],
-    'Medium'
+    'sample, instance, illustration',
+    'easy',
+    CURRENT_DATE
   ),
   (
-    'define', 
+    'define',
     'State or describe exactly the nature, scope, or meaning of',
-    'From Latin definire, from de- "completely" + finire "to bound, limit"',
+    'From Latin definire "to limit, determine"',
     'd',
     'Can you define what this word means?',
     6,
-    ARRAY['explain', 'specify', 'establish', 'determine'],
-    'Easy'
+    'explain, specify, establish',
+    'medium',
+    CURRENT_DATE + INTERVAL '1 day'
   ),
   (
-    'reverse', 
+    'reverse',
     'Move backward in direction or position; change to the opposite',
-    'From Latin reversus, past participle of revertere "turn back"',
+    'From Latin reversus "turn back"',
     'r',
     'The car began to reverse out of the driveway.',
     7,
-    ARRAY['invert', 'flip', 'switch', 'transpose'],
-    'Medium'
+    'invert, flip, switch',
+    'medium',
+    CURRENT_DATE + INTERVAL '2 days'
   )
-ON CONFLICT DO NOTHING; 
+ON CONFLICT (id) DO NOTHING; 

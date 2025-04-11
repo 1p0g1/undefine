@@ -74,4 +74,4 @@ export interface PaginationInfo {
   limit: number;
   pages: number;
   next?: { page: number; limit: number };
- 
+} 
