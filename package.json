@@ -21,7 +21,8 @@
     "test:api": "ts-node src/tests/api-test.ts",
     "lint": "eslint .",
     "test": "jest",
-    "prepare": "husky install"
+    "fix:imports": "node fix-imports.js",
+    "fix:tests": "node fix-test-files.js"
   },
   "ts-node": {
     "esm": true,
