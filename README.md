@@ -2,6 +2,26 @@
 
 A word-guessing game where players try to guess a word based on its definition and progressive hints.
 
+## 📚 Documentation
+
+- [Project Architecture](docs/ARCHITECTURE.md) - Technical overview and design decisions
+- [Project Tracker](docs/Undefine_Project_Tracker.md) - Development progress and task tracking
+- [Release Notes](docs/RELEASE_NOTES.md) - Version history and changes
+- [Testing Guide](docs/TESTING.md) - Testing procedures and guidelines
+- [Testing Checklist](docs/TESTING_CHECKLIST.md) - Pre-release testing checklist
+- [Smoke Test Checklist](docs/SMOKE_TEST_CHECKLIST.md) - Quick validation tests
+- [Import Guide](docs/IMPORT_GUIDE.md) - Guide for importing new words
+
+## 🛠️ Utility Scripts
+
+The project includes several utility scripts in the `scripts/` directory:
+
+- `scripts/apply-migrations.sh` - Applies Supabase database migrations
+- `scripts/test-db-client.ts` - Tests the Supabase client connection and tables
+- `manage_words.sh` - Script for managing the word database
+- `setup-testing-mode.sh` - Sets up the testing environment
+- `dev.sh` - Development server startup script
+
 ## Project Structure
 
 This is a TypeScript monorepo with:
@@ -9,6 +29,75 @@ This is a TypeScript monorepo with:
 - **Frontend**: Next.js + React application in `client/`
 - **Backend**: Express server in `server/`
 - **Database**: Supabase schema in `supabase/`
+
+## 🗄️ Supabase Schema
+
+### Tables
+
+#### words
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| word | text | The word to guess |
+| definition | text | Word definition |
+| etymology | text | Word etymology |
+| first_letter | char(1) | First letter hint |
+| in_a_sentence | text | Example sentence |
+| number_of_letters | integer | Word length |
+| equivalents | text[] | Array of synonyms |
+| difficulty | text | 'Easy', 'Medium', or 'Hard' |
+| times_used | integer | Number of times used |
+| last_used_at | timestamp | Last usage timestamp |
+| created_at | timestamp | Creation timestamp |
+| updated_at | timestamp | Last update timestamp |
+
+#### game_sessions
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| word_id | uuid | Foreign key to words.id |
+| word | text | The word being guessed |
+| guesses | text[] | Array of guesses made |
+| guesses_used | integer | Number of guesses used |
+| revealed_clues | text[] | Array of revealed clue types |
+| clue_status | jsonb | Status of each clue |
+| is_complete | boolean | Whether game is finished |
+| is_won | boolean | Whether game was won |
+| start_time | timestamp | Game start time |
+| end_time | timestamp | Game end time |
+| created_at | timestamp | Creation timestamp |
+| updated_at | timestamp | Last update timestamp |
+
+#### scores
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| player_id | uuid | Player identifier |
+| word | text | Word that was guessed |
+| guesses_used | integer | Number of guesses used |
+| used_hint | boolean | Whether hints were used |
+| completion_time_seconds | integer | Time taken to complete |
+| nickname | text | Optional player nickname |
+| created_at | timestamp | Score timestamp |
+
+#### user_stats
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| player_id | uuid | Player identifier |
+| games_played | integer | Total games played |
+| games_won | integer | Total games won |
+| current_streak | integer | Current win streak |
+| longest_streak | integer | Longest win streak |
+| average_guesses | float | Average guesses per game |
+| average_time | float | Average completion time |
+| last_played_at | timestamp | Last game timestamp |
+| created_at | timestamp | Stats creation time |
+| updated_at | timestamp | Last update time |
+
+### Relationships
+- `game_sessions.word_id` → `words.id`
+- `scores.player_id` → `user_stats.player_id`
 
 ## Getting Started
 
