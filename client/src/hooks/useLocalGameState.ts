@@ -29,7 +29,7 @@ export function useLocalGameState() {
     localStorage.setItem('gameState', JSON.stringify(state));
   }, [state]);
 
-  const updateGameStats = (isWon: boolean, guessesUsed: number, timeTaken: number) => {
+  const updateGameStats = (isWon: boolean) => {
     const today = new Date().toISOString().split('T')[0];
     const lastPlayed = state.lastPlayedDate;
     

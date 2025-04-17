@@ -1,10 +1,20 @@
-import {
+// ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
+
+import type {
   WordEntry,
-  WordsQueryParams,
-  WordsResponse,
+  PaginationParams,
+  PaginationInfo,
   ApiResponse,
   FormState
-} from '../types/index.js';
+} from '@reversedefine/shared-types';
+
+/**
+ * Response type for paginated words
+ */
+interface WordsResponse {
+  words: WordEntry[];
+  pagination: PaginationInfo;
+}
 
 /**
  * Base API URL
@@ -75,7 +85,7 @@ const handleRequest = async <T>(
 /**
  * Get words with optional pagination and filters
  */
-export const getWords = async (params: WordsQueryParams = {}): Promise<ApiResponse<WordsResponse>> => {
+export const getWords = async (params: Partial<PaginationParams> = { page: 1, limit: 10 }): Promise<ApiResponse<WordsResponse>> => {
   const queryString = createQueryString(params);
   return handleRequest<WordsResponse>(`${API_BASE_URL}/admin/words${queryString}`);
 };

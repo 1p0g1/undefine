@@ -1,57 +1,87 @@
-import { db } from '../src/config/database/index.js';
-import { Word, LeaderboardEntry, UserStats } from '../src/config/database/index.js';
+import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+
+// Load environment variables
+config();
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('Missing required environment variables: SUPABASE_URL and/or SUPABASE_ANON_KEY');
+  process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function testDatabaseClient() {
-  console.log('\n=== Database Client Test ===');
+  console.log('\n=== Supabase Client Test ===');
   
-  // Log current provider
-  const provider = db instanceof (await import('../src/config/database/SnowflakeClient.js')).SnowflakeClient ? 'Snowflake' : 'MongoDB';
-  console.log(`Current Provider: ${provider}`);
-
   try {
-    // Test getRandomWord
-    console.log('\nTesting getRandomWord...');
-    const randomWord = await db.getRandomWord();
-    console.log('Random Word Result:', {
-      success: !!randomWord,
-      hasWord: !!randomWord.word,
-      hasDefinition: !!randomWord.definition,
-      hasPartOfSpeech: !!randomWord.partOfSpeech
+    // Test connection
+    console.log('\nTesting Supabase connection...');
+    const { data: testData, error: testError } = await supabase.from('words').select('count(*)');
+    if (testError) throw testError;
+    console.log('✅ Connection successful');
+
+    // Test words table
+    console.log('\nTesting words table...');
+    const { data: word, error: wordError } = await supabase
+      .from('words')
+      .select('*')
+      .limit(1)
+      .single();
+    
+    if (wordError) throw wordError;
+    console.log('Word Result:', {
+      success: !!word,
+      hasWord: !!word?.word,
+      hasDefinition: !!word?.definition,
+      hasClues: {
+        D: !!word?.definition,
+        E: !!word?.etymology,
+        F: !!word?.first_letter,
+        I: !!word?.in_a_sentence,
+        N: !!word?.number_of_letters,
+        E2: !!word?.equivalents
+      }
     });
 
-    // Test getLeaderboard
-    console.log('\nTesting getLeaderboard...');
-    const leaderboard = await db.getLeaderboard();
-    console.log('Leaderboard Result:', {
-      success: !!leaderboard,
-      entryCount: leaderboard.length,
-      hasEntries: leaderboard.length > 0
-    });
-
-    // Test getUserStats
-    console.log('\nTesting getUserStats...');
-    const testUser = 'test_user';
-    const userStats = await db.getUserStats(testUser);
-    console.log('User Stats Result:', {
-      success: !!userStats,
+    // Test game_sessions table
+    console.log('\nTesting game_sessions table...');
+    const { data: session, error: sessionError } = await supabase
+      .from('game_sessions')
+      .select('*')
+      .limit(1)
+      .single();
+    
+    console.log('Game Session Result:', {
+      success: !!session,
       hasRequiredFields: {
-        games_played: typeof userStats.games_played === 'number',
-        average_guesses: typeof userStats.average_guesses === 'number',
-        current_streak: typeof userStats.current_streak === 'number'
+        id: !!session?.id,
+        word_id: !!session?.word_id,
+        is_complete: typeof session?.is_complete === 'boolean'
       }
     });
 
-    // Test connection health if Snowflake
-    if (provider === 'Snowflake') {
-      console.log('\nTesting Snowflake Connection Health...');
-      const snowflakeClient = db as any;
-      if (snowflakeClient.checkConnectionHealth) {
-        const health = await snowflakeClient.checkConnectionHealth();
-        console.log('Connection Health:', health);
+    // Test user_stats table
+    console.log('\nTesting user_stats table...');
+    const { data: stats, error: statsError } = await supabase
+      .from('user_stats')
+      .select('*')
+      .limit(1)
+      .single();
+    
+    console.log('User Stats Result:', {
+      success: !!stats,
+      hasRequiredFields: {
+        player_id: !!stats?.player_id,
+        games_played: typeof stats?.games_played === 'number',
+        current_streak: typeof stats?.current_streak === 'number'
       }
-    }
+    });
 
-    console.log('\n✅ All tests completed successfully');
+    console.log('\n✅ All Supabase tests completed successfully');
   } catch (error) {
     console.error('\n❌ Test failed:', error);
     process.exit(1);

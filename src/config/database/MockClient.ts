@@ -6,13 +6,12 @@ import {
   DailyLeaderboardResponse,
   DailyMetrics,
   User,
-  UserCredentials,
-  AuthResult,
   StreakLeader,
   GameSession,
-  ClueStatus,
-  GuessResult
-} from './types.js';
+  GuessResult,
+  ClueType,
+  ClueStatus
+} from '@shared/types';
 
 /**
  * MockClient - A database client that returns pre-defined responses
@@ -20,116 +19,71 @@ import {
  */
 export class MockClient implements DatabaseClient {
   private connected = false;
-  private words: Word[] = [
-    {
-      wordId: '1',
-      word: 'disseminate',
-      definition: 'To spread or disperse something, especially information, widely.',
-      etymology: 'From Latin disseminare meaning to scatter.',
-      first_letter: 'd',
-      in_a_sentence: 'The internet allows users to disseminate ideas instantly.',
-      number_of_letters: 11,
-      equivalents: 'spread, distribute, circulate',
-      difficulty: 'medium',
-      timesUsed: 0,
-      lastUsedAt: null,
-      partOfSpeech: 'verb',
-      dateAdded: '2024-03-20',
-      createdAt: '2024-03-20T00:00:00Z',
-      updatedAt: '2024-03-20T00:00:00Z'
-    },
-    {
-      wordId: '2',
-      word: 'define',
-      definition: 'State or describe exactly the nature, scope, or meaning of',
-      etymology: 'From Latin definire',
-      firstLetter: 'd',
-      exampleSentence: 'Let me define what I mean by success.',
-      numLetters: 6,
-      synonyms: ['explain', 'describe', 'specify'],
-      difficulty: 'easy',
-      timesUsed: 0,
-      lastUsedAt: null,
-      partOfSpeech: 'verb',
-      dateAdded: '2024-03-21',
-      letterCount: {
-        count: 6,
-        display: '6 letters'
-      },
-      createdAt: '2024-03-21T00:00:00Z',
-      updatedAt: '2024-03-21T00:00:00Z'
-    },
-    {
-      wordId: '3',
-      word: 'reverse',
-      definition: 'Move backward in direction or position; change to the opposite',
-      etymology: 'From Latin reversus',
-      firstLetter: 'r',
-      exampleSentence: 'The car began to reverse out of the driveway.',
-      numLetters: 7,
-      synonyms: ['backward', 'opposite', 'inverse'],
-      difficulty: 'easy',
-      timesUsed: 0,
-      lastUsedAt: null,
-      partOfSpeech: 'verb',
-      dateAdded: '2024-03-22',
-      letterCount: {
-        count: 7,
-        display: '7 letters'
-      },
-      createdAt: '2024-03-22T00:00:00Z',
-      updatedAt: '2024-03-22T00:00:00Z'
-    }
-  ];
-
-  private leaderboard: LeaderboardEntry[] = [
-    {
-      id: '1',
-      username: 'testuser',
-      wordId: '1',
-      word: 'undefine',
-      timeTaken: 120,
-      guessesUsed: 4,
-      fuzzyMatches: 2,
-      hintsUsed: 1,
-      createdAt: '2024-03-20T00:00:00Z'
-    }
-  ];
-
-  private userStats: Record<string, UserStats> = {
-    'testuser': {
-      username: 'testuser',
-      gamesPlayed: 10,
-      gamesWon: 8,
-      averageGuesses: 4.5,
-      averageTime: 120,
-      bestTime: 60,
-      currentStreak: 3,
-      longestStreak: 5,
-      topTenCount: 2,
-      lastPlayedAt: new Date().toISOString()
-    }
-  };
-
-  private mockDailyMetrics: DailyMetrics = {
-    date: new Date().toISOString().split('T')[0],
-    totalPlays: 100,
-    uniqueUsers: 50,
-    averageGuesses: 4.5,
-    averageTime: 120
-  };
-
+  private words: Word[] = [];
   private gameSessions: Record<string, GameSession> = {};
+  private leaderboard: LeaderboardEntry[] = [];
+  private dailyMetrics: DailyMetrics = {
+    totalGames: 0,
+    averageTime: 0,
+    averageGuesses: 0,
+    uniquePlayers: 0,
+    completionRate: 0
+  };
+  private streakLeaders: StreakLeader[] = [];
+  private users: Record<string, User> = {};
+
+  constructor() {
+    this.leaderboard = [];
+    this.streakLeaders = [];
+  }
 
   // Connection methods
   async connect(): Promise<void> {
-    console.log('MockClient: Connected to mock database');
-    this.connected = true;
+    console.log('MockClient: Connecting to mock database');
+    
+    try {
+      // Initialize mock data
+      this.words = [
+        {
+          id: '1',
+          word: 'define',
+          definition: 'To state or describe exactly the nature, scope, or meaning of something',
+          etymology: 'From Latin "definire", meaning "to limit, determine, explain"',
+          first_letter: 'd',
+          in_a_sentence: 'Can you define what success means to you?',
+          number_of_letters: 6,
+          equivalents: 'explain, specify, establish, determine',
+          difficulty: 'Easy',
+          timesUsed: 0,
+          lastUsedAt: null
+        },
+        {
+          id: '2',
+          word: 'undefine',
+          definition: 'To remove or eliminate the definition or limits of something',
+          etymology: 'Combination of prefix "un-" (meaning not or reverse) and "define"',
+          first_letter: 'u',
+          in_a_sentence: 'The artist sought to undefine traditional boundaries in art.',
+          number_of_letters: 8,
+          equivalents: 'remove limits, broaden, expand',
+          difficulty: 'Medium',
+          timesUsed: 0,
+          lastUsedAt: null
+        }
+      ];
+
+      this.connected = true;
+      console.log('MockClient: Connected successfully');
+    } catch (error) {
+      console.error('MockClient: Failed to connect:', error);
+      throw error;
+    }
   }
 
   async disconnect(): Promise<void> {
-    console.log('MockClient: Disconnected from mock database');
+    console.log('MockClient: Disconnecting from mock database');
     this.connected = false;
+    return Promise.resolve();
   }
 
   async initializeDatabase(): Promise<void> {
@@ -146,27 +100,30 @@ export class MockClient implements DatabaseClient {
   }
 
   async getWord(wordId: string): Promise<Word | null> {
-    return this.words.find(w => w.wordId === wordId) || null;
+    return this.words.find(w => w.id === wordId) || null;
   }
 
-  async addWord(word: Omit<Word, 'wordId'>): Promise<Word> {
+  async addWord(word: Omit<Word, 'id'>): Promise<Word> {
     const newWord: Word = {
       ...word,
-      wordId: (this.words.length + 1).toString(),
+      id: (this.words.length + 1).toString(),
       timesUsed: 0,
       lastUsedAt: null,
-      firstLetter: word.word[0],
-      numLetters: word.word.length
+      first_letter: word.word[0],
+      number_of_letters: word.word.length
     };
     this.words.push(newWord);
     return newWord;
   }
 
   async updateWord(wordId: string, word: Partial<Word>): Promise<Word> {
-    const index = this.words.findIndex(w => w.wordId === wordId);
-    if (index === -1) throw new Error('Word not found');
-    this.words[index] = { ...this.words[index], ...word };
-    return this.words[index];
+    const existingWord = this.words.find(w => w.id === wordId);
+    if (!existingWord) throw new Error('Word not found');
+    const updatedWord: Word = {
+      ...existingWord,
+      ...word
+    };
+    return updatedWord;
   }
 
   async deleteWord(wordId: string): Promise<boolean> {
@@ -174,7 +131,7 @@ export class MockClient implements DatabaseClient {
       throw new Error('Database not connected');
     }
     const initialLength = this.words.length;
-    this.words = this.words.filter(word => word.wordId !== wordId);
+    this.words = this.words.filter(w => w.id !== wordId);
     return this.words.length < initialLength;
   }
 
@@ -186,19 +143,33 @@ export class MockClient implements DatabaseClient {
   }
 
   async getRandomWord(): Promise<Word> {
-    if (!this.connected) {
-      throw new Error('Database not connected');
-    }
     const randomIndex = Math.floor(Math.random() * this.words.length);
     return this.words[randomIndex];
   }
 
-  async getDailyWord(): Promise<Word> {
-    if (!this.connected) {
-      throw new Error('Database not connected');
+  async getDailyWord(date?: string): Promise<Word> {
+    if (this.words.length === 0) {
+      console.error('No words available in database');
+      throw new Error('No words available in database');
     }
-    // For mock purposes, just return the first word
-    return this.words[0];
+
+    // Get a random word for development, first word for production
+    const word = process.env.NODE_ENV === 'development' 
+      ? this.words[Math.floor(Math.random() * this.words.length)]
+      : this.words[0];
+
+    if (!word) {
+      console.error('Failed to get word from database');
+      throw new Error('Failed to get word from database');
+    }
+
+    console.log('Retrieved word from database:', {
+      id: word.id,
+      length: word.word.length,
+      hasDefinition: !!word.definition
+    });
+
+    return word;
   }
 
   async setDailyWord(wordId: string, date: string): Promise<void> {
@@ -210,37 +181,30 @@ export class MockClient implements DatabaseClient {
   }
 
   async markAsUsed(wordId: string): Promise<void> {
-    const word = this.words.find(w => w.wordId === wordId);
+    const word = this.words.find(w => w.id === wordId);
     if (word) {
-      word.timesUsed++;
-      word.lastUsedAt = new Date();
+      word.timesUsed = (word.timesUsed || 0) + 1;
+      word.lastUsedAt = new Date().toISOString();
     }
   }
 
   // User management
-  async authenticateUser(credentials: UserCredentials): Promise<AuthResult> {
-    if (!this.connected) {
-      throw new Error('Database not connected');
-    }
-    if (credentials.email === 'test@example.com' && credentials.password === 'password') {
-      return {
-        success: true,
-        token: 'mock-token'
-      };
-    }
-    return {
-      success: false,
-      error: 'Invalid credentials'
-    };
+  async getUserByEmail(email: string): Promise<User | null> {
+    return this.users[email] || null;
   }
 
-  async getUserByEmail(email: string): Promise<User | null> {
-    return {
-      id: 'user1',
-      email,
-      username: 'user1',
-      createdAt: new Date().toISOString()
+  async getUserByUsername(username: string): Promise<User | null> {
+    return this.users[username] || null;
+  }
+
+  async createUser(username: string): Promise<User> {
+    const user: User = {
+      id: crypto.randomUUID(),
+      username,
+      created_at: new Date().toISOString()
     };
+    this.users[username] = user;
+    return user;
   }
 
   // Leaderboard management
@@ -272,12 +236,27 @@ export class MockClient implements DatabaseClient {
   }
 
   // Stats management
-  async updateUserStats(username: string): Promise<void> {
-    if (!this.connected) {
-      throw new Error('Database not connected');
-    }
-    // In a real implementation, this would update the user's stats
-    // For mock purposes, we'll just return void
+  async getUserStats(username: string): Promise<UserStats | null> {
+    return {
+      username,
+      games_played: 0,
+      games_won: 0,
+      average_guesses: 0,
+      average_time: 0,
+      current_streak: 0,
+      longest_streak: 0,
+      last_played_at: new Date().toISOString()
+    };
+  }
+
+  async updateUserStats(
+    username: string,
+    won: boolean,
+    guessesUsed: number,
+    timeTaken: number
+  ): Promise<void> {
+    // Mock implementation - no need to store stats
+    return Promise.resolve();
   }
 
   async getDailyStats(): Promise<DailyMetrics> {
@@ -285,36 +264,24 @@ export class MockClient implements DatabaseClient {
       throw new Error('Database not connected');
     }
     return {
-      date: new Date().toISOString().split('T')[0],
-      totalPlays: this.leaderboard.length,
-      uniqueUsers: new Set(this.leaderboard.map(e => e.username)).size,
+      totalGames: this.leaderboard.length,
+      uniquePlayers: new Set(this.leaderboard.map(e => e.username)).size,
       averageGuesses: this.leaderboard.reduce((acc, e) => acc + e.guessesUsed, 0) / this.leaderboard.length || 0,
-      averageTime: this.leaderboard.reduce((acc, e) => acc + e.timeTaken, 0) / this.leaderboard.length || 0
+      averageTime: this.leaderboard.reduce((acc, e) => acc + e.timeTaken, 0) / this.leaderboard.length || 0,
+      completionRate: (this.leaderboard.filter(e => e.guessesUsed > 0).length / this.leaderboard.length) * 100 || 0
     };
   }
 
   async getTodayMetrics(): Promise<DailyMetrics> {
-    return {
-      totalGames: this.leaderboard.length,
-      averageTime: this.leaderboard.reduce((acc, e) => acc + e.timeTaken, 0) / this.leaderboard.length,
-      averageGuesses: this.leaderboard.reduce((acc, e) => acc + e.guessesUsed, 0) / this.leaderboard.length,
-      uniquePlayers: new Set(this.leaderboard.map(e => e.username)).size,
-      completionRate: 0.8
-    };
+    return this.dailyMetrics;
   }
 
-  async getTopStreaks(limit: number = 10): Promise<StreakLeader[]> {
-    if (!this.connected) {
-      throw new Error('Database not connected');
-    }
-    return Object.values(this.userStats)
-      .map(stats => ({
-        username: stats.username,
-        streak: stats.currentStreak,
-        lastPlayedAt: stats.lastPlayedAt
-      }))
-      .sort((a, b) => b.streak - a.streak)
-      .slice(0, limit);
+  async getTopStreaks(): Promise<StreakLeader[]> {
+    return this.streakLeaders.map(leader => ({
+      username: leader.username,
+      streak: leader.streak,
+      lastPlayed: leader.lastPlayed
+    }));
   }
 
   async updateLastLogin(username: string): Promise<void> {
@@ -325,32 +292,10 @@ export class MockClient implements DatabaseClient {
     // For mock purposes, we'll just return void
   }
 
-  async startGame(): Promise<GameSession> {
-    const word = await this.getDailyWord();
-    const gameId = Math.random().toString(36).substring(2, 15);
-    
-    const session: GameSession = {
-      id: gameId,
-      word_id: word.wordId,
-      word: word.word,
-      start_time: new Date().toISOString(),
-      guesses: [],
-      guesses_used: 0,
-      revealed_clues: ['D'],
-      clue_status: {
-        D: 'neutral',
-        E: 'grey',
-        F: 'grey',
-        I: 'grey',
-        N: 'grey',
-        E2: 'grey'
-      },
-      is_complete: false,
-      is_won: false
-    };
-
-    this.gameSessions[gameId] = session;
-    return session;
+  // Helper function for text normalization
+  private normalize(text: string | null | undefined): string {
+    if (!text) return '';
+    return text.trim().toLowerCase().replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
   }
 
   async processGuess(
@@ -358,66 +303,57 @@ export class MockClient implements DatabaseClient {
     guess: string,
     session: GameSession
   ): Promise<GuessResult> {
-    // Case-insensitive comparison
-    const isCorrect = guess.toLowerCase() === session.word.toLowerCase();
+    // Normalize both guess and word to ensure consistent comparison
+    const normalizedGuess = this.normalize(guess);
+    const normalizedWord = this.normalize(session.word);
+    
+    // Check for exact match
+    const isCorrect = normalizedGuess === normalizedWord;
     const gameOver = isCorrect || session.guesses.length >= 5;
     
-    // Update session with proper state
+    // Update session with original guess (not normalized)
     const updatedSession = {
       ...session,
       guesses: [...session.guesses, guess],
-      guesses_used: session.guesses.length + 1,
-      is_complete: gameOver,
-      is_won: isCorrect,
-      end_time: gameOver ? new Date().toISOString() : undefined,
-      // Update clue status
-      clue_status: {
-        ...session.clue_status,
-        [String.fromCharCode(68 + session.guesses.length)]: isCorrect ? 'green' : 'red'
-      }
+      isComplete: gameOver,
+      isWon: isCorrect,
+      end_time: gameOver ? new Date().toISOString() : undefined
     };
-    
     this.gameSessions[gameId] = updatedSession;
 
-    // Calculate fuzzy match
-    const isFuzzy = !isCorrect && this.calculateFuzzyMatch(guess, session.word);
-    const fuzzyPositions = isFuzzy ? this.getFuzzyPositions(guess, session.word) : [];
+    // Only calculate fuzzy match if not correct
+    const isFuzzy = !isCorrect && this.calculateFuzzyMatch(normalizedGuess, normalizedWord);
+    const fuzzyPositions = isFuzzy ? this.getFuzzyPositions(normalizedGuess, normalizedWord) : [];
 
     return {
       isCorrect,
-      correctWord: session.word,
-      guessedWord: guess,
+      guess: normalizedGuess,
       isFuzzy,
       fuzzyPositions,
       gameOver,
-      updatedSession,
-      leaderboardRank: isCorrect ? 1 : null
+      correctWord: gameOver ? session.word : undefined
     };
   }
 
   private calculateFuzzyMatch(guess: string, word: string): boolean {
-    // Simple fuzzy match: allow one character difference
-    if (Math.abs(guess.length - word.length) > 1) return false;
+    const normalizedGuess = guess.toLowerCase().trim();
+    const normalizedWord = word.toLowerCase().trim();
     
-    let differences = 0;
-    const maxLength = Math.max(guess.length, word.length);
-    
-    for (let i = 0; i < maxLength; i++) {
-      if (guess[i]?.toLowerCase() !== word[i]?.toLowerCase()) {
-        differences++;
-        if (differences > 1) return false;
-      }
+    let matches = 0;
+    for (let i = 0; i < normalizedGuess.length; i++) {
+      if (normalizedGuess[i] === normalizedWord[i]) matches++;
     }
     
-    return differences === 1;
+    return matches >= Math.floor(word.length * 0.8);
   }
 
   private getFuzzyPositions(guess: string, word: string): number[] {
     const positions: number[] = [];
-    const maxLength = Math.max(guess.length, word.length);
+    const normalizedGuess = guess.toLowerCase().trim();
+    const normalizedWord = word.toLowerCase().trim();
     
-    for (let i = 0; i < maxLength; i++) {
-      if (guess[i]?.toLowerCase() !== word[i]?.toLowerCase()) {
+    for (let i = 0; i < normalizedGuess.length; i++) {
+      if (normalizedGuess[i] === normalizedWord[i]) {
         positions.push(i);
       }
     }
@@ -425,12 +361,87 @@ export class MockClient implements DatabaseClient {
     return positions;
   }
 
+  async startGame(): Promise<GameSession> {
+    const word = await this.getDailyWord();
+    const gameId = crypto.randomUUID();
+    
+    console.log('Starting new game session:', {
+      gameId,
+      wordId: word.id,
+      wordLength: word.word.length
+    });
+
+    const session: GameSession = {
+      id: gameId,
+      word_id: word.id,
+      word: word.word,
+      start_time: new Date().toISOString(),
+      guesses: [],
+      guesses_used: 0,
+      revealed_clues: [],
+      clue_status: {},
+      is_complete: false,
+      is_won: false
+    };
+
+    this.gameSessions[gameId] = session;
+    
+    console.log('Game session created:', {
+      gameId: session.id,
+      hasWord: !!session.word,
+      startTime: session.start_time
+    });
+
+    return session;
+  }
+
   async getGameSession(gameId: string): Promise<GameSession | null> {
     return this.gameSessions[gameId] || null;
   }
 
   async checkGuess(wordId: string, guess: string): Promise<boolean> {
-    const word = await this.getWord(wordId);
-    return word ? word.word.toLowerCase() === guess.toLowerCase() : false;
+    const word = this.words.find(w => w.id === wordId);
+    if (!word) return false;
+    return this.normalize(guess) === this.normalize(word.word);
+  }
+
+  async createGameSession(wordId: string, word: string): Promise<GameSession> {
+    const session: GameSession = {
+      id: crypto.randomUUID(),
+      word_id: wordId,
+      word: word,
+      guesses: [],
+      guesses_used: 0,
+      revealed_clues: [],
+      clue_status: {},
+      is_complete: false,
+      is_won: false,
+      start_time: new Date().toISOString()
+    };
+    return session;
+  }
+
+  async endGame(gameId: string, won: boolean): Promise<void> {
+    const session = this.gameSessions[gameId];
+    if (session) {
+      session.is_complete = true;
+      session.is_won = won;
+      session.end_time = new Date().toISOString();
+    }
+  }
+
+  async getClue(session: GameSession, clueType: ClueType): Promise<string | number | null> {
+    const word = this.words.find(w => w.id === session.word_id);
+    if (!word) return null;
+
+    switch (clueType) {
+      case 'D': return word.definition;
+      case 'E': return word.etymology;
+      case 'F': return word.first_letter;
+      case 'I': return word.in_a_sentence;
+      case 'N': return word.number_of_letters;
+      case 'E2': return word.equivalents;
+      default: return null;
+    }
   }
 } 

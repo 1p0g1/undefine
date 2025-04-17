@@ -2,7 +2,7 @@
   "extends": "../../../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../../dist/config/database",
-    "rootDir": "."
+    "rootDir": "../../"
   },
-  "include": ["./**/*"]
+  "include": ["./**/*", "../../types/shared.ts"]
 } 

@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
-import { SupabaseClient } from './services/SupabaseClient.js';
+import { SupabaseClient } from '../src/config/database/SupabaseClient';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { GameService } from './services/GameService';
+import { StatsService } from './services/StatsService';
 
 dotenv.config();
 

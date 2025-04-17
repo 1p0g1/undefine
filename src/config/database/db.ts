@@ -1,25 +1,79 @@
+// ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
+
 import { SupabaseClient } from './SupabaseClient.js';
 import { MockClient } from './MockClient.js';
-import type { DatabaseClient } from './types.js';
-import dotenv from 'dotenv';
+import type { DatabaseClient } from '../../types/shared.js';
+import { config } from 'dotenv';
+import path from 'path';
 
-dotenv.config();
-
-function getDatabaseClient(): DatabaseClient {
-  const dbProvider = process.env.DB_PROVIDER?.toLowerCase() || 'mock';
+// Load environment variables based on NODE_ENV
+if (process.env.NODE_ENV === 'development') {
+  const envPath = path.resolve(process.cwd(), '.env.development');
+  console.log('Loading development environment from:', envPath);
+  config({ path: envPath });
   
+  // Debug log environment variables (without showing sensitive values)
+  console.log('Environment variables loaded:', {
+    NODE_ENV: process.env.NODE_ENV,
+    DB_PROVIDER: process.env.DB_PROVIDER,
+    SUPABASE_URL: process.env.SUPABASE_URL ? '✓ Set' : '✗ Not set',
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? '✓ Set' : '✗ Not set'
+  });
+} else {
+  config();
+}
+
+let dbInstance: DatabaseClient | null = null;
+
+async function initializeDatabaseClient(): Promise<DatabaseClient> {
+  if (dbInstance) {
+    return dbInstance;
+  }
+
+  const dbProvider = process.env.DB_PROVIDER?.toLowerCase();
+  if (!dbProvider) {
+    throw new Error('DB_PROVIDER environment variable is required');
+  }
+
   console.log(`Initializing database client with provider: ${dbProvider}`);
   
-  switch (dbProvider) {
-    case 'supabase':
-      return SupabaseClient.getInstance();
-    case 'mock':
-      return new MockClient();
-    default:
-      console.warn(`Unknown DB_PROVIDER: ${dbProvider}, falling back to mock database`);
-      return new MockClient();
+  try {
+    switch (dbProvider) {
+      case 'supabase':
+        // Validate Supabase environment variables
+        if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+          throw new Error('Missing required Supabase environment variables');
+        }
+        dbInstance = SupabaseClient.getInstance();
+        break;
+      case 'mock':
+        console.warn('Using mock database for development');
+        dbInstance = new MockClient();
+        break;
+      default:
+        throw new Error(`Unsupported database provider: ${dbProvider}`);
+    }
+
+    // Initialize the database connection
+    await dbInstance.connect();
+    console.log('Database connection established successfully');
+    
+    return dbInstance;
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    // Clear instance if initialization failed
+    dbInstance = null;
+    throw error;
   }
 }
 
-// Export the singleton instance
-export const db = getDatabaseClient(); 
+// Export the initialization function
+export const initDb = initializeDatabaseClient;
+
+// Export the singleton instance getter
+export function getDb(): DatabaseClient {
+  if (!dbInstance) {
+    throw new Error('Database not initialized. Call initDb() first.');
+  }
+  return dbInstance;
+} 

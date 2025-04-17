@@ -1,57 +1,51 @@
-import { db } from '../config/database/db.js';
-import { v4 as uuidv4 } from 'uuid';
+import { getDb } from '../config/database/db.js';
+import { WordEntry, GameSession } from '../shared/types/index.js';
 
 export interface GameState {
-  word: Word;
+  word: WordEntry;
   startTime: Date;
   guessCount: number;
   fuzzyCount: number;
   hintCount: number;
-  userEmail: string;
   hints: {
     D: boolean;  // Definition (always revealed)
     E: boolean;  // Etymology
     F: boolean;  // First Letter
-    I: boolean;  // Is Plural
-    N: boolean;  // Number of Syllables
-    E2: boolean; // Example Sentence
+    I: boolean;  // In a sentence
+    N: boolean;  // Number of letters
+    E2: boolean; // Equivalents
   };
-}
-
-export interface Word {
-  wordId: string;
-  word: string;
-  definition: string;
-  partOfSpeech: string;
 }
 
 export interface GuessResult {
   isCorrect: boolean;
-  correctWord?: string;
-  guessedWord: string;
+  guess: string;
   isFuzzy: boolean;
   fuzzyPositions: number[];
-  remainingGuesses: number;
-  leaderboardRank?: number;
+  gameOver: boolean;
+  correctWord?: string;
 }
 
 export interface GameResponse {
   gameId: string;
   word: {
-    id: string;
+    word: string;
     definition: string;
-    partOfSpeech: string;
+    letterCount: {
+      count: number;
+      display: string;
+    };
   };
 }
 
 export class GameService {
-  static activeGames = new Map();
+  static activeGames = new Map<string, GameState>();
 
-  static async getRandomWord() {
+  static async getRandomWord(): Promise<WordEntry> {
     try {
       console.log('[GameService.getRandomWord] Attempting to fetch random word from database');
-      const word = await db.getRandomWord();
-      console.log('[GameService.getRandomWord] Successfully fetched word:', { wordId: word.wordId });
+      const word = await getDb().getRandomWord();
+      console.log('[GameService.getRandomWord] Successfully fetched word:', { word: word.word });
       return word;
     } catch (error) {
       console.error('[GameService.getRandomWord] Error details:', {
@@ -62,25 +56,23 @@ export class GameService {
     }
   }
 
-  static async startGame(userEmail: string) {
+  static async startGame(): Promise<GameResponse> {
     try {
-      console.log('[GameService.startGame] Starting new game for user:', userEmail);
+      console.log('[GameService.startGame] Starting new game');
       const word = await this.getRandomWord();
-      const gameId = `game-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const session = await getDb().startGame();
       
       console.log('[GameService.startGame] Creating game state:', { 
-        gameId,
-        wordId: word.wordId,
-        userEmail 
+        gameId: session.id,
+        word: word.word
       });
 
-      this.activeGames.set(gameId, {
+      this.activeGames.set(session.id, {
         word,
         startTime: new Date(),
         guessCount: 0,
         fuzzyCount: 0,
         hintCount: 0,
-        userEmail,
         hints: {
           D: true,
           E: false,
@@ -93,176 +85,78 @@ export class GameService {
 
       console.log('[GameService.startGame] Game successfully created');
       return {
-        gameId,
+        gameId: session.id,
         word: {
-          id: word.wordId,
+          word: word.word,
           definition: word.definition,
-          partOfSpeech: word.partOfSpeech
+          letterCount: word.letterCount
         }
       };
     } catch (error) {
       console.error('[GameService.startGame] Error details:', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        userEmail
+        stack: error instanceof Error ? error.stack : undefined
       });
       throw error;
     }
   }
 
-  static async processGuess(gameId: string, guess: string) {
-    const gameState = this.activeGames.get(gameId);
-    if (!gameState) {
-      throw new Error('Game not found');
-    }
-
-    const { word: currentWord } = gameState;
-    gameState.guessCount++;
-    
-    const isCorrect = guess.toLowerCase() === currentWord.word.toLowerCase();
-    const isFuzzy = !isCorrect && this.isFuzzyMatch(guess, currentWord.word);
-    const isGameOver = isCorrect || gameState.guessCount >= 6;
-    
-    if (isFuzzy) {
-      gameState.fuzzyCount++;
-    }
-    
-    const fuzzyPositions = this.calculateFuzzyPositions(guess, currentWord.word);
-    
-    if (isCorrect || isGameOver) {
-      try {
-        if (isCorrect) {
-          console.log(`[GameService.processGuess] Correct guess for word: ${currentWord.word}`);
-          
-          // Update word usage metrics
-          await db.markAsUsed(currentWord.wordId);
-          
-          // For early user testing, we'll conditionally disable leaderboard operations
-          // but keep streak tracking functional
-          const isLeaderboardEnabled = process.env.NODE_ENV === 'production' && process.env.DISABLE_LEADERBOARD !== 'true';
-          
-          if (isLeaderboardEnabled) {
-            // Add to leaderboard only in production mode with leaderboard enabled
-            const timeTaken = Date.now() - gameState.startTime.getTime();
-            await db.addToLeaderboard({
-              username: gameState.userEmail,
-              word: currentWord.word,
-              guesses: gameState.guessCount,
-              completion_time_seconds: Math.floor(timeTaken / 1000),
-              used_hint: Object.values(gameState.hints).some(hint => hint),
-              completed: isCorrect,
-              created_at: new Date().toISOString()
-            });
-          } else {
-            console.log('[GameService.processGuess] Leaderboard operations disabled for early user testing');
-          }
-          
-          // Always update user stats to maintain streaks
-          if (gameState.userEmail) {
-            try {
-              await db.updateUserStats(gameState.userEmail);
-              console.log(`[GameService.processGuess] User stats and streak updated for: ${gameState.userEmail}`);
-            } catch (statsError) {
-              console.error('[GameService.processGuess] Error updating user stats:', {
-                error: statsError instanceof Error ? statsError.message : 'Unknown error',
-                stack: statsError instanceof Error ? statsError.stack : undefined
-              });
-            }
-          }
-        } else {
-          console.log(`[GameService.processGuess] Game over without correct guess for word: ${currentWord.word}`);
-        }
-      } catch (error) {
-        console.error('[GameService.processGuess] Error updating game results:', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          gameId,
-          wordId: currentWord.wordId
-        });
-        // Continue with game completion even if database operations fail
+  static async processGuess(gameId: string, guess: string): Promise<GuessResult> {
+    try {
+      const session = await getDb().getGameSession(gameId);
+      if (!session) {
+        throw new Error('Game session not found');
       }
-      
-      this.activeGames.delete(gameId);
+
+      const result = await getDb().processGuess(gameId, guess, session);
+      return {
+        isCorrect: result.isCorrect,
+        guess: result.guess,
+        isFuzzy: result.isFuzzy,
+        fuzzyPositions: result.fuzzyPositions,
+        gameOver: result.gameOver,
+        correctWord: result.correctWord
+      };
+    } catch (error) {
+      console.error('[GameService.processGuess] Error processing guess:', error);
+      throw error;
     }
-    
-    // Conditionally include leaderboard rank in response
-    const isLeaderboardEnabled = process.env.NODE_ENV === 'production' && process.env.DISABLE_LEADERBOARD !== 'true';
-    
-    return {
-      isCorrect,
-      correctWord: isGameOver ? currentWord.word : undefined,
-      guessedWord: guess,
-      isFuzzy,
-      fuzzyPositions,
-      remainingGuesses: 6 - gameState.guessCount,
-      leaderboardRank: isCorrect && isLeaderboardEnabled ? await db.getLeaderboardRank(gameId) : undefined
-    };
   }
 
-  static isFuzzyMatch(guess: string, correct: string) {
-    const normalizedGuess = guess.toLowerCase();
-    const normalizedCorrect = correct.toLowerCase();
+  private static isFuzzyMatch(guess: string, word: string): boolean {
+    const normalize = (text: string): string => 
+      text.trim().toLowerCase().replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
 
-    if (normalizedCorrect.startsWith(normalizedGuess) || normalizedGuess.startsWith(normalizedCorrect)) {
-      return true;
-    }
-
-    const minLength = Math.min(normalizedGuess.length, normalizedCorrect.length);
-    const commonPrefixLength = [...Array(minLength)].findIndex((_, i) => 
-      normalizedGuess[i] !== normalizedCorrect[i]
-    );
+    const normalizedGuess = normalize(guess);
+    const normalizedWord = normalize(word);
     
-    if (commonPrefixLength > 4) {
-      return true;
-    }
-
-    const matrix = [];
-    for (let i = 0; i <= normalizedGuess.length; i++) {
-      matrix[i] = [i];
-    }
-    for (let j = 0; j <= normalizedCorrect.length; j++) {
-      matrix[0][j] = j;
-    }
-
-    for (let i = 1; i <= normalizedGuess.length; i++) {
-      for (let j = 1; j <= normalizedCorrect.length; j++) {
-        if (normalizedGuess[i-1] === normalizedCorrect[j-1]) {
-          matrix[i][j] = matrix[i-1][j-1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i-1][j-1] + 1,
-            matrix[i][j-1] + 1,
-            matrix[i-1][j] + 1
-          );
-        }
-      }
-    }
-
-    const distance = matrix[normalizedGuess.length][normalizedCorrect.length];
-    const maxLength = Math.max(normalizedGuess.length, normalizedCorrect.length);
-    const threshold = Math.max(2, Math.floor(maxLength * 0.3));
-    
-    return distance <= threshold;
+    return normalizedGuess.length >= 3 && normalizedWord.includes(normalizedGuess);
   }
 
-  static calculateFuzzyPositions(guess: string, correct: string) {
-    const guessLetters = guess.toLowerCase().split('');
-    const correctLetters = correct.toLowerCase().split('');
-    const positions = [];
+  private static getFuzzyPositions(guess: string, word: string): number[] {
+    const normalize = (text: string): string => 
+      text.trim().toLowerCase().replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+
+    const normalizedGuess = normalize(guess);
+    const normalizedWord = normalize(word);
     
-    guessLetters.forEach((letter, index) => {
-      if (index < correctLetters.length && letter === correctLetters[index]) {
-        positions.push(index);
+    const positions: number[] = [];
+    let index = normalizedWord.indexOf(normalizedGuess);
+    
+    while (index !== -1) {
+      for (let i = 0; i < normalizedGuess.length; i++) {
+        positions.push(index + i);
       }
-    });
+      index = normalizedWord.indexOf(normalizedGuess, index + 1);
+    }
     
-    return positions.length > 0 ? positions : [0];
+    return positions;
   }
 
-  static cleanupOldGames() {
-    const now = Date.now();
-    for (const [gameId, gameState] of this.activeGames.entries()) {
-      if (now - gameState.startTime.getTime() > 24 * 60 * 60 * 1000) {
+  static cleanupOldGames(): void {
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    for (const [gameId, state] of this.activeGames.entries()) {
+      if (state.startTime.getTime() < oneHourAgo) {
         this.activeGames.delete(gameId);
       }
     }
@@ -278,15 +172,15 @@ export class GameService {
       const targetDate = date || new Date().toISOString().split('T')[0];
       
       // Try to get today's word
-      let word = await db.getDailyWord(targetDate);
+      let word = await getDb().getDailyWord(targetDate);
       
       // If no word is set for today, select one and mark it
       if (!word) {
-        word = await db.getNextUnusedWord();
+        word = await getDb().getNextUnusedWord();
         if (!word) {
           throw new Error('No unused words available');
         }
-        await db.setDailyWord(word.id, targetDate);
+        await getDb().setDailyWord(word.id, targetDate);
       }
       
       return word;

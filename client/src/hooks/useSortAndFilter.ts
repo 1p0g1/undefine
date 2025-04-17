@@ -179,8 +179,8 @@ const useSortAndFilter = ({
         }
         
         // Array of strings (like synonyms)
-        if (Array.isArray(itemValue) && itemValue.every(v => typeof v === 'string')) {
-          return itemValue.some(v => 
+        if (Array.isArray(itemValue) && itemValue.every((v: string) => typeof v === 'string')) {
+          return itemValue.some((v: string) => 
             v.toLowerCase().includes(value.toLowerCase())
           );
         }

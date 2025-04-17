@@ -304,17 +304,12 @@ export interface ServerConfig {
   port: number;
   env: string;
   dbProvider: string;
-  redisUrl: string;
   jwtSecret: string;
 }
 
 export interface DatabaseConfig {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-  ssl: boolean;
+  supabaseUrl: string;
+  supabaseKey: string;
 }
 
 export interface CacheConfig {

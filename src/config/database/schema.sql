@@ -1,6 +1,14 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create test_connection function for health checks
+CREATE OR REPLACE FUNCTION test_connection()
+RETURNS boolean AS $$
+BEGIN
+  RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Words table
 CREATE TABLE IF NOT EXISTS words (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -11,7 +19,8 @@ CREATE TABLE IF NOT EXISTS words (
   in_a_sentence TEXT,
   number_of_letters INTEGER,
   equivalents TEXT,
-  difficulty TEXT
+  difficulty TEXT,
+  active BOOLEAN DEFAULT true
 );
 
 -- Game sessions table
@@ -126,7 +135,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert sample words
-INSERT INTO words (word, definition, etymology, first_letter, in_a_sentence, number_of_letters, equivalents, difficulty)
+INSERT INTO words (word, definition, etymology, first_letter, in_a_sentence, number_of_letters, equivalents, difficulty, active)
 VALUES 
   (
     'example',
@@ -136,7 +145,8 @@ VALUES
     'This is an example sentence.',
     7,
     'sample, instance, illustration',
-    'easy'
+    'easy',
+    true
   ),
   (
     'define',
@@ -146,7 +156,8 @@ VALUES
     'Can you define what this word means?',
     6,
     'explain, specify, establish',
-    'medium'
+    'medium',
+    true
   ),
   (
     'reverse',
@@ -156,6 +167,7 @@ VALUES
     'The car began to reverse out of the driveway.',
     7,
     'invert, flip, switch',
-    'medium'
+    'medium',
+    true
   )
 ON CONFLICT (id) DO NOTHING; 

@@ -1,9 +1,11 @@
+// ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { config } from 'dotenv';
-import healthRouter from './routes/health.js';
+import healthRouter from './routes/health';
 
 // Load environment variables
 config();

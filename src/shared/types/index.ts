@@ -1,4 +1,23 @@
 /**
+ * Game session status
+ */
+export interface GameSession {
+  id: string;
+  word_id: string;
+  word: string;
+  start_time: string;
+  end_time?: string;
+  guesses: string[];
+  guesses_used: number;
+  revealed_clues: string[];
+  clue_status: Record<string, string>;
+  is_complete: boolean;
+  is_won: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * Represents a word entry in the application
  */
 export interface WordEntry {

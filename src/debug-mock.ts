@@ -1,5 +1,7 @@
+// ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
+
 import dotenv from 'dotenv';
-import { db } from './config/database/index.js';
+import { db } from './config/database/index';
 
 // Load environment variables first
 dotenv.config();

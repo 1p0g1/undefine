@@ -1,28 +1,134 @@
-# React + TypeScript + Vite
+# Un-Define Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The React frontend for the Un-Define word-guessing game.
 
-Currently, two official plugins are available:
+## 🛠️ Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 18
+- TypeScript
+- Vite
+- ESLint + TypeScript ESLint
 
-## Expanding the ESLint configuration
+## 🚀 Development
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm (v8 or higher)
+
+### Setup
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+Required environment variables:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_API_URL=http://localhost:3001
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+## 🧪 Testing
+
+Run the test suite:
+```bash
+npm test
+```
+
+Run tests in watch mode:
+```bash
+npm run test:watch
+```
+
+## 📦 Building
+
+Build for production:
+```bash
+npm run build
+```
+
+Preview the production build:
+```bash
+npm run preview
+```
+
+## 🎨 Styling
+
+The game uses a carefully selected typography and visual design system:
+
+### Typography
+- Primary Font: **Libre Baskerville** (Google Fonts)
+  - Used for all main text, headings, and UI elements
+  - Weights: 400, 700 (normal and italic variants)
+  - CSS Variable: `--font-primary`
+
+- Monospace Font: **Special Elite** (Google Fonts)
+  - Used for special text elements
+  - CSS Variable: `--font-monospace`
+
+### Color Palette
+- Primary Colors:
+  - Primary Blue: `#1a237e` - Used for main UI elements and headings
+  - Game Over Red: `#dc2626` - Used for game over states and revealed letters
+  - Paper Background: `#faf7f2` - Subtle off-white for the main container
+
+### Visual Elements
+- Letter Boxes:
+  - Size: 3.5rem × 3.5rem
+  - Red border and light red background for revealed state
+  - Large serif letters (Libre Baskerville) for an elegant look
+
+- Input Field:
+  - Clean, borderless design with only bottom border
+  - Centered text with italic placeholder
+  - Larger font size (1.4rem) for better visibility
+
+- Timer:
+  - Large, elegant display (2rem)
+  - Uses tabular numbers for stable display
+  - Minimal styling without decorative elements
+
+To modify the design:
+1. Update the Google Fonts import in `src/App.css`
+2. Modify the CSS variables in `:root`:
+```css
+:root {
+  --font-primary: 'Libre Baskerville', serif;
+  --font-monospace: 'Special Elite', monospace;
+  --primary-blue: #1a237e;
+  --game-over-red: #dc2626;
+  /* ... other variables ... */
+}
+```
+
+## 🔧 Development Tools
+
+### ESLint Configuration
+
+The project uses a strict TypeScript-aware ESLint configuration. To enable additional rules:
 
 ```js
 export default tseslint.config({
   extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
     ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
     ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
     ...tseslint.configs.stylisticTypeChecked,
   ],
   languageOptions: {
-    // other options...
     parserOptions: {
       project: ['./tsconfig.node.json', './tsconfig.app.json'],
       tsconfigRootDir: import.meta.dirname,
@@ -31,22 +137,20 @@ export default tseslint.config({
 })
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### React-specific Lint Rules
+
+We use [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific linting:
 
 ```js
-// eslint.config.js
 import reactX from 'eslint-plugin-react-x'
 import reactDom from 'eslint-plugin-react-dom'
 
 export default tseslint.config({
   plugins: {
-    // Add the react-x and react-dom plugins
     'react-x': reactX,
     'react-dom': reactDom,
   },
   rules: {
-    // other rules...
-    // Enable its recommended typescript rules
     ...reactX.configs['recommended-typescript'].rules,
     ...reactDom.configs.recommended.rules,
   },

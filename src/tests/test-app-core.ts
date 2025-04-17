@@ -1,7 +1,9 @@
+// ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
+
 import dotenv from 'dotenv';
-import { createDatabaseClient } from '../config/database/index.js';
-import { GameService } from '../services/GameService.js';
-import { LeaderboardService } from '../services/LeaderboardService.js';
+import { createDatabaseClient } from '../config/database/index';
+import { GameService } from '../services/GameService';
+import { LeaderboardService } from '../services/LeaderboardService';
 
 // Load environment variables
 dotenv.config();

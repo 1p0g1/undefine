@@ -60,3 +60,8 @@ client/coverage/
 
 # Server specific
 src/dist/
+
+# Important project files that should never be ignored
+!Undefine_Project_Tracker.md
+!ARCHITECTURE.md
+!docs/*.md

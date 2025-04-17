@@ -1,59 +1,70 @@
-// Import shared types
-import type { WordEntry, FormState, ValidationError, ApiResponse, PaginationParams, PaginationInfo } from '@reversedefine/shared-types';
+// Import shared types using the new path mapping
+import type {
+  Word,
+  User,
+  GameSession,
+  GuessResult,
+  LeaderboardEntry,
+  UserStats,
+  ApiResponse,
+  PaginationParams,
+  PaginationInfo,
+  DatabaseClient
+} from '@reversedefine/shared-types';
 
 // Re-export shared types
-export type { WordEntry, FormState, ValidationError, ApiResponse, PaginationParams, PaginationInfo };
+export type {
+  Word,
+  User,
+  GameSession,
+  GuessResult,
+  LeaderboardEntry,
+  UserStats,
+  ApiResponse,
+  PaginationParams,
+  PaginationInfo,
+  DatabaseClient
+};
 
-// Word-related types
+// Client-specific types
 export interface WordEntry {
+  id: string;
   word: string;
-  partOfSpeech: string;
   definition: string;
-  alternateDefinition?: string;
-  synonyms?: string[];
-  createdAt: string;
-  updatedAt: string;
+  etymology?: string;
+  first_letter: string;
+  in_a_sentence?: string;
+  number_of_letters: number;
+  equivalents?: string;
 }
 
-// Form and state types
-export interface FormState {
+export interface WordData {
+  id: string;
   word: string;
-  partOfSpeech: string;
-  synonyms: string[];
-  definition: string;
-  alternateDefinition: string;
-  dateAdded: string;
-  letterCount: {
-    count: number;
-    display: string;
+  clues: {
+    D: string;  // Definition
+    E: string;  // Etymology
+    F: string;  // First letter
+    I: string;  // In a sentence
+    N: number;  // Number of letters
+    E2: string[];  // Equivalents/synonyms
   };
 }
 
+export interface FormState {
+  id: string;
+  word: string;
+  definition: string;
+  etymology?: string;
+  first_letter: string;
+  in_a_sentence?: string;
+  number_of_letters: number;
+  equivalents?: string;
+}
+
 export interface ValidationError {
-  field: keyof FormState;
+  field: string;
   message: string;
-}
-
-// Client-specific types
-export interface PaginationParams {
-  page: number;
-  limit: number;
-  search?: string;
-}
-
-export interface PaginationInfo {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-  next?: { page: number; limit: number };
-  prev?: { page: number; limit: number };
-}
-
-export interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-  message?: string;
 }
 
 export interface WordsResponse {
@@ -157,35 +168,6 @@ export interface GameState {
   endTime?: Date;
 }
 
-export interface GuessResult {
-  isCorrect: boolean;
-  correctWord?: string;
-  guessedWord: string;
-  isFuzzy: boolean;
-  fuzzyPositions: number[];
-  remainingGuesses: number;
-  leaderboardRank?: number;
-}
-
-export interface LeaderboardEntry {
-  userEmail: string;
-  userName: string;
-  time: number;
-  guessCount: number;
-  fuzzyCount: number;
-  hintCount: number;
-}
-
-export interface UserStats {
-  gamesPlayed: number;
-  averageGuesses: number;
-  averageTime: number;
-  bestTime: number;
-  currentStreak: number;
-  longestStreak: number;
-  topTenCount: number;
-}
-
 export interface UserPreferences {
   theme: 'light' | 'dark';
   notifications: boolean;
@@ -198,5 +180,63 @@ export interface GameStats {
   averageGuesses: number;
   fastestTime: number;
   longestStreak: number;
-  topTenCount: number;
-} 
+}
+
+export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
+
+// Client-specific GuessResult that extends the shared type
+export interface ClientGuessResult extends GuessResult {
+  isCorrect: boolean;
+  guess: string;
+  isFuzzy: boolean;
+  fuzzyPositions?: number[];
+  gameOver: boolean;
+  correctWord: string;
+}
+
+// Add the API response type that matches the Supabase schema
+export interface ApiWord {
+  id: string;
+  word: string;
+  definition: string;
+  etymology: string;
+  first_letter: string;
+  in_a_sentence: string;
+  number_of_letters: number;
+  equivalents: string[];
+  difficulty: string;
+}
+
+// Game types
+export interface GuessHistory {
+  word: string;
+  isCorrect: boolean;
+  isFuzzy: boolean;
+}
+
+export type HintType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
+
+export interface Hint {
+  D: boolean;  // Definition (always revealed)
+  E: boolean;  // Etymology
+  F: boolean;  // First letter
+  I: boolean;  // In a sentence
+  N: boolean;  // Number of letters
+  E2: boolean; // Equivalents (synonyms)
+}
+
+export interface Message {
+  text: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  duration: number;
+}
+
+// Constants
+export const HINT_INDICES: Record<ClueType, number> = {
+  D: 0,  // Definition (always revealed)
+  E: 1,  // Etymology
+  F: 2,  // First Letter
+  I: 3,  // In a Sentence
+  N: 4,  // Number of Letters
+  E2: 5, // Equivalents/Synonyms
+}; 

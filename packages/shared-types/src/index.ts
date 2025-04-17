@@ -2,25 +2,15 @@
  * Represents a word entry in the application
  */
 export interface Word {
-  /** The word itself */
+  id: string;
   word: string;
-  /** The part of speech (noun, verb, etc.) */
-  partOfSpeech: string;
-  /** A list of synonyms for the word */
-  synonyms?: string[];
-  /** The primary definition of the word */
   definition: string;
-  /** An optional alternate definition */
-  alternateDefinition?: string;
-  /** Date when this word will be the daily word (DD/MM/YY) */
-  dateAdded: string;
-  /** Letter count information */
-  letterCount: {
-    count: number;
-    display: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+  etymology?: string;
+  first_letter: string;
+  in_a_sentence?: string;
+  number_of_letters: number;
+  equivalents: string[];
+  difficulty: string;
 }
 
 /**
@@ -196,4 +186,57 @@ export interface AuthResult {
   success: boolean;
   token?: string;
   error?: string;
+}
+
+/**
+ * Represents the result of a guess
+ */
+export interface GuessResult {
+  isCorrect: boolean;
+  guess: string;
+  isFuzzy: boolean;
+  fuzzyPositions: number[];
+  gameOver: boolean;
+  correctWord?: string;
+}
+
+/**
+ * Database client interface
+ */
+export interface DatabaseClient {
+  query: <T = any>(sql: string, params?: any[]) => Promise<T[]>;
+  one: <T = any>(sql: string, params?: any[]) => Promise<T>;
+  transaction: <T>(callback: (client: DatabaseClient) => Promise<T>) => Promise<T>;
+}
+
+/**
+ * Represents the raw word data from Supabase API (snake_case)
+ */
+export interface ApiWord {
+  id: string;
+  word: string;
+  definition: string;
+  etymology?: string;
+  first_letter: string;
+  in_a_sentence?: string;
+  number_of_letters: number;
+  equivalents: string;
+  difficulty: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Represents a word in the game context with transformed fields (camelCase)
+ */
+export interface GameWord {
+  id: string;
+  word: string;
+  definition: string;
+  etymology: string;
+  firstLetter: string;
+  inASentence: string;
+  numberOfLetters: number;
+  equivalents: string[];
+  difficulty: string;
 } 

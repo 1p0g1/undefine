@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5174,
-    strictPort: false,
+    strictPort: true,
     hmr: {
       overlay: false
     },
@@ -15,18 +16,15 @@ export default defineConfig({
         target: process.env.BACKEND_URL || 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   },
   preview: {
-    strictPort: false
+    strictPort: true
   },
   resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx'],
-    alias: {
-      '@': '/src'
-    }
+    extensions: ['.js', '.jsx', '.ts', '.tsx']
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
