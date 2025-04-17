@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "@types/snowflake-sdk": "^1.6.24",
+    "detect-port": "^2.1.0",
+    "get-port": "^7.1.0",
     "react": "^18.2.0",
-    "react-confetti": "^6.1.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.12.0",
     "react-router-dom": "^6.30.0",
