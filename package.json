@@ -15,7 +15,8 @@
     "sync-port": "tsx client/scripts/sync-port.ts",
     "debug:dev": "./scripts/kill-ports.sh && NODE_ENV=development PORT=3001 DB_PROVIDER=supabase DEBUG=1 concurrently \"npm run dev:server\" \"cd client && BACKEND_URL=http://localhost:3001 npm run dev\"",
     "simple:dev": "./scripts/kill-ports.sh && NODE_ENV=development PORT=3001 tsx watch src/simple-server.ts",
-    "test:api": "ts-node src/tests/api-test.ts"
+    "test:api": "ts-node src/tests/api-test.ts",
+    "start": "node dist/index.js"
   },
   "ts-node": {
     "esm": true,
