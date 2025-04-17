@@ -1,18 +1,18 @@
 // ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
 
 import dotenv from 'dotenv';
-import { createDatabaseClient } from '../config/database/index';
-import { GameService } from '../services/GameService';
-import { LeaderboardService } from '../services/LeaderboardService';
+import { getDb } from '../config/database/index.js';
+import { GameService } from '../services/GameService.js';
+import { LeaderboardService } from '../services/LeaderboardService.js';
 
 // Load environment variables
 dotenv.config();
 
 async function testCoreFunctionality() {
   console.log('Starting core functionality test...');
-  console.log(`Using database provider: ${process.env.DB_PROVIDER || 'snowflake'}`);
+  console.log(`Using database provider: ${process.env.DB_PROVIDER || 'supabase'}`);
 
-  const db = createDatabaseClient();
+  const db = getDb();
   let success = true;
 
   try {
