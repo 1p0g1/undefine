@@ -1,12 +1,20 @@
 // ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
 
-import type {
+import {
   WordEntry,
   PaginationParams,
   PaginationInfo,
   ApiResponse,
   FormState
-} from '@reversedefine/shared-types';
+} from '../types/index.js';
+import {
+  WordResponse,
+  LeaderboardResponse,
+  GameSessionResponse,
+  UserStatsResponse,
+  ErrorResponse,
+  DailyWord
+} from '../types/index.js';
 
 /**
  * Response type for paginated words

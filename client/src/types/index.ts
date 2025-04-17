@@ -1,41 +1,82 @@
-// Import shared types using the new path mapping
-import type {
-  Word,
-  User,
-  GameSession,
-  GuessResult,
-  LeaderboardEntry,
-  UserStats,
-  ApiResponse,
-  PaginationParams,
-  PaginationInfo,
-  DatabaseClient
-} from '@reversedefine/shared-types';
+// Local type definitions
+export interface Word {
+  id: string;
+  word: string;
+  definition: string;
+  part_of_speech: string;
+  difficulty?: number;
+}
 
-// Re-export shared types
-export type {
-  Word,
-  User,
-  GameSession,
-  GuessResult,
-  LeaderboardEntry,
-  UserStats,
-  ApiResponse,
-  PaginationParams,
-  PaginationInfo,
-  DatabaseClient
-};
+export interface User {
+  id: string;
+  username: string;
+  email?: string;
+  createdAt?: string;
+}
+
+export interface GameSession {
+  id: string;
+  userId: string;
+  wordId: string;
+  startTime: string;
+  endTime?: string;
+  guesses: number;
+  completed: boolean;
+  score?: number;
+}
+
+export interface GuessResult {
+  correct: boolean;
+  similarity?: number;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  username: string;
+  score: number;
+  rank?: number;
+}
+
+export interface UserStats {
+  totalGames: number;
+  gamesWon: number;
+  averageGuesses: number;
+  bestScore: number;
+  currentStreak: number;
+  longestStreak: number;
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  pagination?: PaginationInfo;
+}
+
+export interface PaginationParams {
+  page: number;
+  limit: number;
+}
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface DatabaseClient {
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  isConnected(): boolean;
+}
 
 // Client-specific types
 export interface WordEntry {
   id: string;
   word: string;
   definition: string;
-  etymology?: string;
-  first_letter: string;
-  in_a_sentence?: string;
-  number_of_letters: number;
-  equivalents?: string;
+  difficulty: number;
+  part_of_speech: string;
 }
 
 export interface WordData {
@@ -52,14 +93,9 @@ export interface WordData {
 }
 
 export interface FormState {
-  id: string;
-  word: string;
-  definition: string;
-  etymology?: string;
-  first_letter: string;
-  in_a_sentence?: string;
-  number_of_letters: number;
-  equivalents?: string;
+  isSubmitting: boolean;
+  isValid: boolean;
+  errors: Record<string, string>;
 }
 
 export interface ValidationError {
@@ -239,4 +275,39 @@ export const HINT_INDICES: Record<ClueType, number> = {
   I: 3,  // In a Sentence
   N: 4,  // Number of Letters
   E2: 5, // Equivalents/Synonyms
-}; 
+};
+
+// Export all types needed by the client application
+export interface WordResponse {
+  word: string;
+  definition: string;
+  part_of_speech: string;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  pagination?: PaginationInfo;
+}
+
+export interface GameSessionResponse {
+  session: GameSession;
+}
+
+export interface UserStatsResponse {
+  stats: UserStats;
+}
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface DailyWord {
+  id: string;
+  word: string;
+  definition: string;
+  part_of_speech: string;
+  date: string;
+}
+
+// Re-export game-specific types
+export * from './game'; 
