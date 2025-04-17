@@ -639,3 +639,64 @@ body {
   }
 }
 
+/* Navigation menu */
+.app-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background-color: var(--paper-color);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding: var(--space-sm) 0;
+  z-index: 10;
+}
+
+.nav-link {
+  display: block;
+  padding: var(--space-sm) var(--space-md);
+  margin: 0 var(--space-md);
+  text-decoration: none;
+  color: var(--text-dark);
+  font-weight: bold;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nav-link.active {
+  color: var(--primary-blue);
+  border-bottom: 2px solid var(--primary-blue);
+}
+
+/* Header Styles */
+.app-header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--space-lg);
+}
+
+.app-title {
+  font-size: var(--font-size-3xl);
+  color: var(--primary-blue);
+  margin: 0 0 var(--space-md) 0;
+  font-weight: bold;
+}
+
+.header-nav {
+  display: flex;
+  justify-content: center;
+}
+
+.header-nav .nav-link {
+  margin: 0 var(--space-md);
+}
+

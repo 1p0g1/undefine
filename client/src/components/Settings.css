@@ -1,0 +1,185 @@
+.settings-container {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  background-color: var(--paper-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.settings-container h2 {
+  text-align: center;
+  color: var(--primary-blue);
+  margin-bottom: var(--space-lg);
+  font-size: var(--font-size-2xl);
+}
+
+.settings-section {
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--space-md);
+}
+
+.settings-section h3 {
+  color: var(--text-dark);
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-md);
+}
+
+.settings-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+.settings-option label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-dark);
+  font-size: var(--font-size-base);
+}
+
+.settings-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.settings-option input[type="checkbox"]:focus {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+.settings-option select {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: white;
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  color: var(--text-dark);
+  width: 150px;
+}
+
+.settings-option select:focus {
+  outline: 2px solid var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.settings-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.settings-actions button {
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  min-width: 180px;
+}
+
+.settings-actions button:hover {
+  background-color: var(--accent-blue);
+}
+
+.settings-actions button:focus {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+.settings-actions button:active {
+  transform: translateY(1px);
+}
+
+.settings-actions button:disabled {
+  background-color: var(--text-light);
+  cursor: not-allowed;
+}
+
+.settings-actions .reset-button {
+  background-color: transparent;
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  font-size: var(--font-size-sm);
+  min-width: 150px;
+}
+
+.settings-actions .reset-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--incorrect-red);
+  border-color: var(--incorrect-red);
+}
+
+.error-message {
+  padding: var(--space-sm);
+  margin-bottom: var(--space-md);
+  background-color: var(--incorrect-red-bg);
+  color: var(--incorrect-red);
+  border: 1px solid var(--incorrect-red);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.success-message {
+  padding: var(--space-sm);
+  margin-bottom: var(--space-md);
+  background-color: var(--correct-green-bg);
+  color: var(--correct-border);
+  border: 1px solid var(--correct-border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode support */
+[data-theme="dark"] {
+  --paper-color: #222;
+  --border-color: #444;
+  --text-dark: #eee;
+  --text-light: #bbb;
+}
+
+/* Accessibility focus indicators */
+*:focus-visible {
+  outline: 3px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 430px) {
+  .settings-container {
+    padding: var(--space-sm);
+  }
+  
+  .settings-option select {
+    width: 120px;
+  }
+  
+  .settings-actions button {
+    min-width: 150px;
+  }
+} 
