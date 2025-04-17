@@ -3,7 +3,12 @@ import { register } from 'prom-client';
 
 const router = Router();
 
-// Simplified health check endpoint (removed Snowflake dependency)
+// Simple root health check for deployment monitoring
+router.get('/', async (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Metrics health check endpoint
 router.get('/health', async (req, res) => {
   try {
     // Get all metrics
