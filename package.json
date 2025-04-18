@@ -10,6 +10,7 @@
   "scripts": {
     "prepare": "[ \"$CI\" = \"true\" ] || exit 0",
     "build": "npm run build:types && npm run build:server && npm run build:client",
+    "build:minimal": "npm run build:types && npm run build:client",
     "build:types": "cd packages/shared-types && tsc",
     "build:server": "tsc -p src/tsconfig.server.json",
     "build:client": "cd client && npm run build",
@@ -47,7 +48,7 @@
     "pg": "^8.11.3",
     "pg-pool": "^3.8.0",
     "prom-client": "^14.2.0",
-    "react": "^18.2.0",
+    "react": "^18.3.1",
     "react-dom": "^18.2.0",
     "typescript": "^5.3.3",
     "web-vitals": "^2.1.4"
@@ -63,8 +64,8 @@
     "@types/morgan": "^1.9.4",
     "@types/node-fetch": "^2.6.12",
     "@types/pg": "^8.11.11",
-    "@types/react": "^18.3.20",
-    "@types/react-dom": "^18.3.6",
+    "@types/react": "18.2.66",
+    "@types/react-dom": "18.2.22",
     "@types/react-router-dom": "^5.3.3",
     "@types/uuid": "^10.0.0",
     "concurrently": "^8.2.2",
