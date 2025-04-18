@@ -19,7 +19,7 @@
     "strict": true,
     "noImplicitAny": false,
     "types": ["vite/client"],
-    "typeRoots": ["./node_modules/vite/client", "./node_modules/@types"]
+    "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": ["src", "types"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
