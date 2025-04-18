@@ -103,6 +103,10 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
   ```json
   "types": ["vite/client"]
   ```
+- [x] Added explicit type references to help Render find Vite types:
+  - Added `typeRoots` to client/tsconfig.json to explicitly point to vite types
+  - Added triple-slash reference directive in main.tsx and config.ts: `/// <reference types="vite/client" />`
+  - Created a custom type declaration file at `client/src/types/vite-env.d.ts` defining ImportMetaEnv
 - [x] Identified fallback plan if Vite 5 causes issues: downgrade to Vite 4.5.0
 - [ ] Redeploy on Render
 - [ ] Check logs for remaining build/runtime issues
