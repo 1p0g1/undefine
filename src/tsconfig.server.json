@@ -10,7 +10,8 @@
       "@shared/*": ["../packages/shared-types/src/*"]
     },
     "outDir": "../dist-server",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node", "react", "react-dom"]
   },
   "include": ["./**/*.ts"],
   "exclude": ["**/*.test.*", "**/*.spec.*"]

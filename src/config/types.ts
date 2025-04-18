@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import type { Word } from '../types/shared.js';
 
 export interface GameState {
