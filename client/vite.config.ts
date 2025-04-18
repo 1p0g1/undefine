@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 // @ts-ignore - The module works but TypeScript doesn't recognize its exports correctly
 import react from '@vitejs/plugin-react'
@@ -41,6 +42,20 @@ export default defineConfig({
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true
+    }
+  },
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3001')
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    includeSource: ['src/**/*.{ts,tsx}'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: ['**/node_modules/**', '**/test/**']
     }
   }
 })
