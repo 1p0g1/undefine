@@ -14,5 +14,9 @@
     "types": ["node"]
   },
   "include": ["./**/*.ts"],
-  "exclude": ["**/*.test.*", "**/*.spec.*"]
+  "exclude": [
+    "**/*.test.*", 
+    "**/*.spec.*",
+    "./tests/api-test.ts"
+  ]
 } 
