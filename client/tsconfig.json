@@ -21,7 +21,7 @@
     "types": ["vite/client"],
     "typeRoots": ["./node_modules/vite/client", "./node_modules/@types"]
   },
-  "include": ["src"],
+  "include": ["src", "types"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
   "references": [{ "path": "./tsconfig.node.json" }],
   "ts-node": {

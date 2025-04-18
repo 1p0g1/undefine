@@ -107,6 +107,12 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
   - Added `typeRoots` to client/tsconfig.json to explicitly point to vite types
   - Added triple-slash reference directive in main.tsx and config.ts: `/// <reference types="vite/client" />`
   - Created a custom type declaration file at `client/src/types/vite-env.d.ts` defining ImportMetaEnv
+- [x] Created a simple shim for vite/client:
+  ```typescript
+  // client/types/vite-client.d.ts
+  declare module "vite/client";
+  ```
+  - Added "types" to the include array in tsconfig.json: `"include": ["src", "types"]`
 - [x] Identified fallback plan if Vite 5 causes issues: downgrade to Vite 4.5.0
 - [ ] Redeploy on Render
 - [ ] Check logs for remaining build/runtime issues
