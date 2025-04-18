@@ -54,6 +54,7 @@ export default defineConfig({
     includeSource: ['src/**/*.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     coverage: {
+      provider: 'istanbul',
       reporter: ['text', 'json', 'html'],
       exclude: ['**/node_modules/**', '**/test/**']
     }

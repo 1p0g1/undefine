@@ -18,7 +18,7 @@
     /* Linting */
     "strict": true,
     "noImplicitAny": false,
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
   "include": ["src"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
