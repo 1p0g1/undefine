@@ -1,5 +1,6 @@
 /// <reference types="react" />
 import type { Word } from '../types/shared.js';
+import type { Dispatch } from 'react';
 
 export interface GameState {
   word: Word | null;
@@ -23,7 +24,7 @@ export interface GameStats {
 
 export interface GameContext {
   state: GameState;
-  dispatch: React.Dispatch<GameAction>;
+  dispatch: Dispatch<GameAction>;
 }
 
 export type GameAction =

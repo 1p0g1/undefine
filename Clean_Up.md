@@ -21,7 +21,8 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
         "@shared/*": ["packages/shared-types/src/*"]
       },
       "outDir": "dist-server",
-      "skipLibCheck": true
+      "skipLibCheck": true,
+      "types": ["node", "react", "react-dom"]
     },
     "include": ["src"],
     "exclude": ["client", "tests", "**/*.test.*"]
@@ -71,26 +72,24 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
 
 ### 🚦 5. SANITY CHECK BEFORE RE-DEPLOY
 
-- [ ] Run:
+- [x] Run:
   ```bash
   npx tsc -p tsconfig.server.json
   ```
   and fix **all errors**.
-- [ ] Test `npm run build` locally.
-- [ ] Remove husky if it's causing deploy issues:
-  ```json
-  "prepare": ""
-  ```
-  Or:
-  ```json
-  "prepare": "test $CI = true || husky install"
-  ```
+- [x] Test `npm run build` locally.
+- [x] Fix React type issues:
+  - Added `/// <reference types="react" />` to `src/config/types.ts`
+  - Added explicit `"types": ["node", "react", "react-dom"]` to `tsconfig.server.json`
+  - Verified React types are needed for `React.Dispatch<GameAction>` in the server code
+- [x] Fix package script issues:
+  - Updated prepare script to use proper shell syntax: `"prepare": "[ \"$CI\" = \"true\" ] || exit 0"`
 
 ---
 
 ### ✅ 6. DEPLOY TO RENDER
 
-- [ ] Push changes to GitHub
+- [x] Push changes to GitHub
 - [ ] Redeploy on Render
 - [ ] Check logs for remaining build/runtime issues
 
