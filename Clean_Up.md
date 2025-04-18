@@ -90,11 +90,20 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
 ### ✅ 6. DEPLOY TO RENDER
 
 - [x] Push changes to GitHub
-- [x] Simplified Render build command to prevent redundant builds:
+- [x] Updated Render build command to a more robust multi-line format:
   ```yaml
-  buildCommand: npm install && cd client && npm install && cd .. && npm run build
+  buildCommand: |
+    cd client && npm install
+    cd ..
+    npm install
+    npm run build
   ```
-  - Ensures client dependencies like vite/client are available before TypeScript compilation
+  - Ensures client dependencies like vite/client are installed first, before any TypeScript compilation
+- [x] Simplified client/tsconfig.json to only include required types:
+  ```json
+  "types": ["vite/client"]
+  ```
+- [x] Identified fallback plan if Vite 5 causes issues: downgrade to Vite 4.5.0
 - [ ] Redeploy on Render
 - [ ] Check logs for remaining build/runtime issues
 

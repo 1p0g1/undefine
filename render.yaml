@@ -3,7 +3,11 @@ services:
     name: undefine-backend
     env: node
     plan: free
-    buildCommand: npm install && cd client && npm install && cd .. && npm run build
+    buildCommand: |
+      cd client && npm install
+      cd ..
+      npm install
+      npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
