@@ -99,21 +99,16 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
     npm run build
   ```
   - Ensures client dependencies like vite/client are installed first, before any TypeScript compilation
-- [x] Simplified client/tsconfig.json to only include required types:
-  ```json
-  "types": ["vite/client"]
-  ```
-- [x] Added explicit type references to help Render find Vite types:
-  - Added `typeRoots` to client/tsconfig.json to explicitly point to vite types
-  - Added triple-slash reference directive in main.tsx and config.ts: `/// <reference types="vite/client" />`
-  - Created a custom type declaration file at `client/src/types/vite-env.d.ts` defining ImportMetaEnv
-- [x] Created a simple shim for vite/client:
-  ```typescript
-  // client/types/vite-client.d.ts
-  declare module "vite/client";
-  ```
-  - Added "types" to the include array in tsconfig.json: `"include": ["src", "types"]`
-- [x] Identified fallback plan if Vite 5 causes issues: downgrade to Vite 4.5.0
+- [x] FINAL BOSS FIX: Fixed vite/client type resolution using ambient module declaration:
+  - Removed explicit `"types": ["vite/client"]` from client/tsconfig.json to prevent TypeScript from looking for non-existent @types packages
+  - Created a simple shim at `client/types/vite-client.d.ts`:
+    ```typescript
+    declare module "vite/client";
+    ```
+  - Ensured proper inclusion of types folder via `"include": ["src", "types"]` in tsconfig.json
+  - Added `"typeRoots": ["./types", "./node_modules/@types"]` to prioritize our ambient declarations
+  - Verified locally with `tsc --noEmit` in the client directory
+- [x] Identified fallback plan if issues persist: downgrade to Vite 4.5.0
 - [ ] Redeploy on Render
 - [ ] Check logs for remaining build/runtime issues
 
