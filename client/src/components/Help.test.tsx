@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,6 +10,8 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('Help', () => {
+  // Create a userEvent instance for each test
+  const user = userEvent.setup();
   beforeEach(() => {
     // Reset all mocks before each test
     vi.clearAllMocks();
@@ -59,7 +63,7 @@ describe('Help', () => {
     const faqItems = screen.getAllByRole('button', { name: /what/i });
     
     for (const item of faqItems) {
-      await userEvent.click(item);
+      await user.click(item);
       expect(item).toHaveAttribute('aria-expanded', 'true');
     }
   });
@@ -72,11 +76,11 @@ describe('Help', () => {
     
     for (const item of faqItems) {
       // Expand
-      await userEvent.click(item);
+      await user.click(item);
       expect(item).toHaveAttribute('aria-expanded', 'true');
       
       // Collapse
-      await userEvent.click(item);
+      await user.click(item);
       expect(item).toHaveAttribute('aria-expanded', 'false');
     }
   });
@@ -97,10 +101,10 @@ describe('Help', () => {
     const messageInput = screen.getByPlaceholderText(/message/i);
     const submitButton = screen.getByRole('button', { name: /send/i });
 
-    await userEvent.type(nameInput, 'Test User');
-    await userEvent.type(emailInput, 'test@example.com');
-    await userEvent.type(messageInput, 'Test message');
-    await userEvent.click(submitButton);
+    await user.type(nameInput, 'Test User');
+    await user.type(emailInput, 'test@example.com');
+    await user.type(messageInput, 'Test message');
+    await user.click(submitButton);
 
     // Verify the submission request
     expect(mockFetch).toHaveBeenCalledWith('/api/contact', expect.any(Object));
@@ -118,7 +122,7 @@ describe('Help', () => {
 
     // Try to submit without filling in fields
     const submitButton = screen.getByRole('button', { name: /send/i });
-    await userEvent.click(submitButton);
+    await user.click(submitButton);
 
     // Check for validation messages
     expect(screen.getByText(/name is required/i)).toBeInTheDocument();
@@ -135,10 +139,10 @@ describe('Help', () => {
     const messageInput = screen.getByPlaceholderText(/message/i);
     const submitButton = screen.getByRole('button', { name: /send/i });
 
-    await userEvent.type(nameInput, 'Test User');
-    await userEvent.type(emailInput, 'invalid-email');
-    await userEvent.type(messageInput, 'Test message');
-    await userEvent.click(submitButton);
+    await user.type(nameInput, 'Test User');
+    await user.type(emailInput, 'invalid-email');
+    await user.type(messageInput, 'Test message');
+    await user.click(submitButton);
 
     // Check for validation message
     expect(screen.getByText(/invalid email format/i)).toBeInTheDocument();
@@ -155,10 +159,10 @@ describe('Help', () => {
     const messageInput = screen.getByPlaceholderText(/message/i);
     const submitButton = screen.getByRole('button', { name: /send/i });
 
-    await userEvent.type(nameInput, 'Test User');
-    await userEvent.type(emailInput, 'test@example.com');
-    await userEvent.type(messageInput, 'Test message');
-    await userEvent.click(submitButton);
+    await user.type(nameInput, 'Test User');
+    await user.type(emailInput, 'test@example.com');
+    await user.type(messageInput, 'Test message');
+    await user.click(submitButton);
 
     // Check for loading state
     expect(screen.getByText(/sending/i)).toBeInTheDocument();
@@ -175,10 +179,10 @@ describe('Help', () => {
     const messageInput = screen.getByPlaceholderText(/message/i);
     const submitButton = screen.getByRole('button', { name: /send/i });
 
-    await userEvent.type(nameInput, 'Test User');
-    await userEvent.type(emailInput, 'test@example.com');
-    await userEvent.type(messageInput, 'Test message');
-    await userEvent.click(submitButton);
+    await user.type(nameInput, 'Test User');
+    await user.type(emailInput, 'test@example.com');
+    await user.type(messageInput, 'Test message');
+    await user.click(submitButton);
 
     // Wait for error message
     await waitFor(() => {
@@ -201,10 +205,10 @@ describe('Help', () => {
     const messageInput = screen.getByPlaceholderText(/message/i);
     const submitButton = screen.getByRole('button', { name: /send/i });
 
-    await userEvent.type(nameInput, 'Test User');
-    await userEvent.type(emailInput, 'test@example.com');
-    await userEvent.type(messageInput, 'Test message');
-    await userEvent.click(submitButton);
+    await user.type(nameInput, 'Test User');
+    await user.type(emailInput, 'test@example.com');
+    await user.type(messageInput, 'Test message');
+    await user.click(submitButton);
 
     // Wait for error message
     await waitFor(() => {

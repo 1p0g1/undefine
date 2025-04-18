@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -9,6 +10,8 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('Profile', () => {
+  // Create a userEvent instance for each test
+  const user = userEvent.setup();
   beforeEach(() => {
     // Reset all mocks before each test
     vi.clearAllMocks();
@@ -63,16 +66,16 @@ describe('Profile', () => {
 
     // Click edit button
     const editButton = screen.getByRole('button', { name: /edit profile/i });
-    await userEvent.click(editButton);
+    await user.click(editButton);
 
     // Update email
     const emailInput = screen.getByPlaceholderText(/email/i);
-    await userEvent.clear(emailInput);
-    await userEvent.type(emailInput, 'updated@example.com');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'updated@example.com');
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Verify the update request
     expect(mockFetch).toHaveBeenCalledWith('/api/profile', expect.any(Object));
@@ -103,16 +106,16 @@ describe('Profile', () => {
 
     // Click edit button
     const editButton = screen.getByRole('button', { name: /edit profile/i });
-    await userEvent.click(editButton);
+    await user.click(editButton);
 
     // Enter invalid email
     const emailInput = screen.getByPlaceholderText(/email/i);
-    await userEvent.clear(emailInput);
-    await userEvent.type(emailInput, 'invalid-email');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'invalid-email');
 
     // Try to save
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Check for validation message
     expect(screen.getByText(/invalid email format/i)).toBeInTheDocument();
@@ -135,16 +138,16 @@ describe('Profile', () => {
 
     // Click edit button
     const editButton = screen.getByRole('button', { name: /edit profile/i });
-    await userEvent.click(editButton);
+    await user.click(editButton);
 
     // Update email
     const emailInput = screen.getByPlaceholderText(/email/i);
-    await userEvent.clear(emailInput);
-    await userEvent.type(emailInput, 'updated@example.com');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'updated@example.com');
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Check for loading state
     expect(screen.getByText(/saving/i)).toBeInTheDocument();
@@ -167,16 +170,16 @@ describe('Profile', () => {
 
     // Click edit button
     const editButton = screen.getByRole('button', { name: /edit profile/i });
-    await userEvent.click(editButton);
+    await user.click(editButton);
 
     // Update email
     const emailInput = screen.getByPlaceholderText(/email/i);
-    await userEvent.clear(emailInput);
-    await userEvent.type(emailInput, 'updated@example.com');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'updated@example.com');
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Wait for error message
     await waitFor(() => {
@@ -205,16 +208,16 @@ describe('Profile', () => {
 
     // Click edit button
     const editButton = screen.getByRole('button', { name: /edit profile/i });
-    await userEvent.click(editButton);
+    await user.click(editButton);
 
     // Update email
     const emailInput = screen.getByPlaceholderText(/email/i);
-    await userEvent.clear(emailInput);
-    await userEvent.type(emailInput, 'updated@example.com');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'updated@example.com');
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Wait for error message
     await waitFor(() => {

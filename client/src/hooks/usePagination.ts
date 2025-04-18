@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { PaginationInfo } from '../types/index.js';
 import { getFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
 
+// Extended pagination info with next/prev page helpers
+interface ExtendedPaginationInfo extends PaginationInfo {
+  next?: { page: number; limit: number };
+  prev?: { page: number; limit: number };
+}
+
 interface UsePaginationProps {
   totalItems?: number;
   initialPage?: number;
@@ -19,7 +25,7 @@ interface UsePaginationResult {
   firstPage: () => void;
   lastPage: () => void;
   totalPages: number;
-  paginationInfo: PaginationInfo | null;
+  paginationInfo: ExtendedPaginationInfo | null;
   canPrevPage: boolean;
   canNextPage: boolean;
   getPageItems: (items: any[]) => any[];
@@ -111,11 +117,11 @@ const usePagination = ({
   }, [page, limit]);
   
   // Create pagination info object for API responses
-  const paginationInfo: PaginationInfo = {
+  const paginationInfo: ExtendedPaginationInfo = {
     total: totalItems,
     page,
     limit,
-    pages: totalPages,
+    totalPages,
     next: canNextPage ? { page: page + 1, limit } : undefined,
     prev: canPrevPage ? { page: page - 1, limit } : undefined
   };

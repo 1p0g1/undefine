@@ -1,6 +1,17 @@
 /**
- * Represents a word entry in the application
+ * Shared types for Un-Define game
  */
+
+// Game core types
+export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
+
+export type ClueStatus = {
+  [key in ClueType]: 'neutral' | 'grey' | 'correct' | 'incorrect';
+};
+
+export type GameState = 'active' | 'completed' | 'expired';
+
+// Database models
 export interface Word {
   id: string;
   word: string;
@@ -10,105 +21,116 @@ export interface Word {
   in_a_sentence?: string;
   number_of_letters: number;
   equivalents: string[];
-  difficulty: string;
+  difficulty?: string;
+  times_used?: number;
+  last_used_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
-/**
- * Represents a leaderboard entry
- */
-export interface LeaderboardEntry {
-  id: string;
-  username: string;
-  wordId: string;
-  word: string;
-  timeTaken: number;
-  guessesUsed: number;
-  fuzzyMatches: number;
-  hintsUsed: number;
-  createdAt: string;
-}
-
-/**
- * Represents user statistics
- */
-export interface UserStats {
-  username: string;
-  gamesPlayed: number;
-  gamesWon: number;
-  averageGuesses: number;
-  averageTime: number;
-  bestTime: number;
-  currentStreak: number;
-  longestStreak: number;
-  topTenCount: number;
-  lastPlayedAt: string;
-}
-
-/**
- * Represents daily metrics
- */
-export interface DailyMetrics {
-  date: string;
-  totalPlays: number;
-  uniqueUsers: number;
-  averageGuesses: number;
-  averageTime: number;
-}
-
-/**
- * Represents a streak leader
- */
-export interface StreakLeader {
-  username: string;
-  streak: number;
-  lastPlayedAt: string;
-}
-
-/**
- * Represents a game session
- */
 export interface GameSession {
   id: string;
-  wordId: string;
+  word_id: string;
   word: string;
-  startTime: string;
-  endTime?: string;
-  guessesUsed: number;
-  hintsUsed: number;
-  fuzzyMatches: number;
-  isComplete: boolean;
-  isWon: boolean;
-  userEmail?: string;
+  words?: Word;
+  word_snapshot?: string;
+  start_time: string;
+  guesses: string[];
+  guesses_used: number;
+  revealed_clues: ClueType[];
+  clue_status: ClueStatus;
+  is_complete: boolean;
+  is_won: boolean;
+  end_time?: string;
+  state: GameState;
+  created_at?: string;
+  updated_at?: string;
 }
 
-/**
- * Represents a word entry in the application
- */
-export interface WordEntry {
-  /** The word itself */
+export interface User {
+  id: string;
+  username: string;
+  created_at: string;
+}
+
+export interface UserStats {
+  username: string;
+  games_played: number;
+  games_won: number;
+  average_guesses: number;
+  average_time: number;
+  current_streak: number;
+  longest_streak: number;
+  last_played_at: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Score {
+  id: string;
+  player_id: string;
   word: string;
-  /** The part of speech (noun, verb, etc.) */
-  partOfSpeech: string;
-  /** A list of synonyms for the word */
-  synonyms?: string[];
-  /** The primary definition of the word */
-  definition: string;
-  /** An optional alternate definition */
-  alternateDefinition?: string;
-  /** Date when this word will be the daily word (DD/MM/YY) */
-  dateAdded: string;
-  /** Letter count information */
-  letterCount: {
-    count: number;
-    display: string;
+  guesses_used: number;
+  used_hint: boolean;
+  completion_time_seconds: number;
+  nickname?: string;
+  created_at?: string;
+}
+
+// API interfaces
+export interface GuessResult {
+  isCorrect: boolean;
+  guess: string;
+  gameOver: boolean;
+  correctWord?: string;
+  nextHint?: {
+    type: ClueType;
+    hint: string;
   };
-  createdAt: string;
-  updatedAt: string;
 }
 
-/**
- * Represents the form state for adding/editing a word
- */
+export interface WordClues {
+  D: string; // Definition
+  E: string; // Etymology
+  F: string; // First letter
+  I: string; // Example sentence (I for "In a sentence")
+  N: number; // Number of letters
+  E2: string[]; // Equivalents/Synonyms
+}
+
+export interface GameWord {
+  id: string;
+  word: string;
+  definition: string;
+  etymology?: string;
+  firstLetter?: string;
+  inASentence?: string;
+  numberOfLetters?: number;
+  equivalents?: string[];
+  difficulty?: string;
+  clues?: WordClues;
+}
+
+export interface GameResponse {
+  gameId: string;
+  word: GameWord;
+}
+
+export interface ApiWord {
+  id: string;
+  word: string;
+  definition: string;
+  etymology?: string;
+  first_letter: string;
+  in_a_sentence?: string;
+  number_of_letters: number;
+  equivalents: string | string[];
+  difficulty: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Form & validation types
 export interface FormState {
   word: string;
   partOfSpeech: string;
@@ -122,121 +144,75 @@ export interface FormState {
   };
 }
 
-/**
- * Represents a validation error for a form field
- */
+export interface WordEntry {
+  word: string;
+  partOfSpeech: string;
+  synonyms?: string[];
+  definition: string;
+  alternateDefinition?: string;
+  dateAdded: string;
+  letterCount: {
+    count: number;
+    display: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ValidationError {
   field: string;
   message: string;
 }
 
-/**
- * Common API response type
- */
-export interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-  message?: string;
+// Leaderboard & stats types
+export interface DailyMetrics {
+  date: string;
+  totalPlays: number;
+  uniqueUsers: number;
+  averageGuesses: number;
+  averageTime: number;
 }
 
-/**
- * Pagination parameters
- */
-export interface PaginationParams {
-  page: number;
-  limit: number;
-  search?: string;
-}
-
-/**
- * Pagination information
- */
-export interface PaginationInfo {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-  next?: { page: number; limit: number };
-  prev?: { page: number; limit: number };
-}
-
-/**
- * User information
- */
-export interface User {
-  id: string;
-  email: string;
+export interface StreakLeader {
   username: string;
+  streak: number;
+  lastPlayedAt: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  username: string;
+  wordId: string;
+  word: string;
+  timeTaken: number;
+  guessesUsed: number;
+  fuzzyMatches?: number;
+  hintsUsed?: number;
   createdAt: string;
-  lastLoginAt?: string;
 }
 
-/**
- * User credentials for authentication
- */
-export interface UserCredentials {
-  email: string;
-  password: string;
-}
-
-/**
- * Authentication result
- */
-export interface AuthResult {
-  success: boolean;
-  token?: string;
-  error?: string;
-}
-
-/**
- * Represents the result of a guess
- */
-export interface GuessResult {
-  isCorrect: boolean;
-  guess: string;
-  isFuzzy: boolean;
-  fuzzyPositions: number[];
-  gameOver: boolean;
-  correctWord?: string;
-}
-
-/**
- * Database client interface
- */
+// Service interfaces
 export interface DatabaseClient {
-  query: <T = any>(sql: string, params?: any[]) => Promise<T[]>;
-  one: <T = any>(sql: string, params?: any[]) => Promise<T>;
-  transaction: <T>(callback: (client: DatabaseClient) => Promise<T>) => Promise<T>;
-}
-
-/**
- * Represents the raw word data from Supabase API (snake_case)
- */
-export interface ApiWord {
-  id: string;
-  word: string;
-  definition: string;
-  etymology?: string;
-  first_letter: string;
-  in_a_sentence?: string;
-  number_of_letters: number;
-  equivalents: string;
-  difficulty: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * Represents a word in the game context with transformed fields (camelCase)
- */
-export interface GameWord {
-  id: string;
-  word: string;
-  definition: string;
-  etymology: string;
-  firstLetter: string;
-  inASentence: string;
-  numberOfLetters: number;
-  equivalents: string[];
-  difficulty: string;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  getRandomWord(): Promise<Word>;
+  getDailyWord(): Promise<Word>;
+  processGuess(gameId: string, guess: string, session: GameSession): Promise<GuessResult>;
+  getUserStats(username: string): Promise<UserStats | null>;
+  updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<void>;
+  getGameSession(gameId: string): Promise<GameSession | null>;
+  startGame(): Promise<GameSession>;
+  endGame(gameId: string, won: boolean): Promise<void>;
+  getUserByUsername(username: string): Promise<User | null>;
+  createUser(username: string): Promise<User>;
+  getClue(session: GameSession, clueType: ClueType): Promise<string | number | null>;
+  getNextHint(session: GameSession): Promise<{ hint: string; type: ClueType }>;
+  submitScore(score: {
+    playerId: string;
+    word: string;
+    guessesUsed: number;
+    usedHint: boolean;
+    completionTime: number;
+    nickname?: string;
+  }): Promise<void>;
 } 

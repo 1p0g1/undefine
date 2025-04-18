@@ -1,66 +1,53 @@
 import { Router } from 'express';
-import { db } from '../config/database/db.js';
-import type { Word } from '../config/database/types.js';
+import { getDb } from '../config/database/db.js';
+import type { Word, ClueType } from '../types/shared.js';
 
 const router = Router();
 
-// Define the DEFINE sequence
-const DEFINE_SEQUENCE = [
-  { letter: 'D', type: 'definition', getter: (word: Word) => word.definition },
-  { letter: 'E', type: 'etymology', getter: (word: Word) => word.etymology || 'No etymology available' },
-  { letter: 'F', type: 'firstLetter', getter: (word: Word) => `The word starts with "${word.firstLetter}"` },
-  { letter: 'I', type: 'sentence', getter: (word: Word) => word.exampleSentence || 'No example sentence available' },
-  { letter: 'N', type: 'length', getter: (word: Word) => `The word has ${word.numLetters} letters` },
-  { letter: 'E', type: 'equivalents', getter: (word: Word) => word.synonyms?.join(', ') || 'No synonyms available' }
-] as const;
+// Hint types mapped to their corresponding word fields
+const HINT_TYPES: Record<string, keyof Word> = {
+  'first-letter': 'first_letter',
+  'in-a-sentence': 'in_a_sentence',
+  'num-letters': 'number_of_letters',
+  'equivalents': 'equivalents'
+};
 
-type HintType = typeof DEFINE_SEQUENCE[number]['type'];
-
-interface HintResponse {
-  clueType: HintType;
-  clueText: string;
-  revealedHints: string[];
-}
-
-router.get('/:gameId', async (req, res) => {
-  const { gameId } = req.params;
+// GET /api/hint/:gameId/:hintType
+router.get('/:gameId/:hintType', async (req, res) => {
+  const { gameId, hintType } = req.params;
   
-  // Get the active game from the server's game store
-  const game = (req.app.locals.activeGames || new Map()).get(gameId);
-  
-  if (!game) {
-    return res.status(404).json({ error: 'Game not found' });
+  try {
+    // Get the current game session
+    const game = await getDb().getGameSession(gameId);
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    
+    // Check if the requested hint type is valid
+    if (!HINT_TYPES[hintType]) {
+      return res.status(400).json({ error: 'Invalid hint type' });
+    }
+    
+    // Check if the user has already requested this hint
+    const hintField = HINT_TYPES[hintType];
+    
+    // Since there's no getWord method, we can use the getClue method
+    const clueType = hintType === 'first-letter' ? 'F' :
+                    hintType === 'in-a-sentence' ? 'I' :
+                    hintType === 'num-letters' ? 'N' :
+                    hintType === 'equivalents' ? 'E2' : 'D' as ClueType;
+    
+    const hint = await getDb().getClue(game, clueType);
+    
+    // Return the hint
+    return res.json({ 
+      hint,
+      hintType
+    });
+  } catch (error) {
+    console.error('Error getting hint:', error);
+    return res.status(500).json({ error: 'Failed to get hint' });
   }
-
-  // Check if game is over
-  if (game.guessCount >= 6) {
-    return res.status(400).json({ error: 'Game over' });
-  }
-
-  // Get the word details from the database
-  const word = await db.getWord(game.wordId);
-  if (!word) {
-    return res.status(404).json({ error: 'Word not found' });
-  }
-
-  // Initialize revealed hints if not exists
-  game.revealedHints = game.revealedHints || new Set<string>();
-
-  // Determine which hint to show based on incorrect guesses
-  const hintIndex = Math.min(game.guessCount, DEFINE_SEQUENCE.length - 1);
-  const currentHint = DEFINE_SEQUENCE[hintIndex];
-
-  // Track hint usage
-  game.hintsUsed = (game.hintsUsed || 0) + 1;
-  game.revealedHints.add(currentHint.letter);
-
-  const response: HintResponse = {
-    clueType: currentHint.type,
-    clueText: currentHint.getter(word),
-    revealedHints: Array.from(game.revealedHints)
-  };
-
-  res.json(response);
 });
 
 export default router; 

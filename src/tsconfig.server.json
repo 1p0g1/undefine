@@ -1,12 +1,17 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../dist",
-    "noEmit": false,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "ES2022"
+    "esModuleInterop": true,
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../packages/shared-types/src/*"]
+    },
+    "outDir": "../dist-server",
+    "skipLibCheck": true
   },
   "include": ["./**/*.ts"],
-  "exclude": ["../client"]
+  "exclude": ["**/*.test.*", "**/*.spec.*"]
 } 

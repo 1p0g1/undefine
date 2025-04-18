@@ -262,7 +262,11 @@ export class SupabaseClient implements DatabaseClient {
         first_letter: dbWord.first_letter,
         in_a_sentence: dbWord.in_a_sentence || '',
         number_of_letters: dbWord.number_of_letters,
-        equivalents: dbWord.equivalents ? dbWord.equivalents.split(',').map((s: string): string => s.trim()) : [],
+        equivalents: Array.isArray(dbWord.equivalents) 
+          ? dbWord.equivalents 
+          : typeof dbWord.equivalents === 'string'
+            ? dbWord.equivalents.split(',').map((s: string): string => s.trim())
+            : [],
         difficulty: dbWord.difficulty || 'Medium'
       };
     } catch (error) {

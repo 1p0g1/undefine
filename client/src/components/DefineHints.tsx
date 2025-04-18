@@ -1,6 +1,19 @@
 import React from 'react';
 import './DefineHints.css';
-import { WordData } from '../types';
+
+// Define WordData interface here instead of importing it
+interface WordData {
+  id: string;
+  word: string;
+  clues: {
+    D: string;  // Definition
+    E: string;  // Etymology
+    F: string;  // First letter
+    I: string;  // In a sentence
+    N: number;  // Number of letters
+    E2: string[];  // Equivalents/synonyms
+  };
+}
 
 interface DefineHintsProps {
   word: WordData;

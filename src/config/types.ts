@@ -1,4 +1,4 @@
-import { Word } from './database/index.js';
+import type { Word } from '../types/shared.js';
 
 export interface GameState {
   word: Word | null;
@@ -31,4 +31,15 @@ export type GameAction =
   | { type: 'USE_HINT' }
   | { type: 'END_GAME'; payload: { isWon: boolean } }
   | { type: 'RESET_GAME' }
-  | { type: 'SET_ERROR'; payload: string }; 
+  | { type: 'SET_ERROR'; payload: string };
+
+export interface WordDefinition {
+  id: string;
+  word: string;
+  definition: string;
+  part_of_speech: string;
+}
+
+export interface WordWithDefinition extends Word {
+  definitions: WordDefinition[];
+} 

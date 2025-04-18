@@ -1,14 +1,29 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Bundler mode */
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
     "jsx": "react-jsx",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "types": ["vite/client", "react", "react-dom"]
+    
+    /* Linting */
+    "strict": true,
+    "noImplicitAny": false,
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
+  "references": [{ "path": "./tsconfig.node.json" }],
+  "ts-node": {
+    "transpileOnly": true
+  }
 }

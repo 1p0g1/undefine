@@ -1,5 +1,6 @@
 import React from 'react';
 import useSettings, { NotificationSettings } from '../hooks/useSettings';
+import { Theme } from '../hooks/useTheme';
 import './Settings.css';
 
 // Individual setting section components
@@ -52,8 +53,8 @@ const NotificationsSection: React.FC<{
 );
 
 const ThemeSection: React.FC<{
-  theme: string;
-  onChange: (theme: string) => void;
+  theme: Theme;
+  onChange: (theme: Theme) => void;
 }> = ({ theme, onChange }) => (
   <section className="settings-section">
     <h3 id="theme-heading">Theme</h3>
@@ -62,7 +63,7 @@ const ThemeSection: React.FC<{
       <select
         id="theme-select"
         value={theme}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value as Theme)}
         aria-labelledby="theme-heading"
       >
         <option value="light">Light</option>

@@ -1,8 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database.types'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Basic Database type definition since we don't have access to the generated types
+interface Database {
+  public: {
+    Tables: {
+      words: {
+        Row: Record<string, any>;
+      };
+      game_sessions: {
+        Row: Record<string, any>;
+      };
+      user_stats: {
+        Row: Record<string, any>;
+      };
+    };
+  };
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')

@@ -1,6 +1,20 @@
 import React from 'react';
-import { WordData } from '../types';
+import './GameOverModal.css';
 import HintContent from './HintContent';
+
+// Define WordData interface here instead of importing it
+interface WordData {
+  id: string;
+  word: string;
+  clues: {
+    D: string;  // Definition
+    E: string;  // Etymology
+    F: string;  // First letter
+    I: string;  // In a sentence
+    N: number;  // Number of letters
+    E2: string[];  // Equivalents/synonyms
+  };
+}
 
 interface GameOverModalProps {
   isOpen: boolean;

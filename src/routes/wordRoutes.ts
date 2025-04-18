@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getDb } from '../config/database/db';
-import { ClueType } from '@shared/types';
+import { getDb } from '../config/database/db.js';
+import { ClueType, GuessResult, Word } from '../types/shared.js';
 
 const router = Router();
 
@@ -15,6 +15,7 @@ router.get('/word', async (req, res) => {
     
     console.log('Word found:', { id: word.id, word: word.word });
     const gameSession = await getDb().startGame();
+
     res.json({ 
       gameId: gameSession.id,
       word: {
@@ -27,7 +28,7 @@ router.get('/word', async (req, res) => {
           F: word.first_letter || '',
           I: word.in_a_sentence || 'No example sentence available',
           N: word.number_of_letters || 0,
-          E2: word.equivalents?.split(',').map(s => s.trim()) || []
+          E2: word.equivalents || []
         }
       }
     });
@@ -50,10 +51,11 @@ router.post('/guess', async (req, res) => {
     }
     
     const result = await getDb().processGuess(gameId, guess, session);
+    
+    // Return only properties that exist in the GuessResult type
     res.json({
       guess: result.guess,
-      isFuzzy: result.isFuzzy,
-      fuzzyPositions: result.fuzzyPositions,
+      isCorrect: result.isCorrect,
       gameOver: result.gameOver,
       correctWord: result.correctWord
     });

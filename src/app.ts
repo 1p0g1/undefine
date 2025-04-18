@@ -5,7 +5,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { config } from 'dotenv';
-import healthRouter from './routes/health';
+import healthRouter from './routes/health.js';
 
 // Load environment variables
 config();

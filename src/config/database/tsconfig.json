@@ -1,8 +1,0 @@
-{
-  "extends": "../../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "../../../dist/config/database",
-    "rootDir": "../../"
-  },
-  "include": ["./**/*", "../../types/shared.ts"]
-} 

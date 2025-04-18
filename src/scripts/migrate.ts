@@ -33,22 +33,10 @@ async function migrateData() {
       times_used: 0
     }));
 
-    // Insert words in batches
-    const batchSize = 100;
-    let successCount = 0;
-    
-    for (let i = 0; i < wordDocuments.length; i += batchSize) {
-      const batch = wordDocuments.slice(i, i + batchSize);
-      try {
-        await db.insertWords(batch);
-        successCount += batch.length;
-        console.log(`Migrated ${Math.min(i + batchSize, wordDocuments.length)} / ${wordDocuments.length} words`);
-      } catch (error) {
-        console.error(`Error inserting batch ${i}-${i + batchSize}:`, error);
-      }
-    }
+    console.log("Word migration is currently not implemented in the DatabaseClient interface");
+    console.log("To add this functionality, extend the DatabaseClient interface with an insertWords method");
+    console.log("Example of prepared data:", wordDocuments[0]);
 
-    console.log(`Migration completed. Successfully migrated ${successCount} of ${wordDocuments.length} words`);
     await db.disconnect();
     process.exit(0);
   } catch (error) {

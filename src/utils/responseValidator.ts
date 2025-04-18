@@ -1,17 +1,20 @@
 import { ApiError } from '../middleware/errorHandler.js';
-import type { 
-  Word, 
-  UserStats, 
-  DailyMetrics, 
-  LeaderboardEntry, 
-  StreakLeader,
-  GameSession
-} from '@reversedefine/shared-types';
+import { 
+  ValidationError, 
+  FormState, 
+  UserStats,
+  GameSession,
+  WordEntry,
+  Word,
+  DailyMetrics,
+  LeaderboardEntry,
+  StreakLeader
+} from '../shared/types/shared.js';
 
 // Type guard functions to validate response shapes
-export const isWord = (data: unknown): data is Word => {
+export const isWord = (data: unknown): data is WordEntry => {
   if (!data || typeof data !== 'object') return false;
-  const word = data as Word;
+  const word = data as WordEntry;
   return (
     typeof word.word === 'string' &&
     typeof word.partOfSpeech === 'string' &&
@@ -31,13 +34,12 @@ export const isUserStats = (data: unknown): data is UserStats => {
   const stats = data as UserStats;
   return (
     typeof stats.username === 'string' &&
-    typeof stats.gamesPlayed === 'number' &&
-    typeof stats.gamesWon === 'number' &&
-    typeof stats.averageGuesses === 'number' &&
-    typeof stats.averageTime === 'number' &&
-    typeof stats.bestTime === 'number' &&
-    typeof stats.currentStreak === 'number' &&
-    typeof stats.longestStreak === 'number'
+    typeof stats.games_played === 'number' &&
+    typeof stats.games_won === 'number' &&
+    typeof stats.average_guesses === 'number' &&
+    typeof stats.average_time === 'number' &&
+    typeof stats.current_streak === 'number' &&
+    typeof stats.longest_streak === 'number'
   );
 };
 
@@ -79,19 +81,18 @@ export const isGameSession = (data: unknown): data is GameSession => {
   const session = data as GameSession;
   return (
     typeof session.id === 'string' &&
-    typeof session.wordId === 'string' &&
+    typeof session.word_id === 'string' &&
     typeof session.word === 'string' &&
-    typeof session.startTime === 'string' &&
-    typeof session.guessesUsed === 'number' &&
-    typeof session.hintsUsed === 'number' &&
-    typeof session.fuzzyMatches === 'number' &&
-    typeof session.isComplete === 'boolean' &&
-    typeof session.isWon === 'boolean'
+    typeof session.start_time === 'string' &&
+    typeof session.guesses_used === 'number' &&
+    typeof session.revealed_clues === 'object' &&
+    typeof session.is_complete === 'boolean' &&
+    typeof session.is_won === 'boolean'
   );
 };
 
 // Validation functions that throw errors if validation fails
-export const validateWord = (data: unknown): Word => {
+export const validateWord = (data: unknown): WordEntry => {
   if (!isWord(data)) {
     throw new ApiError(500, 'Invalid word data structure');
   }

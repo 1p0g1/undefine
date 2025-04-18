@@ -1,9 +1,18 @@
 import { FormState, ValidationError } from '../types/index.js';
 
+// Word form specific type
+interface WordFormData extends FormState {
+  word?: string;
+  partOfSpeech?: string;
+  definition?: string;
+  dateAdded?: string;
+  synonyms?: string[];
+}
+
 /**
  * Validates a word form for required fields and formats
  */
-export const validateWordForm = (formData: FormState): ValidationError[] => {
+export const validateWordForm = (formData: WordFormData): ValidationError[] => {
   const errors: ValidationError[] = [];
 
   // Validate word field

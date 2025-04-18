@@ -58,9 +58,22 @@ function buildServer() {
   
   // Clean previous build
   executeCommand("rm -rf dist");
+
+  // Fix TypeScript issues
+  logStep("Checking for TypeScript issues...");
+  try {
+    const tsIssues = execSync("npx tsc --noEmit -p tsconfig.server.json", { encoding: 'utf-8' });
+    if (tsIssues) {
+      console.log(`${colors.fg.yellow}TypeScript issues found. Attempting to fix...${colors.reset}`);
+      executeCommand("npm run fix:imports");
+    }
+  } catch (error) {
+    console.log(`${colors.fg.yellow}TypeScript issues found. Attempting to fix...${colors.reset}`);
+    executeCommand("npm run fix:imports");
+  }
   
   // Compile TypeScript with relaxed settings
-  const tscCommand = "npx tsc --skipLibCheck --noEmitOnError false";
+  const tscCommand = "npx tsc --skipLibCheck --noEmitOnError false -p tsconfig.server.json";
   if (!executeCommand(tscCommand)) {
     console.log(`${colors.fg.yellow}⚠️  TypeScript compilation had errors, but continuing with build${colors.reset}`);
   }
@@ -81,6 +94,23 @@ function buildClient() {
   
   // Clean client build
   executeCommand("rm -rf dist", clientDir);
+
+  // Fix client TypeScript issues first
+  logStep("Checking for client TypeScript issues...");
+  try {
+    const tsIssues = execSync("npx tsc --noEmit", { cwd: clientDir, encoding: 'utf-8' });
+    if (tsIssues) {
+      console.log(`${colors.fg.yellow}TypeScript issues found in client. Attempting to fix...${colors.reset}`);
+      executeCommand("npm run fix:imports", clientDir);
+    }
+  } catch (error) {
+    console.log(`${colors.fg.yellow}TypeScript issues found in client. Attempting to fix...${colors.reset}`);
+    executeCommand("npm run fix:imports", clientDir);
+  }
+  
+  // Fix test files
+  logStep("Fixing test files...");
+  executeCommand("npm run fix:tests");
   
   // Build using Vite
   if (!executeCommand("npx vite build", clientDir)) {

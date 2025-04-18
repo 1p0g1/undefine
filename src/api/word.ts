@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { SupabaseClient } from '../config/database/SupabaseClient';
+import { SupabaseClient } from '../config/database/SupabaseClient.js';
+import { Word } from '../types/shared.js';
 
 const db = SupabaseClient.getInstance();
 
@@ -30,9 +31,7 @@ export async function handler(req: Request, res: Response) {
         F: word.first_letter || '',
         I: word.in_a_sentence || 'No example sentence available',
         N: word.number_of_letters || 0,
-        E2: word.equivalents
-          ? word.equivalents.split(',').map((s: string) => s.trim())
-          : []
+        E2: word.equivalents || []
       }
     });
 

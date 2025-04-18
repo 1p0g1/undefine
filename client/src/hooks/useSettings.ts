@@ -32,6 +32,18 @@ const SETTINGS_STORAGE_KEY = 'undefine_user_settings';
 
 /**
  * Hook for managing user settings across the application
+ * @returns {Object} Settings state and methods
+ * @returns {UserSettings} settings - Current settings
+ * @returns {string} theme - Current theme
+ * @returns {string} systemTheme - System preferred theme 
+ * @returns {boolean} isLoading - Loading state
+ * @returns {string|null} error - Error message if any
+ * @returns {boolean} isSaved - Whether settings were saved
+ * @returns {Function} updateNotificationSetting - Function to update notification settings
+ * @returns {Function} updateLanguage - Function to update language
+ * @returns {Function} setTheme - Function to set theme
+ * @returns {Function} resetToDefaults - Function to reset settings to defaults
+ * @returns {Function} saveSettingsToAPI - Function to save settings to API
  */
 export const useSettings = () => {
   const [settings, setSettingsState] = useState<UserSettings>(DEFAULT_SETTINGS);

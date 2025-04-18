@@ -1,5 +1,19 @@
 import React from 'react';
-import { WordData } from '../types';
+import './HintContent.css';
+
+// Define WordData interface here instead of importing it
+interface WordData {
+  id: string;
+  word: string;
+  clues: {
+    D: string;  // Definition
+    E: string;  // Etymology
+    F: string;  // First letter
+    I: string;  // In a sentence
+    N: number;  // Number of letters
+    E2: string[];  // Equivalents/synonyms
+  };
+}
 
 interface HintContentProps {
   wordData: WordData;
@@ -50,7 +64,7 @@ const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGa
       {(revealedHints.includes(5) || isGameOver) && (
         <div className="hint-item">
           <strong>Synonyms:</strong>
-          <p>{wordData.clues.E2}</p>
+          <p>{wordData.clues.E2.join(', ')}</p>
         </div>
       )}
     </div>
@@ -69,4 +83,4 @@ const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGa
   );
 };
 
-export default HintContent; 
+export default HintContent;

@@ -1,18 +1,35 @@
-import { db } from '../config/database/index.js';
-import { LeaderboardEntry, UserStats, DailyLeaderboardResponse } from '../config/database/index.js';
+import { getDb } from '../config/database/db.js';
+import type { UserStats } from '../types/shared.js';
+
+// Since these types are used in the interfaces but aren't defined in shared.ts
+interface LeaderboardEntry {
+  id: string;
+  username: string;
+  wordId: string;
+  word: string;
+  timeTaken: number;
+  guessesUsed: number;
+  fuzzyMatches: number;
+  hintsUsed: number;
+  createdAt: string;
+}
+
+interface DailyLeaderboardResponse {
+  entries: LeaderboardEntry[];
+  userRank: number;
+  userStats?: UserStats;
+}
 
 export class LeaderboardService {
-  static async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    return await db.getLeaderboard();
-  }
-
-  static async getDailyLeaderboard(userEmail?: string): Promise<DailyLeaderboardResponse> {
-    return await db.getDailyLeaderboard(userEmail);
-  }
-
   static async getUserStats(username: string): Promise<UserStats> {
-    await db.updateUserStats(username);
-    const response = await db.getDailyLeaderboard(username);
-    return response.userStats!;
+    const stats = await getDb().getUserStats(username);
+    if (!stats) {
+      throw new Error(`User stats not found for username: ${username}`);
+    }
+    return stats;
+  }
+
+  static async updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<void> {
+    await getDb().updateUserStats(username, won, guessesUsed, timeTaken);
   }
 } 

@@ -3,8 +3,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import wordRoutes from './routes/wordRoutes';
-import { db } from './config/database/db';
+import wordRoutes from './routes/wordRoutes.js';
+import { getDb } from './config/database/db.js';
 
 // Load environment variables
 dotenv.config();
@@ -24,15 +24,15 @@ app.use('/api', wordRoutes);
 async function startServer() {
   try {
     console.log('Connecting to Supabase...');
-    await db.connect();
+    await getDb().connect();
     
     app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
+      console.log(`🚀 Server running on http://localhost:${port}`);
       console.log(`Test the API: http://localhost:${port}/api/test`);
       console.log(`Get a word: http://localhost:${port}/api/word`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('Error starting server:', error);
     process.exit(1);
   }
 }

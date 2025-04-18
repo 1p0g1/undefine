@@ -1,11 +1,20 @@
-import { getDb } from '../src/config/database/db';
+import { getDb } from '../src/config/database/db.js';
+import { hasClient, ExtendedDatabaseClient } from '../src/types/databaseClient.js';
 
 async function resetWords() {
   try {
     const db = getDb();
     console.log('Resetting all words to unassigned state...');
     
-    const { error } = await db.client
+    // Check if db has client property
+    if (!hasClient(db)) {
+      throw new Error('Database client does not support direct access');
+    }
+    
+    // Type assertion to use client property
+    const extendedDb = db as ExtendedDatabaseClient;
+    
+    const { error } = await extendedDb.client
       .from('words')
       .update({ date: null })
       .neq('id', '-1');

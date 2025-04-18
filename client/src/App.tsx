@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './App.css'
+import { Routes, Route } from 'react-router-dom'
 import Confetti from './components/Confetti'
 import Leaderboard from './Leaderboard'
 import { getApiUrl } from './config';
@@ -28,6 +29,8 @@ import ErrorMessage from './components/ErrorMessage';
 import Timer from './components/Timer';
 import GameOverModal from './components/GameOverModal';
 import GameLoader from './components/GameLoader';
+import Settings from './components/Settings';
+import Header from './components/Header';
 
 // Define local GameState interface
 interface GameState {
@@ -402,6 +405,7 @@ function App() {
       
       const processedResult: ClientGuessResult = {
         isCorrect: result.isCorrect === true,
+        correct: result.isCorrect === true,
         guess: trimmedGuess,
         isFuzzy: !!result.isFuzzy,
         fuzzyPositions: result.fuzzyPositions || [],
@@ -473,87 +477,93 @@ function App() {
   // ✅ Single return with conditional rendering
   return (
     <div className="app-container">
-      {gameState.loading || !gameState.gameId ? (
-        <GameLoader
-          error={error}
-          onRetry={() => {
-            setError('');
-            initializeGame();
-          }}
-        />
-      ) : (
-        <>
-          {/* Main game content */}
-          <div className="game-container">
-            <Timer time={formatTime(timer)} />
-            <DefineBoxes 
-              isCorrect={gameState.isCorrect}
-              guessCount={gameState.guessCount}
-              revealedHints={revealedHints}
-              guessResults={guessResults}
+      <Header />
+      <Routes>
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/" element={
+          gameState.loading || !gameState.gameId ? (
+            <GameLoader
+              error={error}
+              onRetry={() => {
+                setError('');
+                initializeGame();
+              }}
             />
-            <div className="input-container">
-              <input
-                ref={inputRef}
-                type="text"
-                value={guess}
-                onChange={handleInputChange}
-                onKeyDown={(e) => {
-                  handleKeyDown(e);
-                  if (e.key === 'Enter' && isGuessValid() && !gameState.isGameOver) {
-                    e.preventDefault();
-                    handleGuess(e);
-                  }
-                }}
-                onFocus={handleInputFocus}
-                placeholder={getInputPlaceholder()}
-                maxLength={getInputMaxLength()}
-                disabled={gameState.isGameOver}
-                className={`guess-input ${gameState.isGameOver ? 'disabled' : ''}`}
-              />
-              <button
-                onClick={handleGuess}
-                disabled={!isGuessValid() || gameState.isGameOver}
-                className={`guess-button ${(!isGuessValid() || gameState.isGameOver) ? 'disabled' : ''}`}
-              >
-                Guess
-              </button>
-            </div>
-            <div className="guesses-remaining">
-              Guesses remaining: {gameState.remainingGuesses}
-            </div>
-            {wordData && (
-              <HintContent 
-                wordData={wordData}
-                revealedHints={revealedHints}
-              />
-            )}
-            {showConfetti && <Confetti />}
-            {showLeaderboard && (
-              <Leaderboard 
-                gameId={gameState.gameId}
-                isGameOver={gameState.isGameOver}
-                isCorrect={gameState.isCorrect}
-                correctWord={wordData?.word || ''}
-                onClose={() => setShowLeaderboard(false)}
-              />
-            )}
-            {message && (
-              <div className={`message ${message.type}`}>
-                {message.text}
+          ) : (
+            <>
+              {/* Main game content */}
+              <div className="game-container">
+                <Timer time={formatTime(timer)} />
+                <DefineBoxes 
+                  isCorrect={gameState.isCorrect}
+                  guessCount={gameState.guessCount}
+                  revealedHints={revealedHints}
+                  guessResults={guessResults}
+                />
+                <div className="input-container">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={guess}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => {
+                      handleKeyDown(e);
+                      if (e.key === 'Enter' && isGuessValid() && !gameState.isGameOver) {
+                        e.preventDefault();
+                        handleGuess(e);
+                      }
+                    }}
+                    onFocus={handleInputFocus}
+                    placeholder={getInputPlaceholder()}
+                    maxLength={getInputMaxLength()}
+                    disabled={gameState.isGameOver}
+                    className={`guess-input ${gameState.isGameOver ? 'disabled' : ''}`}
+                  />
+                  <button
+                    onClick={handleGuess}
+                    disabled={!isGuessValid() || gameState.isGameOver}
+                    className={`guess-button ${(!isGuessValid() || gameState.isGameOver) ? 'disabled' : ''}`}
+                  >
+                    Guess
+                  </button>
+                </div>
+                <div className="guesses-remaining">
+                  Guesses remaining: {gameState.remainingGuesses}
+                </div>
+                {wordData && (
+                  <HintContent 
+                    wordData={wordData}
+                    revealedHints={revealedHints}
+                  />
+                )}
+                {showConfetti && <Confetti />}
+                {showLeaderboard && (
+                  <Leaderboard 
+                    gameId={gameState.gameId}
+                    isGameOver={gameState.isGameOver}
+                    isCorrect={gameState.isCorrect}
+                    correctWord={wordData?.word || ''}
+                    onClose={() => setShowLeaderboard(false)}
+                  />
+                )}
+                {message && (
+                  <div className={`message ${message.type}`}>
+                    {message.text}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          {wordData && (
-            <GameOverModal
-              isOpen={showModal}
-              wordData={wordData}
-              isCorrect={gameState.isCorrect}
-              onClose={() => setShowModal(false)}
-            />
-          )}
-        </>
-      )}
+              {wordData && (
+                <GameOverModal
+                  isOpen={showModal}
+                  wordData={wordData}
+                  isCorrect={gameState.isCorrect}
+                  onClose={() => setShowModal(false)}
+                />
+              )}
+            </>
+          )
+        } />
+      </Routes>
     </div>
   );
 }

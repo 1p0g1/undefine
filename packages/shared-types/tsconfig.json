@@ -3,7 +3,10 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "isolatedModules": true
+    "isolatedModules": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist"
   },
   "include": ["src"]
 } 

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { WordService } from '../services/WordService.js';
 import { getDb } from '../config/database/db.js';
-import type { ApiWord, GameWord } from '@shared/types';
+import type { ApiWord, GameWord } from '../shared/types/shared.js';
 
 const router = Router();
 

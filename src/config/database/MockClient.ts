@@ -1,17 +1,46 @@
 import { 
-  DatabaseClient, 
-  Word, 
-  LeaderboardEntry, 
-  UserStats, 
-  DailyLeaderboardResponse,
-  DailyMetrics,
-  User,
-  StreakLeader,
-  GameSession,
-  GuessResult,
+  ClueStatus,
   ClueType,
-  ClueStatus
-} from '@shared/types';
+  DatabaseClient, 
+  GameSession,
+  GameState,
+  GuessResult,
+  User,
+  UserStats,
+  Word
+} from '../../types/shared.js';
+
+// Create additional types locally to fix errors
+interface DailyMetrics {
+  totalGames: number;
+  averageTime: number;
+  averageGuesses: number;
+  uniquePlayers: number;
+  completionRate: number;
+}
+
+interface LeaderboardEntry {
+  id: string;
+  username: string;
+  wordId: string;
+  word: string;
+  timeTaken: number;
+  guessesUsed: number;
+  fuzzyMatches: number;
+  hintsUsed: number;
+  createdAt: string;
+}
+
+interface StreakLeader {
+  username: string;
+  streak: number;
+  lastPlayedAt: string;
+}
+
+interface DailyLeaderboardResponse {
+  entries: LeaderboardEntry[];
+  userRank: number;
+}
 
 /**
  * MockClient - A database client that returns pre-defined responses
@@ -52,10 +81,10 @@ export class MockClient implements DatabaseClient {
           first_letter: 'd',
           in_a_sentence: 'Can you define what success means to you?',
           number_of_letters: 6,
-          equivalents: 'explain, specify, establish, determine',
+          equivalents: ['explain', 'specify', 'establish', 'determine'],
           difficulty: 'Easy',
-          timesUsed: 0,
-          lastUsedAt: null
+          times_used: 0,
+          last_used_at: null
         },
         {
           id: '2',
@@ -65,10 +94,10 @@ export class MockClient implements DatabaseClient {
           first_letter: 'u',
           in_a_sentence: 'The artist sought to undefine traditional boundaries in art.',
           number_of_letters: 8,
-          equivalents: 'remove limits, broaden, expand',
+          equivalents: ['remove limits', 'broaden', 'expand'],
           difficulty: 'Medium',
-          timesUsed: 0,
-          lastUsedAt: null
+          times_used: 0,
+          last_used_at: null
         }
       ];
 
@@ -107,8 +136,8 @@ export class MockClient implements DatabaseClient {
     const newWord: Word = {
       ...word,
       id: (this.words.length + 1).toString(),
-      timesUsed: 0,
-      lastUsedAt: null,
+      times_used: 0,
+      last_used_at: null,
       first_letter: word.word[0],
       number_of_letters: word.word.length
     };
@@ -177,14 +206,14 @@ export class MockClient implements DatabaseClient {
   }
 
   async getNextUnusedWord(): Promise<Word | null> {
-    return this.words.find(w => !w.timesUsed) || null;
+    return this.words.find(w => !w.times_used) || null;
   }
 
   async markAsUsed(wordId: string): Promise<void> {
     const word = this.words.find(w => w.id === wordId);
     if (word) {
-      word.timesUsed = (word.timesUsed || 0) + 1;
-      word.lastUsedAt = new Date().toISOString();
+      word.times_used = (word.times_used || 0) + 1;
+      word.last_used_at = new Date().toISOString();
     }
   }
 
@@ -277,10 +306,15 @@ export class MockClient implements DatabaseClient {
   }
 
   async getTopStreaks(): Promise<StreakLeader[]> {
+    if (!this.connected) {
+      throw new Error('Database not connected');
+    }
+    
+    // Sort streakLeaders by streak in descending order
     return this.streakLeaders.map(leader => ({
       username: leader.username,
       streak: leader.streak,
-      lastPlayed: leader.lastPlayed
+      lastPlayedAt: leader.lastPlayedAt || new Date().toISOString()
     }));
   }
 
@@ -303,74 +337,51 @@ export class MockClient implements DatabaseClient {
     guess: string,
     session: GameSession
   ): Promise<GuessResult> {
-    // Normalize both guess and word to ensure consistent comparison
-    const normalizedGuess = this.normalize(guess);
-    const normalizedWord = this.normalize(session.word);
-    
-    // Check for exact match
-    const isCorrect = normalizedGuess === normalizedWord;
-    const gameOver = isCorrect || session.guesses.length >= 5;
-    
-    // Update session with original guess (not normalized)
-    const updatedSession = {
-      ...session,
-      guesses: [...session.guesses, guess],
-      isComplete: gameOver,
-      isWon: isCorrect,
-      end_time: gameOver ? new Date().toISOString() : undefined
-    };
-    this.gameSessions[gameId] = updatedSession;
+    if (!this.connected) {
+      throw new Error('Database not connected');
+    }
 
-    // Only calculate fuzzy match if not correct
-    const isFuzzy = !isCorrect && this.calculateFuzzyMatch(normalizedGuess, normalizedWord);
-    const fuzzyPositions = isFuzzy ? this.getFuzzyPositions(normalizedGuess, normalizedWord) : [];
+    const wordObj = this.words.find(w => w.id === session.word_id);
+    if (!wordObj) {
+      throw new Error('Word not found');
+    }
 
-    return {
+    const word = wordObj.word;
+    const isCorrect = guess.toLowerCase() === word.toLowerCase();
+
+    const result: GuessResult = {
       isCorrect,
-      guess: normalizedGuess,
-      isFuzzy,
-      fuzzyPositions,
-      gameOver,
-      correctWord: gameOver ? session.word : undefined
+      guess,
+      gameOver: isCorrect || session.guesses_used >= 5,
     };
-  }
 
-  private calculateFuzzyMatch(guess: string, word: string): boolean {
-    const normalizedGuess = guess.toLowerCase().trim();
-    const normalizedWord = word.toLowerCase().trim();
-    
-    let matches = 0;
-    for (let i = 0; i < normalizedGuess.length; i++) {
-      if (normalizedGuess[i] === normalizedWord[i]) matches++;
+    if (result.gameOver && !isCorrect) {
+      result.correctWord = word;
     }
-    
-    return matches >= Math.floor(word.length * 0.8);
-  }
 
-  private getFuzzyPositions(guess: string, word: string): number[] {
-    const positions: number[] = [];
-    const normalizedGuess = guess.toLowerCase().trim();
-    const normalizedWord = word.toLowerCase().trim();
-    
-    for (let i = 0; i < normalizedGuess.length; i++) {
-      if (normalizedGuess[i] === normalizedWord[i]) {
-        positions.push(i);
-      }
-    }
-    
-    return positions;
+    return result;
   }
 
   async startGame(): Promise<GameSession> {
-    const word = await this.getDailyWord();
-    const gameId = crypto.randomUUID();
-    
-    console.log('Starting new game session:', {
-      gameId,
-      wordId: word.id,
-      wordLength: word.word.length
-    });
+    if (!this.connected) {
+      throw new Error('Database not connected');
+    }
 
+    // Get random word
+    const word = await this.getRandomWord();
+    
+    // Create empty clue status
+    const clue_status: ClueStatus = {
+      D: 'neutral',
+      E: 'neutral',
+      F: 'neutral',
+      I: 'neutral',
+      N: 'neutral',
+      E2: 'neutral'
+    };
+    
+    // Create a new game session
+    const gameId = Math.random().toString(36).substr(2, 9);
     const session: GameSession = {
       id: gameId,
       word_id: word.id,
@@ -379,19 +390,13 @@ export class MockClient implements DatabaseClient {
       guesses: [],
       guesses_used: 0,
       revealed_clues: [],
-      clue_status: {},
+      clue_status: clue_status,
       is_complete: false,
-      is_won: false
+      is_won: false,
+      state: 'active'
     };
-
-    this.gameSessions[gameId] = session;
     
-    console.log('Game session created:', {
-      gameId: session.id,
-      hasWord: !!session.word,
-      startTime: session.start_time
-    });
-
+    this.gameSessions[gameId] = session;
     return session;
   }
 
@@ -406,18 +411,33 @@ export class MockClient implements DatabaseClient {
   }
 
   async createGameSession(wordId: string, word: string): Promise<GameSession> {
+    const gameId = Math.random().toString(36).substr(2, 9);
+    
+    // Create empty clue status
+    const clue_status: ClueStatus = {
+      D: 'neutral',
+      E: 'neutral',
+      F: 'neutral',
+      I: 'neutral',
+      N: 'neutral',
+      E2: 'neutral'
+    };
+    
     const session: GameSession = {
-      id: crypto.randomUUID(),
+      id: gameId,
       word_id: wordId,
-      word: word,
+      word,
+      start_time: new Date().toISOString(),
       guesses: [],
       guesses_used: 0,
       revealed_clues: [],
-      clue_status: {},
+      clue_status: clue_status,
       is_complete: false,
       is_won: false,
-      start_time: new Date().toISOString()
+      state: 'active'
     };
+    
+    this.gameSessions[gameId] = session;
     return session;
   }
 
@@ -431,17 +451,83 @@ export class MockClient implements DatabaseClient {
   }
 
   async getClue(session: GameSession, clueType: ClueType): Promise<string | number | null> {
-    const word = this.words.find(w => w.id === session.word_id);
-    if (!word) return null;
-
+    const word = await this.getWord(session.word_id);
+    
+    if (!word) {
+      return null;
+    }
+    
     switch (clueType) {
       case 'D': return word.definition;
-      case 'E': return word.etymology;
+      case 'E': return word.etymology || null;
       case 'F': return word.first_letter;
-      case 'I': return word.in_a_sentence;
+      case 'I': return word.in_a_sentence || null;
       case 'N': return word.number_of_letters;
-      case 'E2': return word.equivalents;
+      case 'E2': return Array.isArray(word.equivalents) ? word.equivalents.join(', ') : null;
       default: return null;
     }
+  }
+
+  async getNextHint(session: GameSession): Promise<{ hint: string; type: ClueType }> {
+    // Collect all available hint types that aren't revealed yet
+    const availableHints: ClueType[] = ['E', 'F', 'I', 'N', 'E2'].filter(type => 
+      !(session.revealed_clues || []).includes(type as ClueType)
+    ) as ClueType[];
+
+    // If all hints are already revealed, return a fallback hint
+    if (availableHints.length === 0) {
+      return {
+        hint: "No more hints available!",
+        type: 'D' // Definition is always available
+      };
+    }
+
+    // Pick a random hint type
+    const randomType = availableHints[Math.floor(Math.random() * availableHints.length)];
+    let hintText = '';
+    
+    // Get the actual word
+    const word = this.words.find(w => w.id === session.word_id) || this.words[0];
+    
+    // Generate hint text based on type
+    switch (randomType) {
+      case 'E':
+        hintText = word.etymology || "Etymology unavailable";
+        break;
+      case 'F':
+        hintText = word.first_letter || word.word.charAt(0);
+        break;
+      case 'I':
+        hintText = word.in_a_sentence || "Example sentence unavailable";
+        break;
+      case 'N':
+        hintText = `This word has ${word.number_of_letters || word.word.length} letters`;
+        break;
+      case 'E2':
+        hintText = word.equivalents && word.equivalents.length > 0 
+          ? `Similar words: ${word.equivalents.join(', ')}`
+          : "No synonyms available";
+        break;
+      default:
+        hintText = "Hint unavailable";
+    }
+
+    return {
+      hint: hintText,
+      type: randomType
+    };
+  }
+
+  async submitScore(score: {
+    playerId: string;
+    word: string;
+    guessesUsed: number;
+    usedHint: boolean;
+    completionTime: number;
+    nickname?: string;
+  }): Promise<void> {
+    // Mock implementation - just log the score
+    console.log('Mock submitScore called with:', score);
+    return Promise.resolve();
   }
 } 

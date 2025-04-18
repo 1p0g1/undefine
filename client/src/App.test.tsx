@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,6 +10,8 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('App', () => {
+  // Create a userEvent instance for each test
+  const user = userEvent.setup();
   beforeEach(() => {
     // Reset all mocks before each test
     vi.clearAllMocks();
@@ -68,8 +72,8 @@ describe('App', () => {
     const submitButton = screen.getByRole('button', { name: /guess/i });
 
     // Type a guess and submit
-    await userEvent.type(input, 'wrong');
-    await userEvent.click(submitButton);
+    await user.type(input, 'wrong');
+    await user.click(submitButton);
 
     // Verify the guess was submitted
     expect(mockFetch).toHaveBeenCalledWith('/api/guess', expect.any(Object));
@@ -103,9 +107,9 @@ describe('App', () => {
     const submitButton = screen.getByRole('button', { name: /guess/i });
 
     for (let i = 0; i < 6; i++) {
-      await userEvent.type(input, 'wrong');
-      await userEvent.click(submitButton);
-      await userEvent.clear(input);
+      await user.type(input, 'wrong');
+      await user.click(submitButton);
+      await user.clear(input);
     }
 
     // Check for game over message
@@ -142,8 +146,8 @@ describe('App', () => {
     const input = screen.getByPlaceholderText(/enter your guess/i);
     const submitButton = screen.getByRole('button', { name: /guess/i });
 
-    await userEvent.type(input, 'test');
-    await userEvent.click(submitButton);
+    await user.type(input, 'test');
+    await user.click(submitButton);
 
     // Check for success message
     await waitFor(() => {
@@ -171,9 +175,9 @@ describe('App', () => {
     const firstLetterHint = screen.getByRole('button', { name: /first letter/i });
     const pluralHint = screen.getByRole('button', { name: /plural/i });
 
-    await userEvent.click(etymologyHint);
-    await userEvent.click(firstLetterHint);
-    await userEvent.click(pluralHint);
+    await user.click(etymologyHint);
+    await user.click(firstLetterHint);
+    await user.click(pluralHint);
 
     // Verify hints are displayed
     expect(screen.getByText(/test etymology/i)).toBeInTheDocument();

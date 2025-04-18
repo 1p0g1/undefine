@@ -1,13 +1,18 @@
+import '@testing-library/jest-dom';
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Game from './Game';
+import App from '../App';
 
 // Mock fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('Game', () => {
+  // Create a userEvent instance for each test
+  const user = userEvent.setup();
+  
   beforeEach(() => {
     // Reset all mocks before each test
     vi.clearAllMocks();
@@ -24,7 +29,7 @@ describe('Game', () => {
       })
     });
 
-    render(<Game />);
+    render(<App />);
 
     // Check for essential UI elements
     expect(screen.getByText(/reverse define/i)).toBeInTheDocument();
@@ -53,15 +58,15 @@ describe('Game', () => {
       })
     });
 
-    render(<Game />);
+    render(<App />);
 
     // Get the input and submit button
     const input = screen.getByPlaceholderText(/enter your guess/i);
     const submitButton = screen.getByRole('button', { name: /guess/i });
 
     // Type a guess and submit
-    await userEvent.type(input, 'wrong');
-    await userEvent.click(submitButton);
+    await user.type(input, 'wrong');
+    await user.click(submitButton);
 
     // Verify the guess was submitted
     expect(mockFetch).toHaveBeenCalledWith('/api/guess', expect.any(Object));
@@ -88,16 +93,16 @@ describe('Game', () => {
       })
     });
 
-    render(<Game />);
+    render(<App />);
 
     // Submit 6 wrong guesses
     const input = screen.getByPlaceholderText(/enter your guess/i);
     const submitButton = screen.getByRole('button', { name: /guess/i });
 
     for (let i = 0; i < 6; i++) {
-      await userEvent.type(input, 'wrong');
-      await userEvent.click(submitButton);
-      await userEvent.clear(input);
+      await user.type(input, 'wrong');
+      await user.click(submitButton);
+      await user.clear(input);
     }
 
     // Check for game over message
@@ -128,14 +133,14 @@ describe('Game', () => {
       })
     });
 
-    render(<Game />);
+    render(<App />);
 
     // Submit correct guess
     const input = screen.getByPlaceholderText(/enter your guess/i);
     const submitButton = screen.getByRole('button', { name: /guess/i });
 
-    await userEvent.type(input, 'test');
-    await userEvent.click(submitButton);
+    await user.type(input, 'test');
+    await user.click(submitButton);
 
     // Check for success message
     await waitFor(() => {
@@ -156,16 +161,16 @@ describe('Game', () => {
       })
     });
 
-    render(<Game />);
+    render(<App />);
 
     // Find and click hint buttons
     const etymologyHint = screen.getByRole('button', { name: /etymology/i });
     const firstLetterHint = screen.getByRole('button', { name: /first letter/i });
     const pluralHint = screen.getByRole('button', { name: /plural/i });
 
-    await userEvent.click(etymologyHint);
-    await userEvent.click(firstLetterHint);
-    await userEvent.click(pluralHint);
+    await user.click(etymologyHint);
+    await user.click(firstLetterHint);
+    await user.click(pluralHint);
 
     // Verify hints are displayed
     expect(screen.getByText(/test etymology/i)).toBeInTheDocument();

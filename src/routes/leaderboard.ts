@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../config/database/db.js';
 import { authenticateUser } from '../auth/authMiddleware.js';
-import { UserStats } from '@shared/types.js';
+import { UserStats } from '../shared/types/shared.js';
 
 const router = Router();
 

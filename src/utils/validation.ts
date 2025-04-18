@@ -1,11 +1,25 @@
-import { FormState, ValidationError } from '../types/index.js';
+import { ValidationError } from '../shared/types/shared.js';
+
+// Define a custom form type for word validation without extending FormState
+interface WordFormData {
+  word?: string;
+  partOfSpeech?: string;
+  definition?: string;
+  alternateDefinition?: string;
+  dateAdded?: string;
+  letterCount?: {
+    count: number;
+    display: string;
+  };
+  [key: string]: any; // Allow other fields
+}
 
 /**
  * Validates a word form data
  * @param formData The form data to validate
  * @returns Array of validation errors (empty if no errors)
  */
-export const validateWordForm = (formData: FormState): ValidationError[] => {
+export const validateWordForm = (formData: WordFormData): ValidationError[] => {
   const errors: ValidationError[] = [];
 
   // Validate word

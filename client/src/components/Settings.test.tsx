@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -9,6 +10,8 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('Settings', () => {
+  // Create a userEvent instance for each test
+  const user = userEvent.setup();
   beforeEach(() => {
     // Reset all mocks before each test
     vi.clearAllMocks();
@@ -45,13 +48,13 @@ describe('Settings', () => {
     const gameResultsToggle = screen.getByRole('switch', { name: /game results/i });
     const achievementsToggle = screen.getByRole('switch', { name: /achievements/i });
 
-    await userEvent.click(dailyReminderToggle);
-    await userEvent.click(gameResultsToggle);
-    await userEvent.click(achievementsToggle);
+    await user.click(dailyReminderToggle);
+    await user.click(gameResultsToggle);
+    await user.click(achievementsToggle);
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Verify the update request
     expect(mockFetch).toHaveBeenCalledWith('/api/settings', expect.any(Object));
@@ -84,11 +87,11 @@ describe('Settings', () => {
 
     // Change theme
     const themeSelect = screen.getByRole('combobox', { name: /theme/i });
-    await userEvent.selectOptions(themeSelect, 'dark');
+    await user.selectOptions(themeSelect, 'dark');
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Verify the update request
     expect(mockFetch).toHaveBeenCalledWith('/api/settings', expect.any(Object));
@@ -117,11 +120,11 @@ describe('Settings', () => {
 
     // Change language
     const languageSelect = screen.getByRole('combobox', { name: /language/i });
-    await userEvent.selectOptions(languageSelect, 'es');
+    await user.selectOptions(languageSelect, 'es');
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Verify the update request
     expect(mockFetch).toHaveBeenCalledWith('/api/settings', expect.any(Object));
@@ -143,11 +146,11 @@ describe('Settings', () => {
 
     // Change a setting
     const dailyReminderToggle = screen.getByRole('switch', { name: /daily reminder/i });
-    await userEvent.click(dailyReminderToggle);
+    await user.click(dailyReminderToggle);
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Check for loading state
     expect(screen.getByText(/saving/i)).toBeInTheDocument();
@@ -160,11 +163,11 @@ describe('Settings', () => {
 
     // Change a setting
     const dailyReminderToggle = screen.getByRole('switch', { name: /daily reminder/i });
-    await userEvent.click(dailyReminderToggle);
+    await user.click(dailyReminderToggle);
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Wait for error message
     await waitFor(() => {
@@ -183,11 +186,11 @@ describe('Settings', () => {
 
     // Change a setting
     const dailyReminderToggle = screen.getByRole('switch', { name: /daily reminder/i });
-    await userEvent.click(dailyReminderToggle);
+    await user.click(dailyReminderToggle);
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+    await user.click(saveButton);
 
     // Wait for error message
     await waitFor(() => {
