@@ -21,8 +21,8 @@
     "dev:server": "tsx watch src/index.ts",
     "dev:client": "cd client && npm run dev",
     "lint": "eslint .",
-    "fix:imports": "node fix-imports.js",
-    "fix:tests": "node fix-test-files.js"
+    "fix:imports": "node scripts/maintenance/fix-imports.js",
+    "fix:tests": "node scripts/maintenance/fix-test-files.js"
   },
   "ts-node": {
     "esm": true,

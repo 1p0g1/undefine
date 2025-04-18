@@ -11,6 +11,8 @@ A word-guessing game where players try to guess a word based on its definition a
 - [Testing Checklist](docs/TESTING_CHECKLIST.md) - Pre-release testing checklist
 - [Smoke Test Checklist](docs/SMOKE_TEST_CHECKLIST.md) - Quick validation tests
 - [Import Guide](docs/IMPORT_GUIDE.md) - Guide for importing new words
+- [Deployment Guide](docs/DEPLOYMENT.md) - Guide for deploying the application
+- [Clean Up Checklist](docs/Clean_Up.md) - Server and build cleanup checklist
 
 ## 🛠️ Utility Scripts
 
@@ -18,9 +20,16 @@ The project includes several utility scripts in the `scripts/` directory:
 
 - `scripts/apply-migrations.sh` - Applies Supabase database migrations
 - `scripts/test-db-client.ts` - Tests the Supabase client connection and tables
-- `manage_words.sh` - Script for managing the word database
-- `setup-testing-mode.sh` - Sets up the testing environment
-- `dev.sh` - Development server startup script
+- `scripts/manage_words.sh` - Script for managing the word database
+- `scripts/setup-testing-mode.sh` - Sets up the testing environment
+- `scripts/dev.sh` - Development server startup script
+
+## 📊 Data Files
+
+Word data and templates are stored in the `data/` directory:
+
+- `data/un_define_all_unique_word_clues_v2.csv` - Main words database
+- `data/new_words_template.csv` - Template for adding new words
 
 ## Project Structure
 
@@ -29,6 +38,9 @@ This is a TypeScript monorepo with:
 - **Frontend**: Next.js + React application in `client/`
 - **Backend**: Express server in `server/`
 - **Database**: Supabase schema in `supabase/`
+- **Scripts**: Utility scripts in `scripts/`
+- **Data**: CSV files and templates in `data/`
+- **Documentation**: Markdown documentation in `docs/`
 
 ## 🗄️ Supabase Schema
 
