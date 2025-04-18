@@ -90,6 +90,10 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
 ### ✅ 6. DEPLOY TO RENDER
 
 - [x] Push changes to GitHub
+- [x] Simplified Render build command to prevent redundant builds:
+  ```yaml
+  buildCommand: npm install && npm run build
+  ```
 - [ ] Redeploy on Render
 - [ ] Check logs for remaining build/runtime issues
 
