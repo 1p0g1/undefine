@@ -92,8 +92,9 @@ You're now working from a fresh copy of the codebase. This checklist is laser-fo
 - [x] Push changes to GitHub
 - [x] Simplified Render build command to prevent redundant builds:
   ```yaml
-  buildCommand: npm install && npm run build
+  buildCommand: npm install && cd client && npm install && cd .. && npm run build
   ```
+  - Ensures client dependencies like vite/client are available before TypeScript compilation
 - [ ] Redeploy on Render
 - [ ] Check logs for remaining build/runtime issues
 
