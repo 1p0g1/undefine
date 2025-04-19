@@ -13,7 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../packages/shared-types')
+      '@shared': path.resolve(__dirname, '../packages/shared-types/src')
     }
   },
   server: {
@@ -38,7 +38,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          shared: [path.resolve(__dirname, '../packages/shared-types')]
+          shared: [path.resolve(__dirname, '../packages/shared-types/src')]
         },
       },
     },
