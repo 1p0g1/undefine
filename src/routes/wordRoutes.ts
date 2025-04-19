@@ -48,6 +48,44 @@ router.get('/debug-connection', async (req, res) => {
   }
 });
 
+// New route for getting a random word for testing
+router.get('/random', async (req, res) => {
+  try {
+    console.log('⚠️ TESTING ONLY: Fetching random word for test/development purposes');
+    
+    const db = getDb();
+    const word = await db.getRandomWord();
+    if (!word) {
+      console.log('No random word found in database');
+      return res.status(404).json({ error: 'No random word found' });
+    }
+    
+    console.log('Random word found:', { id: word.id, word: word.word });
+    const gameSession = await db.startGame();
+
+    // Return in the same format as the /word endpoint
+    res.json({ 
+      gameId: gameSession.id,
+      word: {
+        id: word.id,
+        word: word.word,
+        definition: word.definition,
+        clues: {
+          D: word.definition,
+          E: word.etymology || 'No etymology available',
+          F: word.first_letter || '',
+          I: word.in_a_sentence || 'No example sentence available',
+          N: word.number_of_letters || 0,
+          E2: word.equivalents || []
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error getting random word:', error);
+    res.status(500).json({ error: 'Failed to get random word' });
+  }
+});
+
 router.get('/word', async (req, res) => {
   try {
     console.log('Attempting to get a word...');

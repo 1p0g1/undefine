@@ -146,7 +146,6 @@ function App() {
 
   // ✅ All helper functions
   const initializeGame = async () => {
-    console.log('Initializing game session...');
     setGameState(prev => ({ ...prev, loading: true, isGameOver: false }));
     setError('');
 
@@ -191,6 +190,57 @@ function App() {
       console.error('Failed to initialize game session:', err);
       setGameState(prev => ({ ...prev, loading: false, isGameOver: true }));
       setError(err instanceof Error ? err.message : 'Failed to load game. Please try again.');
+    }
+  };
+
+  // Function to fetch a random word for testing
+  const fetchRandomWord = async () => {
+    setGameState(prev => ({ ...prev, loading: true, isGameOver: false }));
+    setError('');
+
+    try {
+      console.log('⚠️ TESTING MODE: Fetching random word instead of daily word');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(getApiUrl('/api/random'), {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to load random word' }));
+        throw new Error(errorData.error || 'Failed to load random word');
+      }
+
+      const data = await response.json();
+
+      console.log('Random word game session:', {
+        hasGameId: !!data.gameId,
+        hasWord: !!data.word,
+        wordId: data.word?.id
+      });
+
+      if (data && data.gameId && data.word) {
+        setGameState({
+          gameId: data.gameId,
+          word: data.word.word,
+          guessCount: 0,
+          isGameOver: false,
+          isCorrect: false,
+          remainingGuesses: 6,
+          loading: false
+        });
+        setWordData(data.word);
+        toast.info('Random test word loaded! This is not the daily word.');
+      } else {
+        throw new Error('Invalid random word data');
+      }
+    } catch (err) {
+      console.error('Failed to load random word:', err);
+      setGameState(prev => ({ ...prev, loading: false }));
+      setError(err instanceof Error ? err.message : 'Failed to load random word. Please try again.');
     }
   };
 
@@ -488,6 +538,7 @@ function App() {
                 setError('');
                 initializeGame();
               }}
+              onRandomWord={fetchRandomWord}
             />
           ) : (
             <>
