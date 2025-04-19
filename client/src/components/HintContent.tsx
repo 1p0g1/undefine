@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import './HintContent.css';
+import { DEBUG_MODE, DEBUG_CONFIG } from '../config/debug';
 
 // Define WordData interface here instead of importing it
 interface WordData {
@@ -21,15 +22,12 @@ interface HintContentProps {
   isGameOver?: boolean;
 }
 
-// Enable debug mode to force all clues visible
-const DEBUG_MODE = true;
-
 const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGameOver = false }) => {
   if (!wordData) return null;
 
   // Add debugging log
   useEffect(() => {
-    if (DEBUG_MODE) {
+    if (DEBUG_CONFIG.verboseLogging) {
       console.log('[DEBUG] HintContent rendering with:', {
         wordData,
         revealedHints,
@@ -42,14 +40,14 @@ const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGa
   // Full-width hints (Definition and Example)
   const fullWidthHints = (
     <>
-      <div className="hint-item hint-full" style={{ opacity: 1, color: 'black', fontWeight: 'normal' }}>
-        <strong style={{ color: 'black', display: 'block', marginBottom: '8px' }}>Definition:</strong>
-        <p style={{ color: 'black', margin: 0 }}>{wordData.clues.D}</p>
+      <div className="hint-item hint-full" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
+        <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Definition:</strong>
+        <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.D}</p>
       </div>
-      {(DEBUG_MODE || revealedHints.includes(3) || isGameOver) && (
-        <div className="hint-item hint-full" style={{ opacity: 1, color: 'black', fontWeight: 'normal' }}>
-          <strong style={{ color: 'black', display: 'block', marginBottom: '8px' }}>Example:</strong>
-          <p style={{ color: 'black', margin: 0 }}>{wordData.clues.I}</p>
+      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(3) || isGameOver) && (
+        <div className="hint-item hint-full" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
+          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Example:</strong>
+          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.I}</p>
         </div>
       )}
     </>
@@ -58,28 +56,28 @@ const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGa
   // Grid hints (Etymology, First Letter, Number of Letters, Synonyms)
   const gridHints = (
     <div className="hints-grid">
-      {(DEBUG_MODE || revealedHints.includes(1) || isGameOver) && (
-        <div className="hint-item" style={{ opacity: 1, color: 'black', fontWeight: 'normal' }}>
-          <strong style={{ color: 'black', display: 'block', marginBottom: '8px' }}>Etymology:</strong>
-          <p style={{ color: 'black', margin: 0 }}>{wordData.clues.E}</p>
+      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(1) || isGameOver) && (
+        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
+          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Etymology:</strong>
+          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.E}</p>
         </div>
       )}
-      {(DEBUG_MODE || revealedHints.includes(2) || isGameOver) && (
-        <div className="hint-item" style={{ opacity: 1, color: 'black', fontWeight: 'normal' }}>
-          <strong style={{ color: 'black', display: 'block', marginBottom: '8px' }}>First Letter:</strong>
-          <p style={{ color: 'black', margin: 0 }}>{wordData.clues.F}</p>
+      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(2) || isGameOver) && (
+        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
+          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>First Letter:</strong>
+          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.F}</p>
         </div>
       )}
-      {(DEBUG_MODE || revealedHints.includes(4) || isGameOver) && (
-        <div className="hint-item" style={{ opacity: 1, color: 'black', fontWeight: 'normal' }}>
-          <strong style={{ color: 'black', display: 'block', marginBottom: '8px' }}>Letters:</strong>
-          <p style={{ color: 'black', margin: 0 }}>{wordData.clues.N}</p>
+      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(4) || isGameOver) && (
+        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
+          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Letters:</strong>
+          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.N}</p>
         </div>
       )}
-      {(DEBUG_MODE || revealedHints.includes(5) || isGameOver) && (
-        <div className="hint-item" style={{ opacity: 1, color: 'black', fontWeight: 'normal' }}>
-          <strong style={{ color: 'black', display: 'block', marginBottom: '8px' }}>Synonyms:</strong>
-          <p style={{ color: 'black', margin: 0 }}>{Array.isArray(wordData.clues.E2) 
+      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(5) || isGameOver) && (
+        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
+          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Synonyms:</strong>
+          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{Array.isArray(wordData.clues.E2) 
             ? wordData.clues.E2.join(', ') 
             : 'No synonyms available'}</p>
         </div>
@@ -88,11 +86,11 @@ const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGa
   );
 
   return (
-    <div className={`hints-container ${isGameOver ? 'game-over' : ''}`} style={{ border: DEBUG_MODE ? '2px solid red' : undefined }}>
-      <h3 className="section-title" style={{ color: 'black' }}>
-        {DEBUG_MODE ? '🔍 DEBUG: All Clues' : (isGameOver ? 'Word Details' : 'Available Hints')}
+    <div className={`hints-container ${isGameOver ? 'game-over' : ''}`} style={{ border: DEBUG_CONFIG.showDebugBanner ? '2px solid red' : undefined }}>
+      <h3 className="section-title" style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black' } : undefined}>
+        {DEBUG_CONFIG.showDebugBanner ? '🔍 DEBUG: All Clues' : (isGameOver ? 'Word Details' : 'Available Hints')}
       </h3>
-      {DEBUG_MODE && (
+      {DEBUG_CONFIG.showDebugBanner && (
         <div style={{ background: '#ffeb3b', padding: '8px', marginBottom: '10px', color: 'black', textAlign: 'center', fontWeight: 'bold' }}>
           Debug Mode: Showing all clues regardless of reveal status
         </div>

@@ -31,6 +31,7 @@ import GameOverModal from './components/GameOverModal';
 import GameLoader from './components/GameLoader';
 import Settings from './components/Settings';
 import Header from './components/Header';
+import { DEBUG_CONFIG } from './config/debug';
 
 // Define local GameState interface
 interface GameState {
@@ -566,6 +567,85 @@ function App() {
       }
     };
   }, [gameState.isGameOver]);
+
+  useEffect(() => {
+    const fetchGameSession = async () => {
+      try {
+        const response = await fetch('/api/game');
+        const data = await response.json();
+        
+        if (DEBUG_CONFIG.verboseLogging) {
+          console.log('[DEBUG] Game session response:', data);
+          console.log('[DEBUG] Word data available:', !!data.word);
+          if (data.word) {
+            console.log('[DEBUG] Word data details:', {
+              word: data.word.word,
+              cluesAvailable: !!data.word.clues,
+              clueTypes: data.word.clues ? Object.keys(data.word.clues) : [],
+              definitionLength: data.word.clues?.D?.length || 0,
+              etymologyLength: data.word.clues?.E?.length || 0,
+              exampleLength: data.word.clues?.I?.length || 0,
+              synonymsCount: Array.isArray(data.word.clues?.E2) ? data.word.clues.E2.length : 0
+            });
+          }
+        }
+        
+        setGameState(data);
+        setWordData(data.word);
+        
+        if (DEBUG_CONFIG.verboseLogging) {
+          console.log('[DEBUG] Game state after set:', {
+            gameState: data,
+            wordData: data.word
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching game session:', error);
+      }
+    };
+
+    fetchGameSession();
+  }, []);
+
+  // Update the hint revealing logic
+  useEffect(() => {
+    if (!wordData || gameState.isGameOver) return;
+
+    const newRevealedHints = [...revealedHints];
+    const hintIndex = gameState.guessCount < hintOrder.length ? hintOrder[gameState.guessCount] : null;
+    
+    if (DEBUG_CONFIG.verboseLogging) {
+      console.log('[DEBUG] Hint revealing logic:', {
+        guessCount: gameState.guessCount,
+        hintTypeToReveal: hintIndex ? 
+          (hintIndex === 1 ? 'Etymology' : 
+           hintIndex === 2 ? 'First Letter' : 
+           hintIndex === 3 ? 'Example' : 
+           hintIndex === 4 ? 'Number of Letters' : 
+           hintIndex === 5 ? 'Synonyms' : 'Unknown') : 'None',
+        currentRevealedHints: revealedHints,
+        willRevealNewHint: hintIndex !== null && !revealedHints.includes(hintIndex)
+      });
+    }
+
+    if (hintIndex !== null && !newRevealedHints.includes(hintIndex)) {
+      newRevealedHints.push(hintIndex);
+      setRevealedHints(newRevealedHints);
+      
+      if (DEBUG_CONFIG.verboseLogging) {
+        console.log('[DEBUG] Updated revealed hints:', {
+          newRevealedHints,
+          hintTypes: newRevealedHints.map(index => 
+            index === 1 ? 'Etymology' : 
+            index === 2 ? 'First Letter' : 
+            index === 3 ? 'Example' : 
+            index === 4 ? 'Number of Letters' : 
+            index === 5 ? 'Synonyms' : 'Unknown'
+          )
+        });
+      }
+    }
+  }, [gameState.guessCount, wordData, gameState.isGameOver, revealedHints]);
 
   // ✅ Single return with conditional rendering
   return (

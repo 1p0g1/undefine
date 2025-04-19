@@ -7,6 +7,8 @@ services:
       cd client && npm install
       cd ..
       npm install
+      # Clean client build directory to avoid stale files
+      rm -rf client/dist
       npm run build
     startCommand: npm start
     envVars:

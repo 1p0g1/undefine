@@ -4,6 +4,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
+import { validate as uuidValidate } from 'uuid';
 import { 
   GameSession, 
   GuessResult,
@@ -228,51 +229,65 @@ export class SupabaseClient implements DatabaseClient {
     try {
       console.log('Fetching random word...');
       
-      const { data, error } = await this.client
-        .from('words')
-        .select('*')
-        .limit(1)
-        .order('RANDOM()');
+      // Use the RPC function for consistent random word selection
+      const { data, error } = await this.client.rpc('get_random_unassigned_word');
 
-      if (error || !data || data.length === 0) {
-        console.error('Failed to fetch random word:', error);
-        throw new Error('Failed to fetch random word');
+      if (error || !data) {
+        console.error('Failed to fetch random word via RPC:', error);
+        
+        // Fallback to regular query if RPC fails
+        const { data: fallbackData, error: fallbackError } = await this.client
+          .from('words')
+          .select('*')
+          .limit(1);
+          
+        if (fallbackError || !fallbackData || fallbackData.length === 0) {
+          throw new Error('Failed to fetch random word');
+        }
+        
+        return this.formatWordResponse(fallbackData[0]);
       }
 
-      const dbWord = data[0];
-
-      // Log the raw word data for debugging
-      console.log('Raw word data:', {
-        id: dbWord.id,
-        word: dbWord.word,
-        hasDefinition: !!dbWord.definition,
-        hasEtymology: !!dbWord.etymology,
-        hasFirstLetter: !!dbWord.first_letter,
-        hasInSentence: !!dbWord.in_a_sentence,
-        hasEquivalents: !!dbWord.equivalents,
-        equivalentsType: typeof dbWord.equivalents
-      });
-
-      // Return the word with snake_case fields as is
-      return {
-        id: dbWord.id,
-        word: dbWord.word,
-        definition: dbWord.definition,
-        etymology: dbWord.etymology || '',
-        first_letter: dbWord.first_letter,
-        in_a_sentence: dbWord.in_a_sentence || '',
-        number_of_letters: dbWord.number_of_letters,
-        equivalents: Array.isArray(dbWord.equivalents) 
-          ? dbWord.equivalents 
-          : typeof dbWord.equivalents === 'string'
-            ? dbWord.equivalents.split(',').map((s: string): string => s.trim())
-            : [],
-        difficulty: dbWord.difficulty || 'Medium'
-      };
+      // Handle potential array result from RPC
+      const dbWord = Array.isArray(data) ? data[0] : data;
+      
+      return this.formatWordResponse(dbWord);
     } catch (error) {
       console.error('Error in getRandomWord:', error);
       throw error;
     }
+  }
+  
+  // Helper method to ensure consistent formatting of word data
+  private formatWordResponse(dbWord: any): Word {
+    // Log the raw word data for debugging
+    console.log('Raw word data:', {
+      id: dbWord.id,
+      word: dbWord.word,
+      hasDefinition: !!dbWord.definition,
+      hasEtymology: !!dbWord.etymology,
+      hasFirstLetter: !!dbWord.first_letter,
+      hasInSentence: !!dbWord.in_a_sentence,
+      hasEquivalents: !!dbWord.equivalents,
+      equivalentsType: typeof dbWord.equivalents
+    });
+
+    // Return the word with snake_case fields mapped appropriately
+    return {
+      id: dbWord.id,
+      word: dbWord.word,
+      definition: dbWord.definition,
+      etymology: dbWord.etymology || '',
+      first_letter: dbWord.first_letter,
+      in_a_sentence: dbWord.in_a_sentence || '',
+      number_of_letters: dbWord.number_of_letters,
+      equivalents: Array.isArray(dbWord.equivalents) 
+        ? dbWord.equivalents 
+        : typeof dbWord.equivalents === 'string'
+          ? dbWord.equivalents.split(',').map((s: string): string => s.trim())
+          : [],
+      difficulty: dbWord.difficulty || 'Medium'
+    };
   }
 
   async getDailyWord(): Promise<Word> {
@@ -310,23 +325,27 @@ export class SupabaseClient implements DatabaseClient {
         return existingWord;
       }
 
-      // If no word is assigned for today, get a pool of unassigned words
-      console.log('[DailyWord] No existing word found, looking for unassigned word...');
+      // If no word is assigned for today, use the RPC function to get a random unassigned word
+      console.log('[DailyWord] No existing word found, using RPC to get random unassigned word...');
+      
+      // Use the get_random_unassigned_word RPC function for more reliable and efficient random selection
+      const { data: randomWord, error: randomError } = await this.client.rpc('get_random_unassigned_word');
       
       let selectedWord: Word | null = null;
       
-      const { data: unassignedWords, error: unassignedError } = await this.client
-        .from('words')
-        .select('*')
-        .is('date', null)
-        .order('RANDOM()')  // Randomize the selection
-        .limit(1);  // Get just one random word
+      if (!randomError && randomWord) {
+        // Use the first row if the result is an array
+        selectedWord = Array.isArray(randomWord) ? randomWord[0] : randomWord;
+        console.log('[DailyWord] Random word selected via RPC:', {
+          hasWord: !!selectedWord,
+          wordId: selectedWord?.id
+        });
+      }
 
-      if (unassignedError || !unassignedWords || unassignedWords.length === 0) {
-        console.log('[DailyWord] No unassigned words found, checking for fallback...');
+      if (!selectedWord) {
+        console.log('[DailyWord] RPC did not return a word, checking for fallback...');
         
-        // FALLBACK: If no word with today's date and no unassigned words,
-        // just return the first available word in the database
+        // FALLBACK: If RPC fails or no unassigned words, get the first available word
         const { data: fallbackWords, error: fallbackError } = await this.client
           .from('words')
           .select('*')
@@ -338,17 +357,21 @@ export class SupabaseClient implements DatabaseClient {
           throw new Error('No words available in the database');
         }
         
-        console.warn('[DailyWord] FALLBACK MODE: Using first available word as daily word since no date matching and no unassigned words');
+        console.warn('[DailyWord] FALLBACK MODE: Using first available word as daily word');
         selectedWord = fallbackWords[0];
         
         // Don't try to update the date field in fallback mode - this is just temporary
         return selectedWord;
-      } else {
-        selectedWord = unassignedWords[0];
       }
 
-      if (!selectedWord) {
-        throw new Error('Failed to select a word');
+      if (!selectedWord || !selectedWord.id) {
+        throw new Error('Failed to select a word with valid ID');
+      }
+
+      // Validate the UUID before updating to prevent the "-1" UUID error
+      if (!uuidValidate(selectedWord.id)) {
+        console.error('[DailyWord] Invalid UUID detected:', selectedWord.id);
+        throw new Error('Invalid UUID format for selected word');
       }
 
       // Assign this word to today's date

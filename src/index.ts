@@ -90,10 +90,29 @@ app.use('/api/game', gameRouter);
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   const clientPath = path.resolve(__dirname, '../client/dist');
-  app.use(express.static(clientPath));
+  
+  // Serve static assets with appropriate cache headers
+  app.use(express.static(clientPath, {
+    setHeaders: (res, filePath) => {
+      // Apply different cache strategies based on file type
+      if (filePath.endsWith('.html')) {
+        // No caching for HTML files - always fetch fresh
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        // Long cache for hashed asset files (1 year)
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
   
   // Handle client-side routing
   app.get('*', (req, res) => {
+    // Always set no-cache for HTML responses from the catch-all route
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(clientPath, 'index.html'));
   });
 }
