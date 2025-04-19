@@ -23,78 +23,96 @@ interface HintContentProps {
 }
 
 const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGameOver = false }) => {
-  if (!wordData) return null;
-
-  // Add debugging log
+  // IMPORTANT: Added debug logging for data presence
   useEffect(() => {
-    if (DEBUG_CONFIG.verboseLogging) {
-      console.log('[DEBUG] HintContent rendering with:', {
-        wordData,
-        revealedHints,
-        isGameOver,
-        clues: wordData.clues
-      });
+    console.log('[DEBUG-CRITICAL] HintContent.tsx - Component Mounted');
+    console.log('[DEBUG-CRITICAL] wordData:', wordData);
+    console.log('[DEBUG-CRITICAL] revealedHints:', revealedHints);
+    console.log('[DEBUG-CRITICAL] isGameOver:', isGameOver);
+    console.log('[DEBUG-CRITICAL] DEBUG_MODE:', DEBUG_MODE);
+    console.log('[DEBUG-CRITICAL] DEBUG_CONFIG:', DEBUG_CONFIG);
+    
+    if (wordData) {
+      console.log('[DEBUG-CRITICAL] wordData.clues:', wordData.clues);
+      console.log('[DEBUG-CRITICAL] Definition:', wordData.clues.D);
+    } else {
+      console.error('[DEBUG-CRITICAL] wordData is null or undefined');
     }
   }, [wordData, revealedHints, isGameOver]);
 
-  // Full-width hints (Definition and Example)
+  // IMPORTANT: Early data validation with detailed logging
+  if (!wordData) {
+    console.error('[DEBUG-CRITICAL] HintContent returning null - wordData is missing');
+    return <div className="error-box" style={{padding: '10px', color: 'red', border: '1px solid red'}}>No word data available</div>;
+  }
+  
+  if (!wordData.clues) {
+    console.error('[DEBUG-CRITICAL] HintContent - wordData.clues is missing');
+    return <div className="error-box" style={{padding: '10px', color: 'red', border: '1px solid red'}}>Word data has no clues</div>;
+  }
+
+  // IMPORTANT: Force all styles to be visible for debugging
+  const debugStyle = {
+    opacity: 1,
+    color: 'black', 
+    fontWeight: 'normal',
+    border: '1px dashed blue',
+    display: 'block'
+  } as React.CSSProperties;
+  
+  // Full-width hints (Definition and Example) - FORCING ALL TO SHOW
   const fullWidthHints = (
     <>
-      <div className="hint-item hint-full" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
-        <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Definition:</strong>
-        <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.D}</p>
+      <div className="hint-item hint-full" style={debugStyle}>
+        <strong style={debugStyle}>Definition:</strong>
+        <p style={debugStyle}>{wordData.clues.D || 'No definition available'}</p>
       </div>
-      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(3) || isGameOver) && (
-        <div className="hint-item hint-full" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
-          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Example:</strong>
-          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.I}</p>
-        </div>
-      )}
+      {/* IMPORTANT: Removed conditional rendering for debugging */}
+      <div className="hint-item hint-full" style={debugStyle}>
+        <strong style={debugStyle}>Example:</strong>
+        <p style={debugStyle}>{wordData.clues.I || 'No example available'}</p>
+      </div>
     </>
   );
 
-  // Grid hints (Etymology, First Letter, Number of Letters, Synonyms)
+  // Grid hints - FORCING ALL TO SHOW
   const gridHints = (
     <div className="hints-grid">
-      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(1) || isGameOver) && (
-        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
-          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Etymology:</strong>
-          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.E}</p>
-        </div>
-      )}
-      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(2) || isGameOver) && (
-        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
-          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>First Letter:</strong>
-          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.F}</p>
-        </div>
-      )}
-      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(4) || isGameOver) && (
-        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
-          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Letters:</strong>
-          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{wordData.clues.N}</p>
-        </div>
-      )}
-      {(DEBUG_CONFIG.forceShowAllClues || revealedHints.includes(5) || isGameOver) && (
-        <div className="hint-item" style={DEBUG_CONFIG.forceShowAllClues ? { opacity: 1, color: 'black', fontWeight: 'normal' } : undefined}>
-          <strong style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', display: 'block', marginBottom: '8px' } : undefined}>Synonyms:</strong>
-          <p style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black', margin: 0 } : undefined}>{Array.isArray(wordData.clues.E2) 
-            ? wordData.clues.E2.join(', ') 
-            : 'No synonyms available'}</p>
-        </div>
-      )}
+      {/* IMPORTANT: Removed conditional rendering for debugging */}
+      <div className="hint-item" style={debugStyle}>
+        <strong style={debugStyle}>Etymology:</strong>
+        <p style={debugStyle}>{wordData.clues.E || 'No etymology available'}</p>
+      </div>
+      <div className="hint-item" style={debugStyle}>
+        <strong style={debugStyle}>First Letter:</strong>
+        <p style={debugStyle}>{wordData.clues.F || 'No first letter available'}</p>
+      </div>
+      <div className="hint-item" style={debugStyle}>
+        <strong style={debugStyle}>Letters:</strong>
+        <p style={debugStyle}>{wordData.clues.N || 'No letter count available'}</p>
+      </div>
+      <div className="hint-item" style={debugStyle}>
+        <strong style={debugStyle}>Synonyms:</strong>
+        <p style={debugStyle}>{Array.isArray(wordData.clues.E2) && wordData.clues.E2.length > 0
+          ? wordData.clues.E2.join(', ') 
+          : 'No synonyms available'}</p>
+      </div>
     </div>
   );
 
   return (
-    <div className={`hints-container ${isGameOver ? 'game-over' : ''}`} style={{ border: DEBUG_CONFIG.showDebugBanner ? '2px solid red' : undefined }}>
-      <h3 className="section-title" style={DEBUG_CONFIG.forceShowAllClues ? { color: 'black' } : undefined}>
-        {DEBUG_CONFIG.showDebugBanner ? '🔍 DEBUG: All Clues' : (isGameOver ? 'Word Details' : 'Available Hints')}
+    <div className="hints-container" style={{ 
+      border: '2px solid red',
+      padding: '10px',
+      margin: '10px 0',
+      backgroundColor: '#f8f8f8'
+    }}>
+      <h3 className="section-title" style={{ color: 'darkred' }}>
+        DEBUG: All Clues Forced Visible
       </h3>
-      {DEBUG_CONFIG.showDebugBanner && (
-        <div style={{ background: '#ffeb3b', padding: '8px', marginBottom: '10px', color: 'black', textAlign: 'center', fontWeight: 'bold' }}>
-          Debug Mode: Showing all clues regardless of reveal status
-        </div>
-      )}
+      <div style={{ background: '#ffeb3b', padding: '8px', marginBottom: '10px', color: 'black', textAlign: 'center', fontWeight: 'bold' }}>
+        Debug Mode: Forcing all clues to show
+      </div>
       <div className="hints-content">
         {fullWidthHints}
         {gridHints}
