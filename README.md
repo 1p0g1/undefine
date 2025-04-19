@@ -182,15 +182,18 @@ This application uses a robust environment variable management system:
 - `client/.env` - Client-specific environment settings
 - `client/.env.production` - Client production environment settings
 
-#### Deployment on Render
-When deploying to Render.com, the application ensures:
-1. The process binds to the PORT provided by Render
-2. All required environment variables are validated at startup
-3. Missing critical variables trigger warnings
-
 #### Utilities
 - `src/utils/validateEnv.ts` - Validates environment variables at startup
 - `scripts/sync-render-env.js` - Tool to sync environment variables to Render
+
+### 🧪 Common Build Error on Render
+
+If you see: `Cannot find package '@vitejs/plugin-react'` in your Render build logs:
+
+✅ Ensure `@vitejs/plugin-react` is in **dependencies** not devDependencies  
+✅ Or set `NODE_ENV=development` in your Render environment settings  
+
+This happens because Render skips installing devDependencies in production builds by default, but Vite needs this plugin at build time.
 
 4. Start the development server:
 ```bash
