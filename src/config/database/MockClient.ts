@@ -8,7 +8,7 @@ import {
   User,
   UserStats,
   Word
-} from '../../types/shared.js';
+} from 'shared-types';
 
 // Create additional types locally to fix errors
 interface DailyMetrics {

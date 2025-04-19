@@ -14,7 +14,7 @@ import {
   User,
   UserStats,
   GameState
-} from '../../types/shared.js';
+} from 'shared-types';
 
 // Re-export types we need
 export type { GameSession, GuessResult };

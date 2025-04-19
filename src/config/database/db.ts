@@ -2,7 +2,7 @@
 
 import { SupabaseClient } from './SupabaseClient.js';
 import { MockClient } from './MockClient.js';
-import type { DatabaseClient } from '../../types/shared.js';
+import type { DatabaseClient } from 'shared-types';
 import { config } from 'dotenv';
 import path from 'path';
 

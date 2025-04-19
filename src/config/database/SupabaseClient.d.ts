@@ -1,4 +1,4 @@
-import { GameSession, GuessResult, ClueType, DatabaseClient, Word, User, UserStats } from '../../types/shared.js';
+import { GameSession, GuessResult, ClueType, DatabaseClient, Word, User, UserStats } from 'shared-types';
 export type { GameSession, GuessResult };
 export declare class SupabaseClient implements DatabaseClient {
     private client;

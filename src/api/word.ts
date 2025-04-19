@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SupabaseClient } from '../config/database/SupabaseClient.js';
-import { Word } from '../types/shared.js';
+import { Word } from 'shared-types';
 
 const db = SupabaseClient.getInstance();
 

@@ -1,5 +1,5 @@
 import { getDb } from '../config/database/db.js';
-import type { UserStats } from '../types/shared.js';
+import type { UserStats } from 'shared-types';
 
 // Since these types are used in the interfaces but aren't defined in shared.ts
 interface LeaderboardEntry {

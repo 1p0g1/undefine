@@ -1,5 +1,5 @@
 import { getDb } from '../config/database/db.js';
-import type { UserStats } from '../types/shared.js';
+import type { UserStats } from 'shared-types';
 
 // Define the interface for the daily metrics response
 interface DailyMetrics {

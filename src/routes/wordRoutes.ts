@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../config/database/db.js';
-import { ClueType, GuessResult, Word } from '../types/shared.js';
+import { ClueType, GuessResult, Word } from 'shared-types';
 
 const router = Router();
 

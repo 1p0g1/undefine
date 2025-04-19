@@ -9,7 +9,7 @@ import {
   DailyMetrics,
   LeaderboardEntry,
   StreakLeader
-} from '../shared/types/shared.js';
+} from 'shared-types';
 
 // Type guard functions to validate response shapes
 export const isWord = (data: unknown): data is WordEntry => {

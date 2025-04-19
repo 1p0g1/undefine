@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SupabaseClient } from '../config/database/SupabaseClient.js';
-import type { GameSession } from '../shared/types/shared.js';
+import type { GameSession } from 'shared-types';
 
 const db = SupabaseClient.getInstance();
 

@@ -1,4 +1,4 @@
-import { ValidationError } from '../shared/types/shared.js';
+import { ValidationError } from 'shared-types';
 interface WordFormData {
     word?: string;
     partOfSpeech?: string;

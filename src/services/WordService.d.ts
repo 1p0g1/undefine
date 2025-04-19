@@ -1,4 +1,4 @@
-import type { GuessResult, GameWord } from '../types/shared.js';
+import type { GuessResult, GameWord } from 'shared-types';
 export declare class WordService {
     private static supabase;
     /**

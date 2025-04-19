@@ -1,5 +1,5 @@
 import { SupabaseClient } from '../config/database/SupabaseClient.js';
-import type { Word, GuessResult, GameWord, WordClues } from '../types/shared.js';
+import type { Word, GuessResult, GameWord, WordClues } from 'shared-types';
 
 // Constants for word validation
 const MAX_WORD_LENGTH = 100;

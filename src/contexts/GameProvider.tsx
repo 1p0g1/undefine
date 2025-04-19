@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import type { GameState, GameAction, GameContext as GameContextType, GameStats } from '../config/types.js';
-import type { Word } from '../shared/types/shared.js';
+import type { Word } from 'shared-types';
 import { useDatabase } from './DatabaseProvider.js';
 import { calculateFuzzyMatch } from '../utils/calculateFuzzyMatch.js';
 

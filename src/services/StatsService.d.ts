@@ -1,4 +1,4 @@
-import type { UserStats } from '../types/shared.js';
+import type { UserStats } from 'shared-types';
 interface DailyMetrics {
     totalGames: number;
     averageTime: number;

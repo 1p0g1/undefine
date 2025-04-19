@@ -1,4 +1,4 @@
-import { UserStats, GameSession, WordEntry, DailyMetrics, LeaderboardEntry, StreakLeader } from '../shared/types/shared.js';
+import { UserStats, GameSession, WordEntry, DailyMetrics, LeaderboardEntry, StreakLeader } from 'shared-types';
 export declare const isWord: (data: unknown) => data is WordEntry;
 export declare const isUserStats: (data: unknown) => data is UserStats;
 export declare const isDailyMetrics: (data: unknown) => data is DailyMetrics;
