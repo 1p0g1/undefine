@@ -21,11 +21,23 @@
     "strict": true,
     "noImplicitAny": false,
     "typeRoots": ["./types", "./node_modules/@types"],
-    "types": ["node"]
+    
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../packages/shared-types/src/*"]
+    }
   },
-  "include": ["src", "types"],
+  "include": [
+    "src",
+    "types",
+    "../packages/shared-types/src/**/*"
+  ],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
-  "references": [{ "path": "./tsconfig.node.json" }],
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "../packages/shared-types" }
+  ],
   "ts-node": {
     "transpileOnly": true
   }
