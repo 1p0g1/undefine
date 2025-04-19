@@ -7,13 +7,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = __dirname;
+// Adjust rootDir to be the project root (two levels up from scripts/maintenance)
+const rootDir = path.resolve(__dirname, '../..');
 
 // Common extensions to add to imports
 const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 
-// Directories to process
-const dirsToProcess = ['src', 'packages/shared-types/src', 'client/src'];
+// Updated directories to process using the new project structure
+const dirsToProcess = ['src', 'client/src', 'packages/shared-types/src'];
 
 // Regex to match relative imports without extensions
 const importRegex = /from\s+['"]([./][^'"]*)['"]/g;
@@ -136,6 +137,8 @@ async function main() {
     logStep(`Processing directory: ${fullDir}`);
     
     try {
+      // Check if directory exists before processing
+      await fs.access(fullDir);
       const tsFiles = await findTypeScriptFiles(fullDir);
       logStep(`Found ${tsFiles.length} TypeScript/JSX files`);
       

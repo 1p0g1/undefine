@@ -9,6 +9,9 @@ NC='\033[0m' # No Color
 # Database name
 DB_NAME="reversedefine"
 
+# Path to data directory (relative to project root)
+DATA_DIR="./data"
+
 # Function to validate CSV format
 validate_csv_format() {
     local file=$1
@@ -27,8 +30,10 @@ validate_csv_format() {
 # Function to create backup
 create_backup() {
     local timestamp=$(date +%Y%m%d_%H%M%S)
-    local backup_file="backup_words_${timestamp}.csv"
+    local backup_file="${DATA_DIR}/backup_words_${timestamp}.csv"
     echo -e "${YELLOW}Creating backup...${NC}"
+    # Create data directory if it doesn't exist
+    mkdir -p "${DATA_DIR}"
     psql $DB_NAME -c "\COPY (SELECT word, definition, etymology, first_letter, example_sentence as in_a_sentence, length(word) as number_of_letters, '' as equivalents, difficulty FROM words) TO '$backup_file' WITH CSV HEADER;"
     echo -e "${GREEN}Backup created: $backup_file${NC}"
 }
@@ -47,6 +52,32 @@ import_words() {
     psql $DB_NAME -f import_new_words.sql
 }
 
+# Function to resolve file path
+resolve_file_path() {
+    local filename=$1
+    
+    # If it's an absolute path or explicitly relative, use it as is
+    if [[ "$filename" == /* || "$filename" == ./* || "$filename" == ../* ]]; then
+        echo "$filename"
+        return
+    fi
+    
+    # Check if the file exists in the current directory
+    if [ -f "$filename" ]; then
+        echo "$filename"
+        return
+    fi
+    
+    # Check if the file exists in the data directory
+    if [ -f "${DATA_DIR}/$filename" ]; then
+        echo "${DATA_DIR}/$filename"
+        return
+    fi
+    
+    # Not found anywhere, return the original path for error handling
+    echo "$filename"
+}
+
 # Main menu
 while true; do
     echo -e "\n${GREEN}=== Word Management System ===${NC}"
@@ -59,21 +90,25 @@ while true; do
 
     case $choice in
         1)
-            read -p "Enter CSV filename: " filename
-            if [ ! -f "$filename" ]; then
-                echo -e "${RED}Error: File not found${NC}"
+            read -p "Enter CSV filename (or path): " filename
+            resolved_path=$(resolve_file_path "$filename")
+            if [ ! -f "$resolved_path" ]; then
+                echo -e "${RED}Error: File not found at '$resolved_path'${NC}"
+                echo -e "${YELLOW}Note: CSV files should be placed in ${DATA_DIR}/ directory${NC}"
                 continue
             fi
-            validate_csv_format "$filename" && validate_words "$filename"
+            validate_csv_format "$resolved_path" && validate_words "$resolved_path"
             ;;
         2)
-            read -p "Enter CSV filename: " filename
-            if [ ! -f "$filename" ]; then
-                echo -e "${RED}Error: File not found${NC}"
+            read -p "Enter CSV filename (or path): " filename
+            resolved_path=$(resolve_file_path "$filename")
+            if [ ! -f "$resolved_path" ]; then
+                echo -e "${RED}Error: File not found at '$resolved_path'${NC}"
+                echo -e "${YELLOW}Note: CSV files should be placed in ${DATA_DIR}/ directory${NC}"
                 continue
             fi
             create_backup
-            import_words "$filename"
+            import_words "$resolved_path"
             ;;
         3)
             create_backup
