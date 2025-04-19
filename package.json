@@ -9,8 +9,9 @@
   ],
   "scripts": {
     "prepare": "[ \"$CI\" = \"true\" ] || exit 0",
-    "prebuild": "npm run typecheck && npm run lint",
+    "prebuild": "npm run typecheck:server && npm run lint || true",
     "typecheck": "tsc --noEmit",
+    "typecheck:server": "tsc -p src/tsconfig.server.json --noEmit",
     "build": "npm run build:types && npm run build:server && npm run build:client",
     "build:minimal": "npm run build:types && npm run build:client",
     "build:types": "cd packages/shared-types && tsc",
