@@ -138,7 +138,7 @@ const startServer = async () => {
     }
     
     // Start server
-    app.listen(port, '0.0.0.0', () => {
+    const server = app.listen(port, '0.0.0.0', () => {
       console.log('\n✨ Server initialization complete!');
       console.log(`🚀 API server: Listening on port ${port}`);
       console.log(`🔍 Test endpoint: http://localhost:${port}/api/word`);
