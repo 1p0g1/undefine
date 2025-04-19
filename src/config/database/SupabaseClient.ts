@@ -323,31 +323,26 @@ export class SupabaseClient implements DatabaseClient {
         .limit(1);  // Get just one random word
 
       if (unassignedError || !unassignedWords || unassignedWords.length === 0) {
-        console.error('[DailyWord] Error getting unassigned word:', unassignedError);
+        console.log('[DailyWord] No unassigned words found, checking for fallback...');
         
-        // If no unassigned words, reset all words to unassigned
-        const { error: resetError } = await this.client
-          .from('words')
-          .update({ date: null })
-          .neq('id', '-1');  // Update all words
-          
-        if (resetError) {
-          console.error('[DailyWord] Error resetting words:', resetError);
-          throw new Error('Failed to reset words');
-        }
-        
-        // Try getting a random word again
-        const { data: resetWords, error: retryError } = await this.client
+        // FALLBACK: If no word with today's date and no unassigned words,
+        // just return the first available word in the database
+        const { data: fallbackWords, error: fallbackError } = await this.client
           .from('words')
           .select('*')
-          .order('RANDOM()')
+          .order('id', { ascending: true })
           .limit(1);
           
-        if (retryError || !resetWords || resetWords.length === 0) {
-          throw new Error('No available words found even after reset');
+        if (fallbackError || !fallbackWords || fallbackWords.length === 0) {
+          console.error('[DailyWord] No words found at all in the database:', fallbackError);
+          throw new Error('No words available in the database');
         }
         
-        selectedWord = resetWords[0];
+        console.warn('[DailyWord] FALLBACK MODE: Using first available word as daily word since no date matching and no unassigned words');
+        selectedWord = fallbackWords[0];
+        
+        // Don't try to update the date field in fallback mode - this is just temporary
+        return selectedWord;
       } else {
         selectedWord = unassignedWords[0];
       }
