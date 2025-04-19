@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
+    "@types/node": "^22.14.1",
     "@vitejs/plugin-react": "^4.4.0",
     "detect-port": "^2.1.0",
     "get-port": "^7.1.0",
@@ -32,7 +33,6 @@
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
     "@types/morgan": "^1.9.9",
-    "@types/node": "^22.14.1",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
     "@types/react-router-dom": "^5.3.3",

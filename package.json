@@ -15,6 +15,7 @@
     "typecheck:server": "npm run build:types && tsc -p src/tsconfig.server.json --noEmit",
     "build": "npm run build:types && npm run build:server && npm run build:client",
     "build:minimal": "npm run build:types && npm run build:client",
+    "build:render": "./render-build.sh",
     "build:types": "cd packages/shared-types && tsc",
     "build:server": "tsc -p src/tsconfig.server.json",
     "build:client": "cd client && npm run build",
