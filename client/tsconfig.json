@@ -19,7 +19,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@shared/*": ["../packages/shared-types/src/*"]
-    }
+    },
+    "types": ["vite/client", "react", "react-dom", "vitest"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

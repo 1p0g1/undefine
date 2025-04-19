@@ -20,13 +20,13 @@ node -e "
   }
 "
 
-# Install dependencies
+# Install dependencies with legacy peer deps
 echo "Installing dependencies..."
-npm install
+npm install --legacy-peer-deps
 
 # Copy node types explicitly if needed
 echo "Building shared types..."
-cd packages/shared-types && npm install && tsc && cd ../..
+cd packages/shared-types && npm install --legacy-peer-deps && tsc && cd ../..
 
 # Build server
 echo "Building server..."
@@ -35,7 +35,7 @@ npm run build:server
 # Install client dependencies and build
 echo "Building client..."
 cd client
-npm install
+npm install --legacy-peer-deps
 
 # Verify path alias configuration
 echo "✅ Verifying path alias configuration..."
@@ -50,6 +50,10 @@ else
   echo "❌ Shared types directory missing!"
   exit 1
 fi
+
+# Install additional type declarations if needed
+echo "Installing additional type declarations..."
+npm install --save-dev @types/react @types/react-dom @types/react/jsx-runtime @types/testing-library__react vitest
 
 npm run build
 cd ..

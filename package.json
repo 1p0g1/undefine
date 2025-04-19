@@ -4,8 +4,11 @@
   "description": "A Word Guessing Game",
   "main": "dist-server/index.js",
   "type": "module",
+  "private": true,
   "workspaces": [
-    "packages/*"
+    "client",
+    "packages/*",
+    "src"
   ],
   "scripts": {
     "prepare": "[ \"$CI\" = \"true\" ] || exit 0",
@@ -13,7 +16,7 @@
     "prebuild": "npm run typecheck:server && npm run lint || true",
     "typecheck": "npm run build:types && tsc --noEmit",
     "typecheck:server": "npm run build:types && tsc -p src/tsconfig.server.json --noEmit",
-    "build": "npm run build:types && npm run build:server && npm run build:client",
+    "build": "npm run build:types && npm run build:server && cd client && npm install && npm run build",
     "build:minimal": "npm run build:types && npm run build:client",
     "build:render": "./render-build.sh",
     "build:types": "cd packages/shared-types && tsc",
@@ -92,7 +95,9 @@
     "@types/pg": "^8.11.11",
     "@types/react": "18.2.66",
     "@types/react-dom": "18.2.22",
+    "@types/react/jsx-runtime": "^18.2.66",
     "@types/react-router-dom": "^5.3.3",
+    "@types/testing-library__react": "^10.2.0",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
     "@typescript-eslint/parser": "^8.30.1",
