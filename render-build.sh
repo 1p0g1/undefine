@@ -53,7 +53,7 @@ fi
 
 # Install additional type declarations if needed
 echo "Installing additional type declarations..."
-npm install --save-dev @types/react @types/react-dom @types/react/jsx-runtime @types/testing-library__react vitest
+npm install --save-dev @types/react @types/react-dom @types/testing-library__react vitest
 
 npm run build
 cd ..

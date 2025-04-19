@@ -95,7 +95,6 @@
     "@types/pg": "^8.11.11",
     "@types/react": "18.2.66",
     "@types/react-dom": "18.2.22",
-    "@types/react/jsx-runtime": "^18.2.66",
     "@types/react-router-dom": "^5.3.3",
     "@types/testing-library__react": "^10.2.0",
     "@types/uuid": "^10.0.0",
