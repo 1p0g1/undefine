@@ -171,6 +171,16 @@ function App() {
         hasWord: !!data.word,
         wordId: data.word?.id
       });
+      
+      // Add detailed debug logging
+      console.log('🔍 DEBUG: Full word data received:', {
+        word: data.word,
+        clues: data.word?.clues,
+        definitionLength: data.word?.clues?.D?.length,
+        etymologyLength: data.word?.clues?.E?.length,
+        inSentenceLength: data.word?.clues?.I?.length,
+        synonymsCount: Array.isArray(data.word?.clues?.E2) ? data.word?.clues?.E2.length : 'not an array'
+      });
 
       if (data && data.gameId && data.word) {
         setGameState({
@@ -183,6 +193,21 @@ function App() {
           loading: false
         });
         setWordData(data.word);
+        
+        // Log after state update
+        setTimeout(() => {
+          console.log('🔍 DEBUG: Game state and word data set:', {
+            gameState: {
+              gameId: data.gameId,
+              word: data.word.word,
+              guessCount: 0,
+              isGameOver: false,
+              isCorrect: false,
+              remainingGuesses: 6
+            },
+            wordData: data.word
+          });
+        }, 100);
       } else {
         throw new Error('Invalid game session data');
       }
@@ -372,9 +397,27 @@ function App() {
     if (newGuessCount < hintOrder.length) {
       const newRevealedHints = [...revealedHints];
       const hintIndex = HINT_INDICES[hintOrder[newGuessCount]];
+      
+      // Debug logging for hint revealing
+      console.log('🔍 DEBUG: Hint revealing logic:', {
+        currentGuessCount: newGuessCount,
+        hintType: hintOrder[newGuessCount],
+        hintTypeIndex: hintIndex,
+        currentRevealedHints: [...revealedHints],
+        willReveal: !newRevealedHints.includes(hintIndex)
+      });
+      
       if (!newRevealedHints.includes(hintIndex)) {
         newRevealedHints.push(hintIndex);
         setRevealedHints(newRevealedHints);
+        
+        // Log after update
+        console.log('🔍 DEBUG: Updated revealed hints:', {
+          newRevealedHints,
+          correspondingTypes: newRevealedHints.map(idx => 
+            Object.entries(HINT_INDICES).find(([key, val]) => val === idx)?.[0] || 'unknown'
+          )
+        });
       }
     }
     
