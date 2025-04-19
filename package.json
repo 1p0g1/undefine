@@ -9,9 +9,10 @@
   ],
   "scripts": {
     "prepare": "[ \"$CI\" = \"true\" ] || exit 0",
+    "postinstall": "npm run build:types",
     "prebuild": "npm run typecheck:server && npm run lint || true",
-    "typecheck": "tsc --noEmit",
-    "typecheck:server": "tsc -p src/tsconfig.server.json --noEmit",
+    "typecheck": "npm run build:types && tsc --noEmit",
+    "typecheck:server": "npm run build:types && tsc -p src/tsconfig.server.json --noEmit",
     "build": "npm run build:types && npm run build:server && npm run build:client",
     "build:minimal": "npm run build:types && npm run build:client",
     "build:types": "cd packages/shared-types && tsc",
@@ -20,12 +21,13 @@
     "build:client-only": "cd client && npm run build",
     "start": "node dist-server/index.js",
     "start:client-only": "cd client && npm run preview",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "npm run build:types && concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx watch src/index.ts",
     "dev:client": "cd client && npm run dev",
     "lint": "eslint .",
     "fix:imports": "node scripts/maintenance/fix-imports.js",
-    "fix:tests": "node scripts/maintenance/fix-test-files.js"
+    "fix:tests": "node scripts/maintenance/fix-test-files.js",
+    "fix:shared-imports": "node scripts/maintenance/update-imports.js"
   },
   "ts-node": {
     "esm": true,

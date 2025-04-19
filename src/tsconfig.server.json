@@ -7,7 +7,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../packages/shared-types/src/*"]
+      "@shared/*": ["../packages/shared-types/src/*"],
+      "shared-types": ["../packages/shared-types/src/index.ts"],
+      "shared-types/*": ["../packages/shared-types/src/*"]
     },
     "outDir": "../dist-server",
     "skipLibCheck": true,

@@ -11,7 +11,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@shared/*": ["packages/shared-types/src/*"]
+      "@shared/*": ["packages/shared-types/src/*"],
+      "shared-types": ["packages/shared-types/src/index.ts"],
+      "shared-types/*": ["packages/shared-types/src/*"]
     },
     "skipLibCheck": true,
     "resolveJsonModule": true,
@@ -29,8 +31,8 @@
     "deprecated/**"
   ],
   "references": [
-    { "path": "./client" },
+    { "path": "./packages/shared-types" },
     { "path": "./src" },
-    { "path": "./packages/shared-types" }
+    { "path": "./client" }
   ]
 } 
