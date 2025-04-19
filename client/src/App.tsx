@@ -110,6 +110,9 @@ interface AppState {
   inputRef: React.RefObject<HTMLInputElement>;
 }
 
+// Define local constants
+const hintOrder: number[] = [0, 1, 2, 3, 4, 5]; // Hint indices in order of reveal
+
 function App() {
   // ✅ All useState hooks
   const [gameState, setGameState] = useState<GameState>({

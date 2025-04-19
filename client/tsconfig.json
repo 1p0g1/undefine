@@ -20,7 +20,8 @@
     /* Linting */
     "strict": true,
     "noImplicitAny": false,
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "types": ["node"]
   },
   "include": ["src", "types"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],

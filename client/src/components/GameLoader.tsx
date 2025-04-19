@@ -8,7 +8,8 @@ interface GameLoaderProps {
 }
 
 const GameLoader: React.FC<GameLoaderProps> = ({ onRetry, error, onRandomWord }) => {
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Use import.meta.env for Vite projects instead of process.env
+  const isDevelopment = import.meta.env.DEV;
 
   return (
     <div className="app-container">

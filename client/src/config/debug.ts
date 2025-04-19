@@ -4,7 +4,7 @@
  */
 
 // Toggle debugging features for local development
-export const DEBUG_MODE = process.env.NODE_ENV !== 'production';
+export const DEBUG_MODE = import.meta.env.DEV || import.meta.env.MODE !== 'production';
 
 // Additional debug settings can be added here
 export const DEBUG_CONFIG = {
