@@ -18,6 +18,7 @@ interface ToastProps {
   message: string;
   duration?: number;
   onClose: (id: string) => void;
+  key?: string;
 }
 
 interface ToastOptions {

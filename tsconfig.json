@@ -16,7 +16,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "outDir": "dist-types"
+    "outDir": "dist-types",
+    "types": ["vite/client"]
   },
   "exclude": [
     "node_modules",

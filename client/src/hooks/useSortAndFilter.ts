@@ -175,13 +175,13 @@ const useSortAndFilter = ({
         
         // Case-insensitive string comparison
         if (typeof itemValue === 'string') {
-          return itemValue.toLowerCase().includes(value.toLowerCase());
+          return itemValue.toLowerCase().includes((typeof value === 'string' ? value : '').toLowerCase());
         }
         
         // Array of strings (like synonyms)
         if (Array.isArray(itemValue) && itemValue.every((v: string) => typeof v === 'string')) {
           return itemValue.some((v: string) => 
-            v.toLowerCase().includes(value.toLowerCase())
+            v.toLowerCase().includes((typeof value === 'string' ? value : '').toLowerCase())
           );
         }
         
