@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // Debug path resolution
-console.log('🔍 Resolved @shared path:', path.resolve(__dirname, '../packages/shared-types/src'))
+console.log('🔍 Resolved @shared path:', path.resolve(__dirname, '../packages/shared-types'))
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,7 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../packages/shared-types/src')
+      '@shared': path.resolve(__dirname, '../packages/shared-types')
     }
   },
   server: {
@@ -38,7 +38,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          shared: [path.resolve(__dirname, '../packages/shared-types/src')]
+          shared: [path.resolve(__dirname, '../packages/shared-types')]
         },
       },
     },
