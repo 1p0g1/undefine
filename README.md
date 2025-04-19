@@ -113,6 +113,15 @@ This is a TypeScript monorepo with:
 
 ## Getting Started
 
+### Required Dependencies
+
+The project requires the following key dependencies:
+
+- [x] `@vitejs/plugin-react` (used in `vite.config.js` for React support)
+- [x] `eslint` (used for code linting in build scripts)
+- [x] TypeScript (for type checking and compilation)
+- [x] Vite (for bundling client code)
+
 ### Prerequisites
 
 - Node.js (v18 or higher)
