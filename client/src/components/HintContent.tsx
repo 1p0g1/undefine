@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import './HintContent.css';
 import { DEBUG_MODE, DEBUG_CONFIG } from '../config/debug';
 import { WordData, getSynonyms } from '@shared/utils/word';
+import { HINT_INDICES } from '../types/index';
 
 interface HintContentProps {
   wordData: WordData;
@@ -32,11 +33,11 @@ const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGa
 
   const fullWidthHints = (
     <>
-      <div className="hint-item hint-full">
+      <div className={`hint-item hint-full ${revealedHints.includes(HINT_INDICES.D) ? 'revealed' : ''}`}>
         <strong>Definition:</strong>
         <p>{wordData.clues.D || 'No definition available'}</p>
       </div>
-      <div className="hint-item hint-full">
+      <div className={`hint-item hint-full ${revealedHints.includes(HINT_INDICES.I) ? 'revealed' : ''}`}>
         <strong>Example:</strong>
         <p>{wordData.clues.I || 'No example available'}</p>
       </div>
@@ -47,19 +48,19 @@ const HintContent: React.FC<HintContentProps> = ({ wordData, revealedHints, isGa
 
   const gridHints = (
     <div className="hints-grid">
-      <div className="hint-item">
+      <div className={`hint-item ${revealedHints.includes(HINT_INDICES.E) ? 'revealed' : ''}`}>
         <strong>Etymology:</strong>
         <p>{wordData.clues.E || 'No etymology available'}</p>
       </div>
-      <div className="hint-item">
+      <div className={`hint-item ${revealedHints.includes(HINT_INDICES.F) ? 'revealed' : ''}`}>
         <strong>First Letter:</strong>
         <p>{wordData.clues.F || 'No first letter available'}</p>
       </div>
-      <div className="hint-item">
+      <div className={`hint-item ${revealedHints.includes(HINT_INDICES.N) ? 'revealed' : ''}`}>
         <strong>Letters:</strong>
         <p>{wordData.clues.N || 'No letter count available'}</p>
       </div>
-      <div className="hint-item">
+      <div className={`hint-item ${revealedHints.includes(HINT_INDICES.E2) ? 'revealed' : ''}`}>
         <strong>Synonyms:</strong>
         <p>
           {synonyms.length > 0

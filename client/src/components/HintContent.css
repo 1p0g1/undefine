@@ -5,12 +5,13 @@
   border-radius: 8px;
   background-color: var(--background-secondary);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #1a1a1a; /* Dark readable text */
 }
 
 .section-title {
   font-size: 1.2rem;
   margin-bottom: 12px;
-  color: var(--text-primary);
+  color: #1a1a1a;
 }
 
 .hints-content {
@@ -23,6 +24,14 @@
   padding: 12px;
   border-radius: 6px;
   background-color: var(--background-primary);
+  margin-bottom: 1rem;
+  color: #1a1a1a; /* Explicitly override default text */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hint-item.revealed {
+  opacity: 1;
 }
 
 .hint-full {
@@ -31,9 +40,9 @@
 
 .hint-item strong {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 0.3rem;
   font-weight: bold;
-  color: var(--accent-color);
+  color: #2c2c66; /* Match header navy */
 }
 
 .hint-item p {
@@ -43,9 +52,16 @@
 
 .hints-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
   margin-top: 12px;
+}
+
+/* Force reset text colors and opacity */
+.hints-container p,
+.hints-container strong {
+  opacity: 1 !important;
+  color: #1a1a1a !important;
 }
 
 /* Game over specific styles */
