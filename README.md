@@ -14,6 +14,18 @@ A word-guessing game where players try to guess a word based on its definition a
 - [Deployment Guide](docs/DEPLOYMENT.md) - Guide for deploying the application
 - [Clean Up Checklist](docs/Clean_Up.md) - Server and build cleanup checklist
 
+## 🧪 Testing Features
+
+### Random Word Testing
+
+During development or testing, the application provides a way to test with random words:
+
+1. **Frontend**: When in development mode, a "Test with Random Word" button appears on the loading screen
+2. **API**: Access the `/api/random` endpoint directly: `GET http://localhost:3001/api/random`
+3. **Purpose**: This feature is specifically for testing and allows bypassing the daily word logic
+
+> ⚠️ **Note**: The random word feature is only available in development mode and is intended for testing purposes only.
+
 ## 🛠️ Utility Scripts
 
 The project includes several utility scripts in the `scripts/` directory:
