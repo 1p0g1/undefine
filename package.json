@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "prepare": "[ \"$CI\" = \"true\" ] || exit 0",
+    "prebuild": "npm run typecheck && npm run lint",
+    "typecheck": "tsc --noEmit",
     "build": "npm run build:types && npm run build:server && npm run build:client",
     "build:minimal": "npm run build:types && npm run build:client",
     "build:types": "cd packages/shared-types && tsc",

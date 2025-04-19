@@ -1,0 +1,32 @@
+# Build directories
+dist/
+dist-server/
+client/dist/
+client/dist-types/
+
+# Generated type files
+*.d.ts
+**/*.d.ts
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Test files
+**/tests/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__/**
+**/__mocks__/**
+
+# Coverage reports
+coverage/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Misc files
+.DS_Store 

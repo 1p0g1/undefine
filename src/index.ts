@@ -63,6 +63,20 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  // Return basic health information
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+    node_version: process.version,
+    uptime: process.uptime(),
+    db_provider: process.env.DB_PROVIDER,
+    supabase_configured: !!process.env.SUPABASE_URL
+  });
+});
+
 // Routes
 app.use('/api', wordRouter);
 app.use('/api/leaderboard', leaderboardRouter);
@@ -120,13 +134,14 @@ const startServer = async () => {
     }
     
     // Start server
-    app.listen(port, () => {
+    app.listen(port, '0.0.0.0', () => {
       console.log('\n✨ Server initialization complete!');
-      console.log(`🚀 API server: http://localhost:${port}`);
+      console.log(`🚀 API server: Listening on port ${port}`);
       console.log(`🔍 Test endpoint: http://localhost:${port}/api/word`);
       
       if (process.env.NODE_ENV === 'production') {
         console.log(`📝 Running in production mode`);
+        console.log(`🔑 Environment check: Supabase URL ${process.env.SUPABASE_URL ? '✓ Set' : '✗ Missing'}`);
       } else {
         console.log(`🌐 CORS enabled for localhost development`);
         console.log(`📝 Port written to .api_port file`);
