@@ -145,6 +145,44 @@ PORT=3001
 NODE_ENV=development
 ```
 
+### Environment Variables Guide
+
+This application uses a robust environment variable management system:
+
+#### Server Environment Variables
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `NODE_ENV` | No | `development` | Application environment (`development`, `production`, `test`) |
+| `PORT` | No | `3001` | Port for the API server |
+| `DB_PROVIDER` | Yes | - | Database provider (`supabase`, `mock`) |
+| `SUPABASE_URL` | Yes | - | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Yes | - | Supabase anonymous key |
+| `JWT_SECRET` | Yes (prod) | - | Secret key for JWT token signing |
+| `JWT_EXPIRY` | No | `24h` | JWT token expiry time |
+| `ENABLE_METRICS` | No | `false` | Enable/disable metrics collection |
+
+#### Client Environment Variables
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `VITE_API_URL` | No | `http://localhost:5179` | API server URL for client requests |
+
+#### Environment Files
+- `.env.development` - Development environment settings
+- `.env.production` - Production environment settings
+- `.env` - Fallback environment settings
+- `client/.env` - Client-specific environment settings
+- `client/.env.production` - Client production environment settings
+
+#### Deployment on Render
+When deploying to Render.com, the application ensures:
+1. The process binds to the PORT provided by Render
+2. All required environment variables are validated at startup
+3. Missing critical variables trigger warnings
+
+#### Utilities
+- `src/utils/validateEnv.ts` - Validates environment variables at startup
+- `scripts/sync-render-env.js` - Tool to sync environment variables to Render
+
 4. Start the development server:
 ```bash
 npm run dev

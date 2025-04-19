@@ -12,6 +12,7 @@ import wordRouter from './routes/wordRoutes.js';
 import { gameRouter } from './routes/game.js';
 import morgan from 'morgan';
 import http from 'http';
+import validateAndExit from './utils/validateEnv.js';
 
 // Load environment variables first - MUST happen before any other imports
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -32,6 +33,28 @@ console.log('Environment variables loaded:', {
   SUPABASE_URL: process.env.SUPABASE_URL ? '✓ Set' : '✗ Missing',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? '✓ Set' : '✗ Missing'
 });
+
+// Validate environment variables
+validateAndExit(nodeEnv === 'production'); // Only exit on failure in production
+
+// Production safety guards - check critical environment variables
+if (process.env.NODE_ENV === 'production') {
+  const missingVars = [];
+  
+  if (!process.env.SUPABASE_URL) missingVars.push('SUPABASE_URL');
+  if (!process.env.SUPABASE_ANON_KEY) missingVars.push('SUPABASE_ANON_KEY');
+  if (!process.env.JWT_SECRET) missingVars.push('JWT_SECRET');
+  
+  if (missingVars.length > 0) {
+    console.warn(`⚠️ PRODUCTION WARNING: Missing critical environment variables: ${missingVars.join(', ')}`);
+    console.warn('⚠️ Application may not function correctly in production!');
+  }
+  
+  if (process.env.DB_PROVIDER === 'mock') {
+    console.warn('⚠️ PRODUCTION WARNING: Using mock database in production environment!');
+    console.warn('⚠️ This is not recommended for production use.');
+  }
+}
 
 const app = express();
 

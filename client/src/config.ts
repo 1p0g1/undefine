@@ -1,6 +1,19 @@
 /// <reference types="vite/client" />
 // API configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5179';
+const API_BASE_URL = (() => {
+  const configuredUrl = import.meta.env.VITE_API_URL;
+  
+  if (!configuredUrl) {
+    if (import.meta.env.MODE === 'production') {
+      console.error('⚠️ Missing VITE_API_URL in production build! API calls may fail.');
+    } else {
+      console.warn('No VITE_API_URL found, using default localhost:5179');
+    }
+    return 'http://localhost:5179';
+  }
+  
+  return configuredUrl;
+})();
 
 /**
  * Builds a complete API URL by combining the base URL with the provided endpoint
