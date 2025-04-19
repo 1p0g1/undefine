@@ -27,7 +27,11 @@
     "lint": "eslint .",
     "fix:imports": "node scripts/maintenance/fix-imports.js",
     "fix:tests": "node scripts/maintenance/fix-test-files.js",
-    "fix:shared-imports": "node scripts/maintenance/update-imports.js"
+    "fix:shared-imports": "node scripts/maintenance/update-imports.js",
+    "security:jwt": "tsx scripts/security/generate-jwt-secret.ts",
+    "security:jwt:dev": "tsx scripts/security/generate-jwt-secret.ts --dev",
+    "security:jwt:verify": "tsx scripts/security/verify-jwt-secret.ts",
+    "security:jwt:deploy": "tsx scripts/security/deploy-jwt-secret.ts"
   },
   "ts-node": {
     "esm": true,
