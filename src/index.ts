@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDb } from './config/database/db.js';
 import getPort from 'get-port';
 import fs from 'fs';
@@ -13,6 +14,10 @@ import { gameRouter } from './routes/game.js';
 import morgan from 'morgan';
 import http from 'http';
 import validateAndExit from './utils/validateEnv.js';
+
+// Create ESM compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables first - MUST happen before any other imports
 const nodeEnv = process.env.NODE_ENV || 'development';
