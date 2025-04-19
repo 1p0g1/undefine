@@ -9,51 +9,36 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, '..', 'packages', 'shared-types', 'src')
     }
   },
   server: {
-    port: 5174,
-    strictPort: true,
-    hmr: {
-      overlay: false
-    },
+    port: 3000,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:3001',
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path
       }
     }
   },
   preview: {
-    strictPort: true
+    port: 3000,
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
-    force: true,
-    esbuildOptions: {
-      target: 'es2020'
-    }
+    include: ['react', 'react-dom'],
   },
   build: {
-    target: 'es2020',
+    outDir: 'dist',
     sourcemap: true,
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true
-    },
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      }
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          shared: [path.resolve(__dirname, '..', 'packages', 'shared-types', 'src')]
+        },
+      },
     },
-    write: true,
-    manifest: true,
-    assetsInlineLimit: 0,
-    emptyOutDir: true
   },
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3001')
