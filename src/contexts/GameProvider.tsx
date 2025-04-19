@@ -3,7 +3,7 @@ import type { GameState, GameAction, GameContext as GameContextType, GameStats }
 import { Word } from '../config/database/index.js';
 import { useAuth } from './AuthProvider.js';
 import { useDatabase } from './DatabaseProvider.js';
-import { calculateFuzzyMatch } from '../utils/fuzzyMatch.js';
+import { calculateFuzzyMatch } from '../utils/calculateFuzzyMatch.js';
 
 const initialState: GameState = {
   word: null,
