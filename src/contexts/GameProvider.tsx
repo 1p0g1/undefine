@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import type { GameState, GameAction, GameContext as GameContextType, GameStats } from '../config/types.js';
-import { Word } from '../config/database/index.js';
-import { useAuth } from './AuthProvider.js';
+import type { Word } from '../shared/types/shared.js';
 import { useDatabase } from './DatabaseProvider.js';
 import { calculateFuzzyMatch } from '../utils/calculateFuzzyMatch.js';
 
@@ -84,7 +83,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
-  const { user } = useAuth();
+  const user = { username: 'anonymous' };
   const { db } = useDatabase();
 
   const getGameStats = useCallback((): GameStats | null => {
@@ -104,7 +103,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (stats && state.word && user) {
       db.addLeaderboardEntry({
         username: user.username || 'anonymous',
-        wordId: state.word.wordId,
+        wordId: state.word.id,
         word: state.word.word,
         timeTaken: stats.timeTaken,
         guessesUsed: stats.guessesUsed,
@@ -112,7 +111,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         hintsUsed: stats.hintsUsed
       });
       db.updateUserStats(user.username || 'anonymous');
-      db.markAsUsed(state.word.wordId);
+      db.markAsUsed(state.word.id);
     }
   }, [state.isComplete]);
 

@@ -15,9 +15,18 @@
     },
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "outDir": "dist-types"
   },
-  "exclude": ["node_modules"],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "archive/**",
+    "deprecated/**"
+  ],
   "references": [
     { "path": "./client" },
     { "path": "./src" },

@@ -6,7 +6,8 @@
     "isolatedModules": true,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "composite": true
   },
   "include": ["src"]
 } 

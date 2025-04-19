@@ -58,7 +58,7 @@ router.get('/api/word', async (req, res) => {
       hasFirstLetter: !!transformedWord.firstLetter,
       hasInASentence: !!transformedWord.inASentence,
       hasEquivalents: !!transformedWord.equivalents,
-      equivalentsLength: transformedWord.equivalents.length
+      equivalentsLength: transformedWord.equivalents?.length || 0
     });
 
     // Transform word data into clues format for frontend

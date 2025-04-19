@@ -11,12 +11,18 @@
     },
     "outDir": "../dist-server",
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "composite": true,
+    "declaration": true,
+    "rootDir": "."
   },
   "include": ["./**/*.ts"],
   "exclude": [
     "**/*.test.*", 
     "**/*.spec.*",
     "./tests/api-test.ts"
+  ],
+  "references": [
+    { "path": "../packages/shared-types" }
   ]
 } 
