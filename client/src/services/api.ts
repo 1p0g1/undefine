@@ -27,7 +27,8 @@ interface WordsResponse {
 /**
  * Base API URL
  */
-const API_BASE_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = `${API_URL}/api`;
 
 /**
  * Create query string from parameters

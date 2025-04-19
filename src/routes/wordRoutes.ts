@@ -4,6 +4,50 @@ import { ClueType, GuessResult, Word } from 'shared-types';
 
 const router = Router();
 
+// Add temporary debug endpoint
+router.get('/debug-connection', async (req, res) => {
+  try {
+    console.log('🔍 DEBUG: Testing database connection...');
+    console.log('Environment:', {
+      DB_PROVIDER: process.env.DB_PROVIDER,
+      SUPABASE_URL: process.env.SUPABASE_URL ? '✓ Set' : '✗ Missing',
+      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? '✓ Set' : '✗ Missing'
+    });
+    
+    const db = getDb();
+    console.log('Database client type:', db.constructor.name);
+    
+    console.log('Attempting to fetch a word from database...');
+    const word = await db.getDailyWord();
+    
+    res.json({
+      success: true,
+      environmentCheck: {
+        dbProvider: process.env.DB_PROVIDER,
+        supabaseUrlSet: !!process.env.SUPABASE_URL,
+        supabaseKeySet: !!process.env.SUPABASE_ANON_KEY
+      },
+      word: word ? {
+        id: word.id,
+        wordValue: word.word,
+        definition: word.definition && word.definition.substring(0, 20) + '...'
+      } : null
+    });
+  } catch (error) {
+    console.error('🔥 DEBUG: Connection test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: String(error),
+      stack: (error as Error).stack,
+      environmentCheck: {
+        dbProvider: process.env.DB_PROVIDER,
+        supabaseUrlSet: !!process.env.SUPABASE_URL,
+        supabaseKeySet: !!process.env.SUPABASE_ANON_KEY
+      }
+    });
+  }
+});
+
 router.get('/word', async (req, res) => {
   try {
     console.log('Attempting to get a word...');
