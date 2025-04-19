@@ -32,6 +32,7 @@ import GameLoader from './components/GameLoader';
 import Settings from './components/Settings';
 import Header from './components/Header';
 import { DEBUG_CONFIG } from './config/debug';
+import { useHintRevealer } from './hooks/useHintRevealer';
 
 // Define local GameState interface
 interface GameState {
@@ -610,45 +611,13 @@ function App() {
     fetchGameSession();
   }, []);
 
-  // Update the hint revealing logic
-  useEffect(() => {
-    if (!wordData || gameState.isGameOver) return;
-
-    const newRevealedHints = [...revealedHints];
-    const hintIndex = gameState.guessCount < hintOrder.length ? hintOrder[gameState.guessCount] : null;
-    
-    if (DEBUG_CONFIG.verboseLogging) {
-      console.log('[DEBUG] Hint revealing logic:', {
-        guessCount: gameState.guessCount,
-        hintTypeToReveal: hintIndex ? 
-          (hintIndex === 1 ? 'Etymology' : 
-           hintIndex === 2 ? 'First Letter' : 
-           hintIndex === 3 ? 'Example' : 
-           hintIndex === 4 ? 'Number of Letters' : 
-           hintIndex === 5 ? 'Synonyms' : 'Unknown') : 'None',
-        currentRevealedHints: revealedHints,
-        willRevealNewHint: hintIndex !== null && !revealedHints.includes(hintIndex)
-      });
-    }
-
-    if (hintIndex !== null && !newRevealedHints.includes(hintIndex)) {
-      newRevealedHints.push(hintIndex);
-      setRevealedHints(newRevealedHints);
-      
-      if (DEBUG_CONFIG.verboseLogging) {
-        console.log('[DEBUG] Updated revealed hints:', {
-          newRevealedHints,
-          hintTypes: newRevealedHints.map(index => 
-            index === 1 ? 'Etymology' : 
-            index === 2 ? 'First Letter' : 
-            index === 3 ? 'Example' : 
-            index === 4 ? 'Number of Letters' : 
-            index === 5 ? 'Synonyms' : 'Unknown'
-          )
-        });
-      }
-    }
-  }, [gameState.guessCount, wordData, gameState.isGameOver, revealedHints]);
+  // Replace the old hint revealing useEffect with the hook
+  useHintRevealer({
+    guessCount: gameState.guessCount,
+    isGameOver: gameState.isGameOver,
+    revealedHints,
+    setRevealedHints
+  });
 
   // ✅ Single return with conditional rendering
   return (

@@ -14,6 +14,8 @@ import { gameRouter } from './routes/game.js';
 import morgan from 'morgan';
 import http from 'http';
 import validateAndExit from './utils/validateEnv.js';
+import compression from 'compression';
+import helmet from 'helmet';
 
 // Create ESM compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -64,9 +66,34 @@ if (process.env.NODE_ENV === 'production') {
 const app = express();
 
 // Middleware
+app.use(compression());
 app.use(cors());
-app.use(express.json());
+app.use(helmet());
 app.use(morgan('dev'));
+app.use(express.json());
+
+// Cache control middleware
+const setCustomCacheControl = (res: express.Response, path: string) => {
+  // HTML files should not be cached
+  if (path.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    return;
+  }
+  
+  // Assets with content hash in filename can be cached indefinitely
+  if (path.match(/\.[0-9a-f]{8}\.(js|css|png|jpg|jpeg|gif|webp|svg|woff2?)$/)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return;
+  }
+  
+  // Default cache control for other assets
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+};
+
+// Serve static files with custom cache control
+app.use(express.static(path.join(__dirname, '../client/dist'), {
+  setHeaders: setCustomCacheControl
+}));
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
@@ -87,36 +114,6 @@ app.use('/api', wordRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 app.use('/api/game', gameRouter);
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  const clientPath = path.resolve(__dirname, '../client/dist');
-  
-  // Serve static assets with appropriate cache headers
-  app.use(express.static(clientPath, {
-    setHeaders: (res, filePath) => {
-      // Apply different cache strategies based on file type
-      if (filePath.endsWith('.html')) {
-        // No caching for HTML files - always fetch fresh
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-      } else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
-        // Long cache for hashed asset files (1 year)
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      }
-    }
-  }));
-  
-  // Handle client-side routing
-  app.get('*', (req, res) => {
-    // Always set no-cache for HTML responses from the catch-all route
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(clientPath, 'index.html'));
-  });
-}
-
 // Initialize database
 const initializeDatabase = async () => {
   try {
@@ -128,29 +125,16 @@ const initializeDatabase = async () => {
   }
 };
 
-async function findAvailablePort(start = 3001): Promise<number> {
-  // In production, use the PORT environment variable
-  if (process.env.NODE_ENV === 'production') {
-    return Number(process.env.PORT) || 3001;
-  }
-
-  const tryPort = (port: number): Promise<number> =>
-    new Promise((resolve) => {
-      const server = http.createServer();
-      server.listen(port, () => server.close(() => resolve(port)));
-      server.on('error', () => resolve(tryPort(port + 1)));
-    });
-
-  return await tryPort(start);
-}
-
-// Start server with proper initialization
+// Dynamic port allocation
 const startServer = async () => {
   try {
     // Initialize database first
     await initializeDatabase();
     
-    const port = await findAvailablePort();
+    const port = await getPort({
+      port: 3001,
+      fallbackPorts: [3002, 3003, 3004]
+    });
 
     // Write port to file for client reference (only in development)
     if (process.env.NODE_ENV !== 'production') {
