@@ -6,7 +6,6 @@ import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb } from './config/database/db.js';
-import getPort from 'get-port';
 import fs from 'fs';
 import { leaderboardRouter } from './routes/leaderboard.js';
 import wordRouter from './routes/wordRoutes.js';
@@ -131,10 +130,7 @@ const startServer = async () => {
     // Initialize database first
     await initializeDatabase();
     
-    const port = await getPort({
-      port: 3001,
-      fallbackPorts: [3002, 3003, 3004]
-    });
+    const port = parseInt(process.env.PORT || '3001', 10);
 
     // Write port to file for client reference (only in development)
     if (process.env.NODE_ENV !== 'production') {
