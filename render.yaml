@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: undefine-backend
+    name: undefine
     env: node
     plan: free
     buildCommand: |
       npm install
-      npm run build
+      npm run build:render
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -16,5 +16,7 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
+      - key: PORT
+        value: 10000
     healthCheckPath: /api/word
     autoDeploy: true 

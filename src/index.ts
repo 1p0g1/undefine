@@ -67,7 +67,17 @@ const app = express();
 // Middleware
 app.use(compression());
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://*.supabase.co"]
+    }
+  }
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 
@@ -89,10 +99,10 @@ const setCustomCacheControl = (res: express.Response, path: string) => {
   res.setHeader('Cache-Control', 'public, max-age=3600');
 };
 
-// Serve static files with custom cache control
-app.use(express.static(path.join(__dirname, '../client/dist'), {
-  setHeaders: setCustomCacheControl
-}));
+// API Routes - must come before static file serving
+app.use('/api', wordRouter);
+app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/game', gameRouter);
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
@@ -108,10 +118,21 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes
-app.use('/api', wordRouter);
-app.use('/api/leaderboard', leaderboardRouter);
-app.use('/api/game', gameRouter);
+// Serve static files with custom cache control
+app.use(express.static(path.join(__dirname, '../client/dist'), {
+  setHeaders: setCustomCacheControl
+}));
+
+// Handle client-side routing - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  // Serve index.html for all other routes to support client-side routing
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 // Initialize database
 const initializeDatabase = async () => {
@@ -140,8 +161,9 @@ const startServer = async () => {
     // Start server
     const server = app.listen(port, '0.0.0.0', () => {
       console.log('\n✨ Server initialization complete!');
-      console.log(`🚀 API server: Listening on port ${port}`);
-      console.log(`🔍 Test endpoint: http://localhost:${port}/api/word`);
+      console.log(`🚀 Server: Listening on port ${port}`);
+      console.log(`🔍 API endpoint: http://localhost:${port}/api/word`);
+      console.log(`🌐 Frontend: http://localhost:${port}/`);
       
       if (process.env.NODE_ENV === 'production') {
         console.log(`📝 Running in production mode`);

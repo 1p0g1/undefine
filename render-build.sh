@@ -3,6 +3,9 @@
 # Exit on error
 set -e
 
+# Print commands for debugging
+set -x
+
 # Debug path resolution
 echo "Current directory: $(pwd)"
 echo "Does @shared point to: $(realpath client/../packages/shared-types)"
@@ -55,6 +58,8 @@ fi
 echo "Installing additional type declarations..."
 npm install --save-dev @types/react @types/react-dom @types/testing-library__react vitest
 
+# Build client
+echo "Building client..."
 npm run build
 cd ..
 
@@ -79,6 +84,24 @@ fi
 if [ ! -f "./dist-server/index.js" ]; then
   echo "Error: Server index.js missing!"
   exit 1
+fi
+
+# Verify API endpoints
+echo "Verifying API endpoints..."
+if [ ! -f "./dist-server/api/word.js" ]; then
+  echo "Error: /api/word endpoint missing!"
+  exit 1
+fi
+
+if [ ! -f "./dist-server/api/guess.js" ]; then
+  echo "Error: /api/guess endpoint missing!"
+  exit 1
+fi
+
+# Verify client static files
+echo "Verifying client static files..."
+if [ ! -f "./client/dist/assets/index.js" ]; then
+  echo "Warning: Client assets may be missing. Check the build output."
 fi
 
 echo "Build completed successfully!" 

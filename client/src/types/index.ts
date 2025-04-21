@@ -1,33 +1,136 @@
 // Local type definitions
-export interface Word {
-  id: string;
-  word: string;
-  definition: string;
-  part_of_speech: string;
-  difficulty?: number;
+import { WordData as SharedWordData, SafeClueData } from '@shared/utils/word';
+
+// Re-export shared types with local modifications
+export type WordData = SharedWordData;
+export type { SafeClueData };
+
+// Export HINT_INDICES
+export const HINT_INDICES = {
+  D: 0,  // Definition
+  E: 1,  // Etymology
+  F: 2,  // First letter
+  I: 3,  // In a sentence
+  N: 4,  // Number of letters
+  E2: 5, // Equivalents
+} as const;
+
+// Game types
+export type ClueType = keyof typeof HINT_INDICES;
+export type HintIndex = (typeof HINT_INDICES)[ClueType];
+
+// Helper functions for hint type conversion
+export const clueTypeToNumber = (type: ClueType): HintIndex => HINT_INDICES[type];
+export const numberToClueType = (num: HintIndex): ClueType => {
+  const entry = Object.entries(HINT_INDICES).find(([_, value]) => value === num);
+  if (!entry) throw new Error(`Invalid hint number: ${num}`);
+  return entry[0] as ClueType;
+};
+
+export interface Message {
+  type: 'success' | 'error' | 'info';
+  text: string;
 }
 
-export interface User {
-  id: string;
-  username: string;
-  email?: string;
-  createdAt?: string;
+export interface GuessResponse {
+  isCorrect: boolean;
+  correctWord?: string;
 }
 
-export interface GameSession {
-  id: string;
-  userId: string;
-  wordId: string;
-  startTime: string;
-  endTime?: string;
-  guesses: number;
-  completed: boolean;
-  score?: number;
+export interface GuessHistory {
+  guess: string;
+  result: GuessResponse;
+  timestamp: number;
 }
 
 export interface GuessResult {
-  correct: boolean;
-  similarity?: number;
+  isCorrect: boolean;
+  guess: string;
+  isFuzzy: boolean;
+  fuzzyPositions: number[];
+  gameOver: boolean;
+  correctWord?: string;
+}
+
+export interface ClientGuessResult {
+  isCorrect: boolean;
+  guess: string;
+  isFuzzy: boolean;
+  fuzzyPositions: number[];
+  gameOver: boolean;
+  correctWord?: string;
+}
+
+// Base game state properties that are always present
+export interface BaseGameState {
+  loading: boolean;
+  error?: string;
+  wordData: WordData | null;
+  revealedHints: HintIndex[];
+  remainingGuesses: number;
+  isGameOver: boolean;
+  hasWon: boolean;
+  isCorrect: boolean;
+  showConfetti: boolean;
+  showLeaderboard: boolean;
+  message: Message | null;
+  guessCount: number;
+  guessHistory: GuessHistory[];
+  guessResults: GuessResult[];
+  fuzzyMatchPositions: number[];
+}
+
+export interface LoadingGameState extends BaseGameState {
+  loading: true;
+  wordData: null;
+}
+
+export interface ActiveGameState extends BaseGameState {
+  loading: false;
+  wordData: WordData;
+}
+
+export type GameState = LoadingGameState | ActiveGameState;
+
+export function isGameLoaded(state: GameState): state is ActiveGameState {
+  return !state.loading && state.wordData !== null;
+}
+
+export function isGameInProgress(state: GameState): state is ActiveGameState {
+  return isGameLoaded(state) && !state.isGameOver;
+}
+
+// Initial game state
+export const initialGameState: LoadingGameState = {
+  loading: true,
+  error: '',
+  wordData: null,
+  revealedHints: [HINT_INDICES.D],
+  remainingGuesses: 6,
+  isGameOver: false,
+  hasWon: false,
+  isCorrect: false,
+  showConfetti: false,
+  showLeaderboard: false,
+  message: null,
+  guessCount: 0,
+  guessHistory: [],
+  guessResults: [],
+  fuzzyMatchPositions: []
+};
+
+export interface UserPreferences {
+  theme: 'light' | 'dark';
+  notifications: boolean;
+  sound: boolean;
+}
+
+export interface GameStats {
+  gamesPlayed: number;
+  gamesWon: number;
+  averageGuesses: number;
+  fastestTime: number;
+  longestStreak: number;
 }
 
 export interface LeaderboardEntry {
@@ -45,269 +148,3 @@ export interface UserStats {
   currentStreak: number;
   longestStreak: number;
 }
-
-export interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-  pagination?: PaginationInfo;
-}
-
-export interface PaginationParams {
-  page: number;
-  limit: number;
-}
-
-export interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
-export interface DatabaseClient {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  isConnected(): boolean;
-}
-
-// Client-specific types
-export interface WordEntry {
-  id: string;
-  word: string;
-  definition: string;
-  difficulty: number;
-  part_of_speech: string;
-}
-
-export interface WordData {
-  id: string;
-  word: string;
-  clues: {
-    D: string;  // Definition
-    E: string;  // Etymology
-    F: string;  // First letter
-    I: string;  // In a sentence
-    N: number;  // Number of letters
-    E2: string[];  // Equivalents/synonyms
-  };
-}
-
-export interface FormState {
-  isSubmitting: boolean;
-  isValid: boolean;
-  errors: Record<string, string>;
-}
-
-export interface ValidationError {
-  field: string;
-  message: string;
-}
-
-export interface WordsResponse {
-  words: WordEntry[];
-  pagination?: PaginationInfo;
-}
-
-// Query parameters for API operations
-export interface WordsQueryParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: keyof WordEntry;
-  sortDirection?: 'asc' | 'desc';
-  filterBy?: Partial<Record<keyof WordEntry, string>>;
-}
-
-// Component props types
-export interface TableRowProps {
-  word: WordEntry;
-  index: number;
-  onEdit: (word: WordEntry) => void;
-  onDelete: (word: WordEntry) => void;
-  isSelected: boolean;
-  onSelect: (word: WordEntry) => void;
-}
-
-export interface WordFormProps {
-  initialData: FormState;
-  onSubmit: (data: FormState) => void;
-  onCancel: () => void;
-  isEditing: boolean;
-}
-
-export interface PaginationProps {
-  pagination: PaginationInfo;
-  onPageChange: (page: number) => void;
-  onLimitChange: (limit: number) => void;
-  pageSizeOptions?: number[];
-}
-
-export interface SearchBarProps {
-  value: string;
-  onChange: (value: string) => void;
-  onClear: () => void;
-  placeholder?: string;
-}
-
-// Application state interfaces
-export interface AdminPanelState {
-  words: WordEntry[];
-  loading: boolean;
-  error: string | null;
-  selectedWord: WordEntry | null;
-  selectedWords: WordEntry[];
-  isEditing: boolean;
-  isAdding: boolean;
-  formData: FormState;
-  pagination: PaginationInfo | null;
-  search: string;
-}
-
-// Form validation types
-export type FormValidationFunction = (data: FormState) => ValidationError[];
-
-// Sort direction type
-export type SortDirection = 'asc' | 'desc';
-
-// Filter options type
-export interface FilterOption {
-  field: keyof WordEntry;
-  value: string;
-  label: string;
-}
-
-// Export enum for action types (useful for reducers)
-export enum ActionType {
-  FETCH_WORDS_START = 'FETCH_WORDS_START',
-  FETCH_WORDS_SUCCESS = 'FETCH_WORDS_SUCCESS',
-  FETCH_WORDS_FAILURE = 'FETCH_WORDS_FAILURE',
-  SET_SELECTED_WORD = 'SET_SELECTED_WORD',
-  TOGGLE_SELECTED_WORD = 'TOGGLE_SELECTED_WORD',
-  SET_SELECTED_WORDS = 'SET_SELECTED_WORDS',
-  SET_IS_EDITING = 'SET_IS_EDITING',
-  SET_IS_ADDING = 'SET_IS_ADDING',
-  SET_FORM_DATA = 'SET_FORM_DATA',
-  UPDATE_FORM_FIELD = 'UPDATE_FORM_FIELD',
-  SET_PAGINATION = 'SET_PAGINATION',
-  SET_SEARCH = 'SET_SEARCH',
-  SET_SORT = 'SET_SORT',
-  SET_FILTER = 'SET_FILTER',
-  RESET_STATE = 'RESET_STATE',
-}
-
-export interface GameState {
-  currentWord: string;
-  guesses: string[];
-  hints: string[];
-  isComplete: boolean;
-  startTime: Date;
-  endTime?: Date;
-}
-
-export interface UserPreferences {
-  theme: 'light' | 'dark';
-  notifications: boolean;
-  sound: boolean;
-}
-
-export interface GameStats {
-  gamesPlayed: number;
-  gamesWon: number;
-  averageGuesses: number;
-  fastestTime: number;
-  longestStreak: number;
-}
-
-export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
-
-// Client-specific GuessResult that extends the shared type
-export interface ClientGuessResult extends GuessResult {
-  isCorrect: boolean;
-  guess: string;
-  isFuzzy: boolean;
-  fuzzyPositions?: number[];
-  gameOver: boolean;
-  correctWord: string;
-}
-
-// Add the API response type that matches the Supabase schema
-export interface ApiWord {
-  id: string;
-  word: string;
-  definition: string;
-  etymology: string;
-  first_letter: string;
-  in_a_sentence: string;
-  number_of_letters: number;
-  equivalents: string[];
-  difficulty: string;
-}
-
-// Game types
-export interface GuessHistory {
-  word: string;
-  isCorrect: boolean;
-  isFuzzy: boolean;
-}
-
-export type HintType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
-
-export interface Hint {
-  D: boolean;  // Definition (always revealed)
-  E: boolean;  // Etymology
-  F: boolean;  // First letter
-  I: boolean;  // In a sentence
-  N: boolean;  // Number of letters
-  E2: boolean; // Equivalents (synonyms)
-}
-
-export interface Message {
-  text: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  duration: number;
-}
-
-// Constants
-export const HINT_INDICES: Record<ClueType, number> = {
-  D: 0,  // Definition (always revealed)
-  E: 1,  // Etymology
-  F: 2,  // First Letter
-  I: 3,  // In a Sentence
-  N: 4,  // Number of Letters
-  E2: 5, // Equivalents/Synonyms
-};
-
-// Export all types needed by the client application
-export interface WordResponse {
-  word: string;
-  definition: string;
-  part_of_speech: string;
-}
-
-export interface LeaderboardResponse {
-  entries: LeaderboardEntry[];
-  pagination?: PaginationInfo;
-}
-
-export interface GameSessionResponse {
-  session: GameSession;
-}
-
-export interface UserStatsResponse {
-  stats: UserStats;
-}
-
-export interface ErrorResponse {
-  error: string;
-}
-
-export interface DailyWord {
-  id: string;
-  word: string;
-  definition: string;
-  part_of_speech: string;
-  date: string;
-}
-
-// Re-export game-specific types
-export * from './game'; 

@@ -1,20 +1,22 @@
 import React from 'react';
-import { HINT_INDICES } from '../types/index';
+import { HINT_INDICES, HintIndex } from '../types/index';
 
 interface DefineBoxesProps {
-  isCorrect: boolean;
-  guessCount: number;
-  revealedHints: number[];
+  revealedHints: HintIndex[];
+  onHintReveal: (hint: HintIndex) => void;
+  isGameOver: boolean;
+  hasWon: boolean;
   guessResults: ('correct' | 'incorrect' | null)[];
 }
 
-export const DefineBoxes: React.FC<DefineBoxesProps> = ({
-  isCorrect,
-  guessCount,
+const DefineBoxes: React.FC<DefineBoxesProps> = ({
   revealedHints,
-  guessResults
+  onHintReveal,
+  isGameOver,
+  hasWon,
+  guessResults,
 }) => {
-  const defineLetters = ['D', 'E', 'F', 'I', 'N', 'E'];
+  const defineLetters = Object.values(HINT_INDICES);
   
   return (
     <div className="define-boxes-container">
@@ -24,21 +26,25 @@ export const DefineBoxes: React.FC<DefineBoxesProps> = ({
           let boxClass = 'define-box';
           
           // Only highlight the correct box for the winning guess
-          if (isCorrect && index === guessCount - 1) {
+          if (hasWon && index === guessResults.length - 1) {
             boxClass += ' correct';
           }
           // Show incorrect for past guesses
-          else if (index < guessCount) {
+          else if (index < guessResults.length) {
             boxClass += ' incorrect';
           }
           // Show hint revealed state for current guess
-          else if (index === guessCount && revealedHints.includes(index)) {
+          else if (index === guessResults.length && revealedHints.includes(letter)) {
             boxClass += ' hint-revealed';
           }
           
           return (
-            <div key={index} className={boxClass}>
-              {letter}
+            <div
+              key={letter}
+              className={boxClass}
+              onClick={() => onHintReveal(letter)}
+            >
+              {Object.keys(HINT_INDICES)[letter]}
             </div>
           );
         })}

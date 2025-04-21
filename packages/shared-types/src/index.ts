@@ -2,6 +2,17 @@
  * Shared types for Un-Define game
  */
 
+// Result type for better error handling
+export type Result<T> = {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+};
+
 // Game core types
 export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
 
@@ -193,20 +204,20 @@ export interface LeaderboardEntry {
 
 // Service interfaces
 export interface DatabaseClient {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  getRandomWord(): Promise<Word>;
-  getDailyWord(): Promise<Word>;
-  processGuess(gameId: string, guess: string, session: GameSession): Promise<GuessResult>;
-  getUserStats(username: string): Promise<UserStats | null>;
-  updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<void>;
-  getGameSession(gameId: string): Promise<GameSession | null>;
-  startGame(): Promise<GameSession>;
-  endGame(gameId: string, won: boolean): Promise<void>;
-  getUserByUsername(username: string): Promise<User | null>;
-  createUser(username: string): Promise<User>;
-  getClue(session: GameSession, clueType: ClueType): Promise<string | number | null>;
-  getNextHint(session: GameSession): Promise<{ hint: string; type: ClueType }>;
+  connect(): Promise<Result<void>>;
+  disconnect(): Promise<Result<void>>;
+  getRandomWord(): Promise<Result<Word>>;
+  getDailyWord(): Promise<Result<Word>>;
+  processGuess(gameId: string, guess: string, session: GameSession): Promise<Result<GuessResult>>;
+  getUserStats(username: string): Promise<Result<UserStats | null>>;
+  updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<Result<void>>;
+  getGameSession(gameId: string): Promise<Result<GameSession | null>>;
+  startGame(): Promise<Result<GameSession>>;
+  endGame(gameId: string, won: boolean): Promise<Result<void>>;
+  getUserByUsername(username: string): Promise<Result<User | null>>;
+  createUser(username: string): Promise<Result<User>>;
+  getClue(session: GameSession, clueType: ClueType): Promise<Result<string | number | null>>;
+  getNextHint(session: GameSession): Promise<Result<{ hint: string; type: ClueType }>>;
   submitScore(score: {
     playerId: string;
     word: string;
@@ -214,5 +225,18 @@ export interface DatabaseClient {
     usedHint: boolean;
     completionTime: number;
     nickname?: string;
-  }): Promise<void>;
-} 
+  }): Promise<Result<void>>;
+}
+
+// Game utility types and functions
+export { 
+  HintIndex,
+  Message,
+  AppGameState,
+  HINT_INDICES,
+  INDEX_TO_HINT,
+  clueTypeToNumber,
+  numberToClueType,
+  isHintAvailable,
+  getHintContent
+} from './utils/game'; 

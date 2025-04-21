@@ -13,12 +13,14 @@ export default defineConfig({
       exclude: ['**/node_modules/**', '**/tests/**', '**/dist/**']
     },
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      'shared-types': path.resolve(__dirname, './packages/shared-types/src')
     }
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      'shared-types': path.resolve(__dirname, './packages/shared-types/src')
     }
   }
 }); 

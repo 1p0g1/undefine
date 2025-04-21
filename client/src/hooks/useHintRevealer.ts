@@ -31,7 +31,7 @@ export function useHintRevealer({
            hintIndex === 2 ? 'First Letter' : 
            hintIndex === 3 ? 'Example' : 
            hintIndex === 4 ? 'Number of Letters' : 
-           hintIndex === 5 ? 'Synonyms' : 'Unknown') : 'None',
+           hintIndex === 5 ? 'Equivalents' : 'Unknown') : 'None',
         currentRevealedHints: revealedHints,
         willRevealNewHint: hintIndex !== null && !revealedHints.includes(hintIndex)
       });
@@ -49,7 +49,7 @@ export function useHintRevealer({
             index === 2 ? 'First Letter' : 
             index === 3 ? 'Example' : 
             index === 4 ? 'Number of Letters' : 
-            index === 5 ? 'Synonyms' : 'Unknown'
+            index === 5 ? 'Equivalents' : 'Unknown'
           )
         });
       }

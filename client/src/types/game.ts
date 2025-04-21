@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { WordData } from '@shared/utils/word';
 
 export interface GameState {
   currentWord?: {
@@ -33,6 +34,6 @@ export enum GameActionTypes {
 }
 
 export interface GameContext {
-  state: GameState;
+  state: WordData | null;
   dispatch: React.Dispatch<GameAction>;
 } 

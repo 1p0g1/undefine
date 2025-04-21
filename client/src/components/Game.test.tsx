@@ -163,18 +163,30 @@ describe('Game', () => {
 
     render(<App />);
 
-    // Find and click hint buttons
-    const etymologyHint = screen.getByRole('button', { name: /etymology/i });
+    // Check that hints are revealed in the correct order
+    const synonymsHint = screen.getByRole('button', { name: /synonyms/i });
+    expect(synonymsHint).toBeInTheDocument();
+    await user.click(synonymsHint);
+    expect(screen.getByText(/test1, test2/i)).toBeInTheDocument();
+
     const firstLetterHint = screen.getByRole('button', { name: /first letter/i });
-    const pluralHint = screen.getByRole('button', { name: /plural/i });
-
-    await user.click(etymologyHint);
+    expect(firstLetterHint).toBeInTheDocument();
     await user.click(firstLetterHint);
-    await user.click(pluralHint);
+    expect(screen.getByText(/T/i)).toBeInTheDocument();
 
-    // Verify hints are displayed
+    const exampleHint = screen.getByRole('button', { name: /example/i });
+    expect(exampleHint).toBeInTheDocument();
+    await user.click(exampleHint);
+    expect(screen.getByText(/test in a sentence/i)).toBeInTheDocument();
+
+    const letterCountHint = screen.getByRole('button', { name: /letter count/i });
+    expect(letterCountHint).toBeInTheDocument();
+    await user.click(letterCountHint);
+    expect(screen.getByText(/4/i)).toBeInTheDocument();
+
+    const etymologyHint = screen.getByRole('button', { name: /etymology/i });
+    expect(etymologyHint).toBeInTheDocument();
+    await user.click(etymologyHint);
     expect(screen.getByText(/test etymology/i)).toBeInTheDocument();
-    expect(screen.getByText(/first letter: t/i)).toBeInTheDocument();
-    expect(screen.getByText(/this word is singular/i)).toBeInTheDocument();
   });
 }); 

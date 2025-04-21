@@ -373,11 +373,11 @@ export class MockClient implements DatabaseClient {
     // Create empty clue status
     const clue_status: ClueStatus = {
       D: 'neutral',
-      E: 'neutral',
+      E2: 'neutral',
       F: 'neutral',
       I: 'neutral',
       N: 'neutral',
-      E2: 'neutral'
+      E: 'neutral'
     };
     
     // Create a new game session
@@ -416,11 +416,11 @@ export class MockClient implements DatabaseClient {
     // Create empty clue status
     const clue_status: ClueStatus = {
       D: 'neutral',
-      E: 'neutral',
+      E2: 'neutral',
       F: 'neutral',
       I: 'neutral',
       N: 'neutral',
-      E2: 'neutral'
+      E: 'neutral'
     };
     
     const session: GameSession = {
@@ -459,18 +459,18 @@ export class MockClient implements DatabaseClient {
     
     switch (clueType) {
       case 'D': return word.definition;
-      case 'E': return word.etymology || null;
+      case 'E2': return Array.isArray(word.equivalents) ? word.equivalents.join(', ') : null;
       case 'F': return word.first_letter;
       case 'I': return word.in_a_sentence || null;
       case 'N': return word.number_of_letters;
-      case 'E2': return Array.isArray(word.equivalents) ? word.equivalents.join(', ') : null;
+      case 'E': return word.etymology || null;
       default: return null;
     }
   }
 
   async getNextHint(session: GameSession): Promise<{ hint: string; type: ClueType }> {
     // Collect all available hint types that aren't revealed yet
-    const availableHints: ClueType[] = ['E', 'F', 'I', 'N', 'E2'].filter(type => 
+    const availableHints: ClueType[] = ['D', 'E2', 'F', 'I', 'N', 'E'].filter(type => 
       !(session.revealed_clues || []).includes(type as ClueType)
     ) as ClueType[];
 
@@ -491,8 +491,10 @@ export class MockClient implements DatabaseClient {
     
     // Generate hint text based on type
     switch (randomType) {
-      case 'E':
-        hintText = word.etymology || "Etymology unavailable";
+      case 'E2':
+        hintText = word.equivalents && word.equivalents.length > 0 
+          ? `Similar words: ${word.equivalents.join(', ')}`
+          : "No synonyms available";
         break;
       case 'F':
         hintText = word.first_letter || word.word.charAt(0);
@@ -503,10 +505,8 @@ export class MockClient implements DatabaseClient {
       case 'N':
         hintText = `This word has ${word.number_of_letters || word.word.length} letters`;
         break;
-      case 'E2':
-        hintText = word.equivalents && word.equivalents.length > 0 
-          ? `Similar words: ${word.equivalents.join(', ')}`
-          : "No synonyms available";
+      case 'E':
+        hintText = word.etymology || "Etymology unavailable";
         break;
       default:
         hintText = "Hint unavailable";

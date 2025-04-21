@@ -3,6 +3,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import wordRoutes from './routes/wordRoutes.js';
 import { getDb } from './config/database/db.js';
 
@@ -13,12 +15,24 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Mount routes
+// Mount API routes
 app.use('/api', wordRoutes);
+
+// Serve static files from the client build directory
+app.use(express.static(path.join(__dirname, '../../client/build')));
+
+// Serve index.html for all other routes (client-side routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+});
 
 // Initialize database and start server
 async function startServer() {

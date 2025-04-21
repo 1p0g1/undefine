@@ -39,83 +39,71 @@ const DefineHints: React.FC<DefineHintsProps> = ({
     );
   }
 
-  const renderHint = (type: number) => {
-    // Definition (type 0) is always revealed
-    const isRevealed = type === 0 || revealedHints.includes(type);
-    const hintClass = `hint-item ${isRevealed ? 'revealed' : 'hidden'}`;
-
-    switch (type) {
+  const renderHint = (index: number) => {
+    switch (index) {
       case 0: // Definition
         return (
-          <div className={hintClass}>
+          <div className="hint-box">
             <div className="hint-label">Definition</div>
-            <p className="hint-content definition-text">
+            <blockquote className="hint-content">
               {word.clues?.D || 'No definition available'}
-            </p>
-          </div>
-        );
-      
-      case 1: // Etymology
-        return (
-          <div className={hintClass}>
-            <div className="hint-label">Etymology</div>
-            <blockquote className="hint-content etymology-text">
-              {word.clues?.E || 'No etymology available'}
             </blockquote>
           </div>
         );
       
-      case 2: // First Letter
+      case 1: // Equivalents (E2)
         return (
-          <div className={hintClass}>
-            <div className="hint-label">First Letter</div>
-            <div className="hint-content first-letter">
-              {word.clues?.F || '—'}_______
-            </div>
-          </div>
-        );
-      
-      case 3: // In a Sentence
-        return (
-          <div className={hintClass}>
-            <div className="hint-label">In a Sentence</div>
-            <p className="hint-content sentence-text">
-              {word.clues?.I || 'No example sentence available'}
-            </p>
-          </div>
-        );
-      
-      case 4: // Number of Letters
-        return (
-          <div className={hintClass}>
-            <div className="hint-label">Number of Letters</div>
-            <div className="hint-content letter-boxes">
-              {Array(Number(word.clues?.N || 0)).fill('_').map((_, i) => (
-                <span key={`letter-box-${i}`} className="letter-box" />
-              ))}
-            </div>
-          </div>
-        );
-      
-      case 5: // Equivalents (E2)
-        return (
-          <div className={hintClass}>
+          <div className="hint-box">
             <div className="hint-label">Synonyms</div>
-            <div className="hint-content synonym-chips">
+            <div className="hint-content synonyms-list">
               {(word.clues?.E2 ?? []).length > 0 ? (
                 (word.clues?.E2 ?? []).map((synonym: string, i: number) => (
-                  <button
-                    key={`synonym-${synonym}-${i}`}
-                    className="synonym-chip"
-                    onClick={() => onSynonymClick?.(synonym)}
-                  >
-                    {synonym || '—'}
-                  </button>
+                  <span key={i} className="synonym-tag">{synonym}</span>
                 ))
               ) : (
                 <span className="no-synonyms">No synonyms available</span>
               )}
             </div>
+          </div>
+        );
+      
+      case 2: // First Letter
+        return (
+          <div className="hint-box">
+            <div className="hint-label">First Letter</div>
+            <blockquote className="hint-content">
+              {word.clues?.F || 'No first letter available'}
+            </blockquote>
+          </div>
+        );
+      
+      case 3: // In a Sentence
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Example</div>
+            <blockquote className="hint-content">
+              {word.clues?.I || 'No example available'}
+            </blockquote>
+          </div>
+        );
+      
+      case 4: // Number of Letters
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Letter Count</div>
+            <blockquote className="hint-content">
+              {word.clues?.N || 'No letter count available'}
+            </blockquote>
+          </div>
+        );
+      
+      case 5: // Etymology
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Etymology</div>
+            <blockquote className="hint-content etymology-text">
+              {word.clues?.E || 'No etymology available'}
+            </blockquote>
           </div>
         );
       
