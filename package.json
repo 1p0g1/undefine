@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "prepare": "[ \"$CI\" = \"true\" ] || exit 0",
+    "prepare": "[ \"$CI\" = \"true\" ] || npm run lint || echo '⚠️ Linting failed — check plugin configs!'",
     "postinstall": "npm run build:types",
     "prebuild": "npm run build:types && npm run typecheck:server && npm run lint || true",
     "typecheck": "npm run build:types && tsc --noEmit",
@@ -109,6 +109,7 @@
     "@vitest/ui": "^1.6.1",
     "concurrently": "^8.2.2",
     "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "globals": "^13.24.0",

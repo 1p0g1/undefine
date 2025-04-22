@@ -556,3 +556,123 @@ This cleanup will improve maintainability and reduce dependency conflicts.
    npm run typecheck
    ```
 
+## 🛠️ Build Blockers – Fix Round: JSX, Shared Types, Build Scripts
+
+### ✅ Summary
+This round addresses the core issues causing build failure on Render. All fixes were tested locally and committed to `main`.
+
+---
+
+### 📁 1. JSX Compilation Errors in `.tsx` Files
+
+#### 🔧 Problem
+- `TS17004: Cannot use JSX unless the '--jsx' flag is provided`
+- JSX syntax unsupported in `App.tsx`, `Toast.tsx`, etc.
+
+#### ✅ Fixes
+- Updated `tsconfig.server.json`:
+  ```json
+  {
+    "compilerOptions": {
+      "jsx": "react-jsx",
+      "types": ["node", "react", "react-dom"]
+    }
+  }
+  ```
+
+### 📦 2. Shared Types Not Compiling
+
+#### 🔧 Problem
+- `TS6305: Output file 'dist/index.d.ts' has not been built...`
+- Downstream imports failing due to missing type outputs
+
+#### ✅ Fixes
+- Ensured packages/shared-types compiles before server build:
+- Updated root package.json scripts:
+  ```json
+  "prebuild": "npm run build:types",
+  "build:types": "cd packages/shared-types && npm install && npm run clean && tsc"
+  ```
+- Verified:
+  - dist/index.d.ts exists after build
+  - Proper type exports from src/index.ts
+
+### 🌐 3. Incorrect DatabaseClient Exports
+
+#### 🔧 Problem
+- `TS2459: Module declares 'DatabaseClient' locally but it is not exported`
+
+#### ✅ Fixes
+- Standardised export from src/config/database/index.ts:
+  ```typescript
+  export { SupabaseClient as DatabaseClient } from "./SupabaseClient.js";
+  ```
+- Removed duplicate type exports to avoid circular references
+
+### 🛠️ 4. Build Order & CI Script Chain
+
+#### 🔧 Problem
+- Type declarations not ready when server build runs
+- Missing or unordered scripts leading to cascading failures
+
+#### ✅ Fixes
+- Root package.json now chains build correctly:
+  ```json
+  "build": "npm run clean && npm run build:types && npm run build:server && npm run build:client",
+  "prebuild": "npm run build:types"
+  ```
+- Added npm install to build:types to ensure dependency freshness
+
+### 🧪 5. Verification Steps Taken
+- ✅ `npx tsc -p src/tsconfig.server.json --noEmit`
+- ✅ `npm run build`
+- ✅ Verified .tsx component imports use .js extensions with NodeNext resolution
+- ✅ Confirmed presence of:
+  - packages/shared-types/dist/
+  - dist-server/
+  - client/dist/
+
+### 📋 To-Do: Follow-Up Tasks
+
+| Task | Status |
+|------|--------|
+| Lint .tsx imports for .js extension compliance | ⬜️ Pending |
+| Add CI step to verify shared-types are built before main app | ⬜️ Pending |
+| Add test for JSX compilation in client build | ⬜️ Optional |
+| Watch for Render deployment logs (next run) | ⬜️ In Progress |
+
+### ✅ Commit Ref
+Committed and pushed to main as of commit: af6e4b0.
+This round clears the known blockers.
+
+Next step: Deploy to Render and monitor logs for runtime edge cases.
+
+## 🔒 ESLint Plugin Registration
+
+> Ensure all rules in .eslintrc.json have corresponding plugins installed and registered:
+> - `"import/extensions"` → needs `eslint-plugin-import`
+> - `"react/*"` → needs `eslint-plugin-react`
+> - `"react-hooks/*"` → needs `eslint-plugin-react-hooks`
+> - `"@typescript-eslint/*"` → needs `@typescript-eslint/eslint-plugin`
+
+### Plugin Verification Steps
+1. Check .eslintrc.json plugins array contains all required plugins
+2. Verify each plugin is installed in package.json
+3. Run `npx eslint .` to confirm rules are being enforced
+4. Add to prepare script: `"prepare": "npm run lint || echo '⚠️ Linting failed — check plugin configs!'"`
+
+### Common Plugin/Rule Pairs
+| Rule Pattern | Required Plugin | Package Name |
+|--------------|-----------------|--------------|
+| import/* | import | eslint-plugin-import |
+| react/* | react | eslint-plugin-react |
+| react-hooks/* | react-hooks | eslint-plugin-react-hooks |
+| @typescript-eslint/* | @typescript-eslint | @typescript-eslint/eslint-plugin |
+
+### Troubleshooting
+- If a rule is not being enforced, check:
+  1. Plugin is listed in .eslintrc.json plugins array
+  2. Plugin package is installed
+  3. Rule is properly configured in rules section
+  4. No conflicting extends or overrides
+

@@ -21,7 +21,8 @@
   "plugins": [
     "react",
     "react-hooks",
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "import"
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",
