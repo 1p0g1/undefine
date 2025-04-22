@@ -30,4 +30,19 @@ export interface WordClues {
   I: string | null; // Example sentence (I for "In a sentence")
   N: number; // Number of letters
   E2: string | null; // Equivalents/Synonyms
+}
+
+export interface GameSession {
+  id: string;
+  word_id: string;
+  word: string;
+  start_time: string;
+  end_time?: string;
+  guesses: string[];
+  guesses_used: number;
+  revealed_clues: number[];
+  clue_status: Record<ClueType, string>;
+  is_complete: boolean;
+  is_won: boolean;
+  state: string;
 } 

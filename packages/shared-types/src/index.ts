@@ -17,19 +17,21 @@ export type Result<T> = {
   };
 };
 
-// Re-export all types
-export {
+export type User = {
+  id: string;
+  username: string;
+  email?: string;
+  created_at: string;
+  last_login?: string;
+};
+
+// Re-export all types and functions
+export type {
   // Game types
   HintIndex,
   Message,
   GuessHistory,
   AppGameState,
-  HINT_INDICES,
-  INDEX_TO_HINT,
-  clueTypeToNumber,
-  numberToClueType,
-  isHintAvailable,
-  getHintContent,
   GameState,
   ClueType,
   ClueStatus,
@@ -37,8 +39,21 @@ export {
   WordClues,
   
   // Word types
+  WordData as Word,
   WordData,
-  SafeClueData,
+  SafeClueData
+};
+
+export {
+  // Game functions
+  HINT_INDICES,
+  INDEX_TO_HINT,
+  clueTypeToNumber,
+  numberToClueType,
+  isHintAvailable,
+  getHintContent,
+  
+  // Word functions
   validateWordData,
   isWordData,
   validateClues,
@@ -48,7 +63,7 @@ export {
 };
 
 // Database models
-export interface GameSession {
+export type GameSession = {
   id: string;
   user_id: string;
   word_id: string;
@@ -62,13 +77,21 @@ export interface GameSession {
   completed: boolean;
   won: boolean;
   score?: number;
-}
+  guesses_used?: number;
+  revealed_clues?: number[];
+  is_complete?: boolean;
+  is_won?: boolean;
+  state?: string;
+};
 
 // API interfaces
-export interface GameResponse {
+export type GameResponse = {
   gameId: string;
   word: WordData;
-}
+};
+
+// Game word type
+export type GameWord = WordData;
 
 // Database client interface
 export interface DatabaseClient {
@@ -85,7 +108,7 @@ export interface DatabaseClient {
 }
 
 // User stats interface
-export interface UserStats {
+export type UserStats = {
   username: string;
   games_played: number;
   games_won: number;
@@ -94,18 +117,18 @@ export interface UserStats {
   current_streak: number;
   longest_streak: number;
   last_played_at: string;
-}
+};
 
 // Leaderboard entry interface
-export interface LeaderboardEntry {
+export type LeaderboardEntry = {
   username: string;
   score: number;
   rank: number;
-}
+};
 
 // Streak leader interface
-export interface StreakLeader {
+export type StreakLeader = {
   username: string;
   current_streak: number;
   longest_streak: number;
-} 
+}; 

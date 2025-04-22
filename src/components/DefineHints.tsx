@@ -1,5 +1,5 @@
 import React from 'react';
-import { WordData } from '../types/game';
+import { WordData } from '../types/game.js';
 import './DefineHints.css';
 
 interface DefineHintsProps {
