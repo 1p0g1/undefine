@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
 
     /* Bundler mode */
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "composite": true,
@@ -25,10 +25,10 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "shared-types": ["../packages/shared-types/src"]
+      "shared-types": ["../packages/shared-types/src/index.ts"]
     }
   },
-  "include": ["src", "types", "../packages/shared-types/src"],
+  "include": ["src", "types"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
   "references": [
     { "path": "./tsconfig.node.json" },

@@ -6,7 +6,7 @@
     "target": "ES2022",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../packages/shared-types/src/*"]
+      "shared-types": ["../packages/shared-types/src/index.ts"]
     },
     "outDir": "../dist-server",
     "skipLibCheck": true,
