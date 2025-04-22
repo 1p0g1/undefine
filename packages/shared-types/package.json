@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc || (echo '❌ TypeScript failed to emit files' && exit 1)",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "prepare": "npm run build",
