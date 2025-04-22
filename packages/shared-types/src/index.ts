@@ -2,6 +2,8 @@
  * Shared types for Un-Define game
  */
 
+import { HintIndex, Message, GuessHistory, AppGameState, HINT_INDICES, INDEX_TO_HINT, clueTypeToNumber, numberToClueType, isHintAvailable, getHintContent } from './utils/game.js';
+
 // Result type for better error handling
 export type Result<T> = {
   success: boolean;
@@ -239,4 +241,4 @@ export {
   numberToClueType,
   isHintAvailable,
   getHintContent
-} from './utils/game'; 
+} from './utils/game.js'; 

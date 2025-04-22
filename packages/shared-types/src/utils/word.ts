@@ -159,7 +159,7 @@ export const validateWordData = (data: unknown): WordData => {
     return parsed as WordData;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Validation failed: ${error.errors.map(e => e.message).join(', ')}`);
+      throw new Error(`Validation failed: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
     }
     throw error;
   }

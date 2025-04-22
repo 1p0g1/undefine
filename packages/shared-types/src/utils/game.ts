@@ -2,7 +2,7 @@
  * Game state types for Un-Define game
  */
 
-import { WordClues, ClueType, GuessResult } from '../index';
+import { WordClues, ClueType, GuessResult } from '../index.js';
 
 /**
  * Hint index type representing the position of a hint in the hint array
