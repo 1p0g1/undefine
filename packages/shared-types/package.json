@@ -1,5 +1,5 @@
 {
-  "name": "@reversedefine/shared-types",
+  "name": "@undefine/shared-types",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -20,11 +20,15 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "verify:render": "rm -rf dist && npx tsc --project tsconfig.json && ls dist/index.d.ts"
   },
   "devDependencies": {
-    "@types/node-fetch": "^2.6.12",
-    "typescript": "^5.3.3"
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "eslint": "^8.56.0",
+    "typescript": "^5.8.3",
+    "vitest": "^1.2.2"
   },
   "dependencies": {
     "zod": "^3.24.3"

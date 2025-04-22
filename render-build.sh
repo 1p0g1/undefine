@@ -73,8 +73,8 @@ npm run build
 
 # Verify path alias configuration
 echo "✅ Verifying path alias configuration..."
-echo "✅ Vite client alias: @shared -> ../packages/shared-types/src"
-echo "✅ TypeScript path alias: @shared/* -> ../packages/shared-types/src/*"
+echo "✅ Vite client alias: @shared -> ../packages/shared-types/dist"
+echo "✅ TypeScript path alias: @shared/* -> ../packages/shared-types/dist/*"
 
 # Final verification
 echo "Verifying build outputs..."

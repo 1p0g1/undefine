@@ -17,7 +17,7 @@
     "prebuild": "npm run clean"
   },
   "dependencies": {
-    "@reversedefine/shared-types": "1.0.0",
+    "@undefine/shared-types": "1.0.0",
     "@supabase/auth-helpers-react": "^0.4.2",
     "@supabase/supabase-js": "^2.39.7",
     "jsdom": "^24.0.0",

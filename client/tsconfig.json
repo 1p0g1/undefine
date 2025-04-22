@@ -26,8 +26,8 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../packages/shared-types/src/*"],
-      "shared-types": ["../packages/shared-types/src/index.ts"]
+      "@shared/*": ["../packages/shared-types/dist/*"],
+      "shared-types": ["../packages/shared-types/dist/index.js"]
     }
   },
   "include": ["src", "types"],

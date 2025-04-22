@@ -13,7 +13,9 @@
       "@/*": ["src/*"],
       "@shared/*": ["packages/shared-types/src/*"],
       "shared-types": ["packages/shared-types/src/index.ts"],
-      "shared-types/*": ["packages/shared-types/src/*"]
+      "shared-types/*": ["packages/shared-types/src/*"],
+      "@undefine/shared-types": ["packages/shared-types/src/index.ts"],
+      "@undefine/shared-types/*": ["packages/shared-types/src/*"]
     },
     "skipLibCheck": true,
     "resolveJsonModule": true,
