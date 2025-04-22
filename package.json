@@ -13,7 +13,7 @@
   "scripts": {
     "prepare": "[ \"$CI\" = \"true\" ] || exit 0",
     "postinstall": "npm run build:types",
-    "prebuild": "npm run typecheck:server && npm run lint || true",
+    "prebuild": "npm run build:types && npm run typecheck:server && npm run lint || true",
     "typecheck": "npm run build:types && tsc --noEmit",
     "typecheck:server": "npm run build:types && tsc -p src/tsconfig.server.json --noEmit",
     "typecheck:client": "cd client && npm run typecheck",
@@ -21,7 +21,7 @@
     "build": "npm run clean && npm run build:types && npm run build:server && npm run build:client",
     "build:minimal": "npm run build:types && npm run build:client",
     "build:render": "./render-build.sh",
-    "build:types": "cd packages/shared-types && npm run clean && tsc",
+    "build:types": "cd packages/shared-types && npm install && npm run clean && tsc",
     "build:server": "tsc -p src/tsconfig.server.json",
     "build:client": "cd client && npm install && npm run build",
     "build:client-only": "cd client && npm run build",
@@ -47,8 +47,7 @@
     "test:uuid": "vitest run src/tests/api-validation.test.ts",
     "test:build": "vitest run src/tests/build-freshness.test.ts",
     "test:debug": "vitest run src/tests/debug-mode.test.ts",
-    "render:build": "npm run build:types && npm run build:server && cd client && npm install && npm run build",
-    "render:start": "node dist-server/index.js"
+    "render:build": "npm run build:types && npm run build:server && cd client && npm install && npm run build"
   },
   "ts-node": {
     "esm": true,

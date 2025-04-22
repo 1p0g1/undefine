@@ -1,7 +1,9 @@
 // ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
 
 import { SupabaseClient } from './SupabaseClient.js';
-import type { DatabaseClient } from 'shared-types';
+import type { DatabaseClient } from '../../../packages/shared-types/src/index.js';
+
+export { SupabaseClient as DatabaseClient };
 
 export async function initDb(): Promise<void> {
   try {
