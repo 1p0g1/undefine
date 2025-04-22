@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "prepare": "[ \"$CI\" = \"true\" ] || npm run lint || echo '⚠️ Linting failed — check plugin configs!'",
+    "prepare": "true",
     "setup": "node scripts/setup-monorepo.js",
     "prebuild": "npm run build:types && npm run typecheck:server && npm run lint > /dev/null 2>&1 || echo '⚠️ Skipping lint errors...'",
     "typecheck": "npm run build:types && tsc --noEmit",
