@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "prepare": "[ \"$CI\" = \"true\" ] || npm run lint || echo '⚠️ Linting failed — check plugin configs!'",
-    "postinstall": "npm run build:types",
+    "setup": "node scripts/setup-monorepo.js",
     "prebuild": "npm run build:types && npm run typecheck:server && npm run lint || true",
     "typecheck": "npm run build:types && tsc --noEmit",
     "typecheck:server": "npm run build:types && tsc -p src/tsconfig.server.json --noEmit",
@@ -21,7 +21,7 @@
     "build": "npm run clean && npm run build:types && npm run build:server && npm run build:client",
     "build:minimal": "npm run build:types && npm run build:client",
     "build:render": "./render-build.sh",
-    "build:types": "cd packages/shared-types && npm install && npm run clean && tsc",
+    "build:types": "cd packages/shared-types && npm run clean && tsc && test -f dist/index.d.ts",
     "build:server": "tsc -p src/tsconfig.server.json",
     "build:client": "cd client && npm install && npm run build",
     "build:client-only": "cd client && npm run build",
@@ -47,7 +47,9 @@
     "test:uuid": "vitest run src/tests/api-validation.test.ts",
     "test:build": "vitest run src/tests/build-freshness.test.ts",
     "test:debug": "vitest run src/tests/debug-mode.test.ts",
-    "render:build": "npm run build:types && npm run build:server && cd client && npm install && npm run build"
+    "render:build": "npm run build:types && npm run build:server && cd client && npm install && npm run build",
+    "verify:build": "test -f packages/shared-types/dist/index.d.ts && test -f dist-server/index.js && test -f client/dist/index.html",
+    "ci:verify-types": "./scripts/ci/verify-types.sh"
   },
   "ts-node": {
     "esm": true,

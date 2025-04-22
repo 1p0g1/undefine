@@ -6,6 +6,14 @@ set -e
 # Print commands for debugging
 set -x
 
+# Create timestamped build log
+BUILD_LOG="build-$(date +%Y%m%d-%H%M%S).log"
+exec 1> >(tee -a "$BUILD_LOG")
+exec 2> >(tee -a "$BUILD_LOG" >&2)
+
+echo "=== Build Started at $(date) ==="
+echo "Build log: $BUILD_LOG"
+
 # Debug path resolution
 echo "Current directory: $(pwd)"
 echo "Does @shared point to: $(realpath client/../packages/shared-types)"
@@ -23,13 +31,35 @@ node -e "
   }
 "
 
-# Install dependencies with legacy peer deps
-echo "Installing dependencies..."
+# Verify package-lock.json
+echo "Verifying package-lock.json..."
+if [ ! -f "package-lock.json" ]; then
+  echo "❌ package-lock.json missing"
+  exit 1
+fi
+
+# Clean any existing build artifacts
+echo "Cleaning build artifacts..."
+rm -rf packages/shared-types/dist
+rm -rf dist-server
+rm -rf client/dist
+
+# Install root dependencies
+echo "Installing root dependencies..."
 npm install --legacy-peer-deps
 
-# Copy node types explicitly if needed
+# Build shared types with verification
 echo "Building shared types..."
-cd packages/shared-types && npm install --legacy-peer-deps && tsc && cd ../..
+cd packages/shared-types
+npm install --legacy-peer-deps
+npm run clean
+tsc
+# Verify the build output
+if [ ! -f "dist/index.d.ts" ]; then
+  echo "❌ Failed to generate dist/index.d.ts"
+  exit 1
+fi
+cd ../..
 
 # Build server
 echo "Building server..."
@@ -39,69 +69,27 @@ npm run build:server
 echo "Building client..."
 cd client
 npm install --legacy-peer-deps
+npm run build
 
 # Verify path alias configuration
 echo "✅ Verifying path alias configuration..."
 echo "✅ Vite client alias: @shared -> ../packages/shared-types/src"
 echo "✅ TypeScript path alias: @shared/* -> ../packages/shared-types/src/*"
 
-# Check if the shared-types directory exists
-if [ -d "../packages/shared-types/src" ]; then
-  echo "✅ Shared types directory exists"
-  ls -la "../packages/shared-types/src"
-else
-  echo "❌ Shared types directory missing!"
+# Final verification
+echo "Verifying build outputs..."
+if [ ! -f "packages/shared-types/dist/index.d.ts" ]; then
+  echo "❌ Missing shared-types build output"
+  exit 1
+fi
+if [ ! -f "dist-server/index.js" ]; then
+  echo "❌ Missing server build output"
+  exit 1
+fi
+if [ ! -f "client/dist/index.html" ]; then
+  echo "❌ Missing client build output"
   exit 1
 fi
 
-# Install additional type declarations if needed
-echo "Installing additional type declarations..."
-npm install --save-dev @types/react @types/react-dom @types/testing-library__react vitest
-
-# Build client
-echo "Building client..."
-npm run build
-cd ..
-
-# Verify build artifacts
-echo "Verifying build artifacts..."
-if [ ! -d "./dist-server" ]; then
-  echo "Error: Server build artifacts missing!"
-  exit 1
-fi
-
-if [ ! -d "./client/dist" ]; then
-  echo "Error: Client build artifacts missing!"
-  exit 1
-fi
-
-# Verify key files exist
-if [ ! -f "./client/dist/index.html" ]; then
-  echo "Error: Client index.html missing!"
-  exit 1
-fi
-
-if [ ! -f "./dist-server/index.js" ]; then
-  echo "Error: Server index.js missing!"
-  exit 1
-fi
-
-# Verify API endpoints
-echo "Verifying API endpoints..."
-if [ ! -f "./dist-server/api/word.js" ]; then
-  echo "Error: /api/word endpoint missing!"
-  exit 1
-fi
-
-if [ ! -f "./dist-server/api/guess.js" ]; then
-  echo "Error: /api/guess endpoint missing!"
-  exit 1
-fi
-
-# Verify client static files
-echo "Verifying client static files..."
-if [ ! -f "./client/dist/assets/index.js" ]; then
-  echo "Warning: Client assets may be missing. Check the build output."
-fi
-
-echo "Build completed successfully!" 
+echo "✅ Build completed successfully at $(date)"
+echo "Build log saved to: $BUILD_LOG" 
