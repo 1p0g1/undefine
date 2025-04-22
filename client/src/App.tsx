@@ -405,7 +405,6 @@ function App() {
       
       const processedResult: ClientGuessResult = {
         isCorrect: result.isCorrect === true,
-        correct: result.isCorrect === true,
         guess: trimmedGuess,
         isFuzzy: !!result.isFuzzy,
         fuzzyPositions: result.fuzzyPositions || [],

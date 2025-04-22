@@ -20,11 +20,20 @@
     /* Linting */
     "strict": true,
     "noImplicitAny": false,
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "typeRoots": ["./types", "./node_modules/@types"],
+    
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "shared-types": ["../packages/shared-types/src"]
+    }
   },
-  "include": ["src", "types"],
+  "include": ["src", "types", "../packages/shared-types/src"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
-  "references": [{ "path": "./tsconfig.node.json" }],
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "../packages/shared-types" }
+  ],
   "ts-node": {
     "transpileOnly": true
   }

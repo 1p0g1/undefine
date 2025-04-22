@@ -1,0 +1,122 @@
+import React from 'react';
+import { WordData } from '../types/game';
+import './DefineHints.css';
+
+interface DefineHintsProps {
+  word: WordData;
+  revealedHints: number[];
+  guessCount: number;
+  onSynonymClick?: (synonym: string) => void;
+  isLoading?: boolean;
+}
+
+const DefineHints: React.FC<DefineHintsProps> = ({ 
+  word, 
+  revealedHints, 
+  guessCount,
+  onSynonymClick,
+  isLoading = false 
+}) => {
+  if (isLoading) {
+    return (
+      <div className="define-hints loading">
+        <div className="loading-spinner" />
+        <div className="loading-text">Loading hints...</div>
+      </div>
+    );
+  }
+
+  const renderHint = (index: number) => {
+    switch (index) {
+      case 0: // Definition
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Definition</div>
+            <blockquote className="hint-content">
+              {word.clues?.D || 'No definition available'}
+            </blockquote>
+          </div>
+        );
+      
+      case 1: // Equivalents (E2)
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Synonyms</div>
+            <div className="hint-content synonyms-list">
+              {(word.clues?.E2 ?? []).length > 0 ? (
+                (word.clues?.E2 ?? []).map((synonym: string, i: number) => (
+                  <span 
+                    key={i} 
+                    className="synonym-tag"
+                    onClick={() => onSynonymClick?.(synonym)}
+                  >
+                    {synonym}
+                  </span>
+                ))
+              ) : (
+                <span className="no-synonyms">No synonyms available</span>
+              )}
+            </div>
+          </div>
+        );
+      
+      case 2: // First Letter
+        return (
+          <div className="hint-box">
+            <div className="hint-label">First Letter</div>
+            <blockquote className="hint-content">
+              {word.clues?.F || 'No first letter available'}
+            </blockquote>
+          </div>
+        );
+      
+      case 3: // In a Sentence
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Example</div>
+            <blockquote className="hint-content">
+              {word.clues?.I || 'No example available'}
+            </blockquote>
+          </div>
+        );
+      
+      case 4: // Number of Letters
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Letter Count</div>
+            <blockquote className="hint-content">
+              {word.clues?.N || 'No letter count available'}
+            </blockquote>
+          </div>
+        );
+      
+      case 5: // Etymology
+        return (
+          <div className="hint-box">
+            <div className="hint-label">Etymology</div>
+            <blockquote className="hint-content etymology-text">
+              {word.clues?.E || 'No etymology available'}
+            </blockquote>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="define-hints">
+      {[0, 1, 2, 3, 4, 5].map(type => (
+        <React.Fragment key={`hint-type-${type}`}>
+          {renderHint(type)}
+        </React.Fragment>
+      ))}
+      <div className="guesses-remaining">
+        Guesses remaining: {6 - guessCount}
+      </div>
+    </div>
+  );
+};
+
+export default DefineHints; 
