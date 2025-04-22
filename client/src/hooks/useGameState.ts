@@ -1,39 +1,70 @@
-import { useState } from 'react';
-import { WordData } from '@shared/utils/word';
+import { useState, useCallback } from 'react';
+import { GameState, WordData, HintIndex, GuessResult } from '../types/game.js';
 
-export interface BaseGameState {
-  wordData: WordData | null;
-  revealedHints: string[];
-  remainingGuesses: number;
-  isGameOver: boolean;
-  hasWon: boolean;
-  isCorrect: boolean;
-  showConfetti: boolean;
-  showLeaderboard: boolean;
-  message: { type: 'success' | 'error'; text: string } | null;
-  guessCount: number;
-  gameId?: string;
-  correctWord?: string;
-}
-
-const initialGameState: BaseGameState = {
+const initialState: GameState = {
   wordData: null,
   revealedHints: [],
-  remainingGuesses: 6,
+  guessCount: 0,
   isGameOver: false,
   hasWon: false,
-  isCorrect: false,
-  showConfetti: false,
-  showLeaderboard: false,
-  message: null,
-  guessCount: 0
+  guessResults: [],
+  isLoading: false
 };
 
 export function useGameState() {
-  const [gameState, setGameState] = useState<BaseGameState>(initialGameState);
+  const [state, setState] = useState<GameState>(initialState);
+
+  const startNewGame = useCallback((wordData: WordData) => {
+    setState({
+      ...initialState,
+      wordData,
+      isLoading: false
+    });
+  }, []);
+
+  const revealHint = useCallback((hintIndex: HintIndex) => {
+    setState(prev => {
+      if (prev.isGameOver || prev.revealedHints.includes(hintIndex)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        revealedHints: [...prev.revealedHints, hintIndex]
+      };
+    });
+  }, []);
+
+  const submitGuess = useCallback((guess: string) => {
+    setState(prev => {
+      if (!prev.wordData || prev.isGameOver) {
+        return prev;
+      }
+
+      const isCorrect = guess.toLowerCase() === prev.wordData.word.toLowerCase();
+      const newGuessCount = prev.guessCount + 1;
+      const newGuessResult: GuessResult = isCorrect ? 'correct' : 'incorrect';
+      const newGuessResults = [...prev.guessResults, newGuessResult];
+      const isGameOver = isCorrect || newGuessCount >= 6;
+
+      return {
+        ...prev,
+        guessCount: newGuessCount,
+        guessResults: newGuessResults,
+        isGameOver,
+        hasWon: isCorrect
+      };
+    });
+  }, []);
+
+  const resetGame = useCallback(() => {
+    setState(initialState);
+  }, []);
 
   return {
-    gameState,
-    setGameState
+    state,
+    startNewGame,
+    revealHint,
+    submitGuess,
+    resetGame
   };
 } 

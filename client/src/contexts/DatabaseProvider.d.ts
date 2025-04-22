@@ -8,4 +8,4 @@ export declare function DatabaseProvider({ children, client }: {
     client: DatabaseClient;
 }): import("react/jsx-runtime").JSX.Element;
 export declare function useDatabase(): DatabaseContextType;
-export {};
+export {}; 

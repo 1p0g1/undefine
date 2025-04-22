@@ -34,4 +34,4 @@ export declare const toast: {
     warning: (message: string, options?: Omit<ToastOptions, "message" | "type">) => any;
     dismiss: (id: string) => any;
     dismissAll: () => any;
-};
+}; 

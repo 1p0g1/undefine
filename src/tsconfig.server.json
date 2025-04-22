@@ -4,14 +4,13 @@
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "target": "ES2022",
-    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["../packages/shared-types/src/*"]
     },
     "outDir": "../dist-server",
     "skipLibCheck": true,
-    "types": ["node", "react", "react-dom"]
+    "types": ["node"]
   },
   "include": ["."],
   "exclude": ["client", "tests", "**/*.test.*"]
