@@ -1,5 +1,6 @@
-import { WordData, GuessResponse } from './types';
-import { getApiUrl } from './utils';
+import { WordData } from '@shared/utils/word.js';
+import { getApiUrl } from './config.js';
+import { GuessResult } from './types/index.js';
 
 export const fetchWord = async (): Promise<WordData> => {
   const controller = new AbortController();
@@ -24,7 +25,7 @@ export const fetchWord = async (): Promise<WordData> => {
   }
 };
 
-export const submitGuess = async (guess: string): Promise<GuessResponse> => {
+export const submitGuess = async (guess: string): Promise<GuessResult> => {
   const response = await fetch(getApiUrl('/api/guess'), {
     method: 'POST',
     headers: {

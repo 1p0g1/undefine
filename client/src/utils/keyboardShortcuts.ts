@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState } from 'react';
-import { getFromStorage, saveToStorage, STORAGE_KEYS } from './storage';
+import { getFromStorage, saveToStorage, STORAGE_KEYS } from './storage.js';
 
 export interface ShortcutAction {
   key: string;

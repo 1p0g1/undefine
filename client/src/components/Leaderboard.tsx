@@ -1,1 +1,2 @@
- 
+import { LeaderboardEntry } from '../types/leaderboard.js';
+// ... existing code ... 

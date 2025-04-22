@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import './Toast.css';
 
@@ -129,6 +129,7 @@ export interface ToastOptions {
   type?: ToastType;
   message: string;
   duration?: number;
+  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 }
 
 interface ToastItem extends ToastOptions {
@@ -143,33 +144,34 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ position = 'top-right' 
   
   useEffect(() => {
     // Create global access to toast methods
-    const toast = {
+    const toast: ToastInstance = {
       show: (options: ToastOptions) => {
         const id = options.id || `toast-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
         const newToast: ToastItem = {
           id,
           type: options.type || 'info',
           message: options.message,
-          duration: options.duration
+          duration: options.duration,
+          position: options.position
         };
         
         setToasts(prevToasts => [...prevToasts, newToast]);
         return id;
       },
       
-      success: (message: string, options: Omit<ToastOptions, 'message' | 'type'> = {}) => {
+      success: (message: string, options: Omit<ToastOptions, 'message' | 'type' | 'position'> = {}) => {
         return toast.show({ ...options, message, type: 'success' });
       },
       
-      error: (message: string, options: Omit<ToastOptions, 'message' | 'type'> = {}) => {
+      error: (message: string, options: Omit<ToastOptions, 'message' | 'type' | 'position'> = {}) => {
         return toast.show({ ...options, message, type: 'error' });
       },
       
-      info: (message: string, options: Omit<ToastOptions, 'message' | 'type'> = {}) => {
+      info: (message: string, options: Omit<ToastOptions, 'message' | 'type' | 'position'> = {}) => {
         return toast.show({ ...options, message, type: 'info' });
       },
       
-      warning: (message: string, options: Omit<ToastOptions, 'message' | 'type'> = {}) => {
+      warning: (message: string, options: Omit<ToastOptions, 'message' | 'type' | 'position'> = {}) => {
         return toast.show({ ...options, message, type: 'warning' });
       },
       
@@ -218,10 +220,52 @@ export { Toast, ToastContainer };
 // Export toast functions
 export const toast = {
   show: (options: ToastOptions) => (window as any).toast?.show(options),
-  success: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => (window as any).toast?.success(message, options),
-  error: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => (window as any).toast?.error(message, options),
-  info: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => (window as any).toast?.info(message, options),
-  warning: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => (window as any).toast?.warning(message, options),
+  success: (message: string, options?: Omit<ToastOptions, 'message' | 'type' | 'position'>) => (window as any).toast?.success(message, options),
+  error: (message: string, options?: Omit<ToastOptions, 'message' | 'type' | 'position'>) => (window as any).toast?.error(message, options),
+  info: (message: string, options?: Omit<ToastOptions, 'message' | 'type' | 'position'>) => (window as any).toast?.info(message, options),
+  warning: (message: string, options?: Omit<ToastOptions, 'message' | 'type' | 'position'>) => (window as any).toast?.warning(message, options),
   dismiss: (id: string) => (window as any).toast?.dismiss(id),
   dismissAll: () => (window as any).toast?.dismissAll()
-}; 
+};
+
+interface ToastInstance {
+  show: (options: ToastOptions) => void;
+  success: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => void;
+  error: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => void;
+  info: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => void;
+  warning: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => void;
+  dismiss: (id: string) => void;
+  dismissAll: () => void;
+}
+
+declare global {
+  interface Window {
+    toast?: ToastInstance;
+  }
+}
+
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  useEffect(() => {
+    window.toast = toast;
+    return () => {
+      delete window.toast;
+    };
+  }, []);
+
+  return (
+    <div>
+      {children}
+      <div id="toast-container" className="toast-container" />
+    </div>
+  );
+};
+
+export const useToast = () => ({
+  show: (options: ToastOptions) => window.toast?.show(options),
+  success: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => window.toast?.success(message, options),
+  error: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => window.toast?.error(message, options),
+  info: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => window.toast?.info(message, options),
+  warning: (message: string, options?: Omit<ToastOptions, 'message' | 'type'>) => window.toast?.warning(message, options),
+  dismiss: (id: string) => window.toast?.dismiss(id),
+  dismissAll: () => window.toast?.dismissAll()
+}); 

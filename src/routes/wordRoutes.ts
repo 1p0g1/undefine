@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../config/database/db.js';
-import { ClueType, GuessResult, Word } from 'shared-types';
+import { ClueType, GuessResult, Word, Result } from '../../packages/shared-types/src/index.js';
 
 const router = Router();
 
@@ -127,19 +127,25 @@ router.post('/guess', async (req, res) => {
       return res.status(400).json({ error: 'Missing gameId or guess' });
     }
     
-    const session = await getDb().getGameSession(gameId);
-    if (!session) {
+    const sessionResult = await getDb().getGameSession(gameId);
+    if (!sessionResult.success) {
+      return res.status(500).json({ error: sessionResult.error?.message || 'Failed to get game session' });
+    }
+    if (!sessionResult.data) {
       return res.status(404).json({ error: 'Game not found' });
     }
     
-    const result = await getDb().processGuess(gameId, guess, session);
+    const result = await getDb().processGuess(gameId, guess, sessionResult.data);
+    if (!result.success) {
+      return res.status(500).json({ error: result.error?.message || 'Failed to process guess' });
+    }
     
     // Return only properties that exist in the GuessResult type
     res.json({
-      guess: result.guess,
-      isCorrect: result.isCorrect,
-      gameOver: result.gameOver,
-      correctWord: result.correctWord
+      guess: result.data.guess,
+      isCorrect: result.data.isCorrect,
+      gameOver: result.data.gameOver,
+      correctWord: result.data.correctWord
     });
   } catch (error) {
     console.error('Error processing guess:', error);

@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
+import { configDefaults, defineConfig as defineVitestConfig } from 'vitest/config'
 // @ts-ignore - The module works but TypeScript doesn't recognize its exports correctly
 import react from '@vitejs/plugin-react'
 import path from 'path'
@@ -10,6 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, '../packages/shared-types/src'),
       'shared-types': path.resolve(__dirname, '../packages/shared-types/src')
     }
   },
@@ -49,6 +51,7 @@ export default defineConfig({
     'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3001')
   },
   test: {
+    ...configDefaults,
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClientGuessResult } from '../types/index';
+import { ClientGuessResult } from '../types/index.js';
 
 export function useGameGuess() {
   const [isSubmitting, setIsSubmitting] = useState(false);

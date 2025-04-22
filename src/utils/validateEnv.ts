@@ -106,7 +106,7 @@ export function validateEnv(): ValidationResult {
   ENV_VARS.forEach(config => {
     const value = process.env[config.name];
     const isRequired = config.required && 
-      (!config.requiredIn || config.requiredIn.includes(currentEnv as any));
+      (!config.requiredIn || (config.requiredIn as Array<string>).includes(currentEnv));
 
     // Check if required variable is missing
     if (isRequired && !value) {

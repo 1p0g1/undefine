@@ -10,8 +10,15 @@
     },
     "outDir": "../dist-server",
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "declaration": true,
+    "declarationDir": "../dist-server",
+    "composite": true,
+    "rootDir": "."
   },
   "include": ["."],
-  "exclude": ["client", "tests", "**/*.test.*"]
+  "exclude": ["client", "tests", "**/*.test.*"],
+  "references": [
+    { "path": "../packages/shared-types" }
+  ]
 } 

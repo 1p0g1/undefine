@@ -7,8 +7,9 @@ import {
   GuessResult,
   User,
   UserStats,
-  Word
-} from 'shared-types';
+  Word,
+  Result
+} from '../../../packages/shared-types/src/index.js';
 
 // Create additional types locally to fix errors
 interface DailyMetrics {
@@ -67,7 +68,7 @@ export class MockClient implements DatabaseClient {
   }
 
   // Connection methods
-  async connect(): Promise<void> {
+  async connect(): Promise<Result<void>> {
     console.log('MockClient: Connecting to mock database');
     
     try {
@@ -103,16 +104,24 @@ export class MockClient implements DatabaseClient {
 
       this.connected = true;
       console.log('MockClient: Connected successfully');
+      return { success: true, data: undefined };
     } catch (error) {
       console.error('MockClient: Failed to connect:', error);
-      throw error;
+      return { 
+        success: false, 
+        error: { 
+          code: 'CONNECTION_ERROR',
+          message: 'Failed to connect to mock database',
+          details: error
+        }
+      };
     }
   }
 
-  async disconnect(): Promise<void> {
+  async disconnect(): Promise<Result<void>> {
     console.log('MockClient: Disconnecting from mock database');
     this.connected = false;
-    return Promise.resolve();
+    return { success: true, data: undefined };
   }
 
   async initializeDatabase(): Promise<void> {
@@ -124,15 +133,15 @@ export class MockClient implements DatabaseClient {
   }
 
   // Word management
-  async getWords(): Promise<Word[]> {
-    return this.words;
+  async getWords(): Promise<Result<Word[]>> {
+    return { success: true, data: this.words };
   }
 
-  async getWord(wordId: string): Promise<Word | null> {
-    return this.words.find(w => w.id === wordId) || null;
+  async getWord(wordId: string): Promise<Result<Word | null>> {
+    return { success: true, data: this.words.find(w => w.id === wordId) || null };
   }
 
-  async addWord(word: Omit<Word, 'id'>): Promise<Word> {
+  async addWord(word: Omit<Word, 'id'>): Promise<Result<Word>> {
     const newWord: Word = {
       ...word,
       id: (this.words.length + 1).toString(),
@@ -142,44 +151,96 @@ export class MockClient implements DatabaseClient {
       number_of_letters: word.word.length
     };
     this.words.push(newWord);
-    return newWord;
+    return { success: true, data: newWord };
   }
 
-  async updateWord(wordId: string, word: Partial<Word>): Promise<Word> {
+  async updateWord(wordId: string, word: Partial<Word>): Promise<Result<Word>> {
     const existingWord = this.words.find(w => w.id === wordId);
-    if (!existingWord) throw new Error('Word not found');
+    if (!existingWord) {
+      return { 
+        success: false, 
+        error: { 
+          code: 'WORD_NOT_FOUND',
+          message: 'Word not found'
+        }
+      };
+    }
     const updatedWord: Word = {
       ...existingWord,
       ...word
     };
-    return updatedWord;
+    return { success: true, data: updatedWord };
   }
 
-  async deleteWord(wordId: string): Promise<boolean> {
+  async deleteWord(wordId: string): Promise<Result<boolean>> {
     if (!this.connected) {
-      throw new Error('Database not connected');
+      return {
+        success: false,
+        error: {
+          code: 'NOT_CONNECTED',
+          message: 'Database not connected'
+        }
+      };
     }
     const initialLength = this.words.length;
     this.words = this.words.filter(w => w.id !== wordId);
-    return this.words.length < initialLength;
+    return { success: true, data: this.words.length < initialLength };
   }
 
-  async searchWords(query: string): Promise<Word[]> {
-    return this.words.filter(w => 
-      w.word.toLowerCase().includes(query.toLowerCase()) ||
-      w.definition.toLowerCase().includes(query.toLowerCase())
-    );
+  async searchWords(query: string): Promise<Result<Word[]>> {
+    return { 
+      success: true, 
+      data: this.words.filter(w => 
+        w.word.toLowerCase().includes(query.toLowerCase()) ||
+        w.definition.toLowerCase().includes(query.toLowerCase())
+      )
+    };
   }
 
-  async getRandomWord(): Promise<Word> {
-    const randomIndex = Math.floor(Math.random() * this.words.length);
-    return this.words[randomIndex];
-  }
-
-  async getDailyWord(date?: string): Promise<Word> {
+  async getRandomWord(): Promise<Result<Word>> {
+    if (!this.connected) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_CONNECTED',
+          message: 'Database not connected'
+        }
+      };
+    }
+    
     if (this.words.length === 0) {
-      console.error('No words available in database');
-      throw new Error('No words available in database');
+      return {
+        success: false,
+        error: {
+          code: 'NO_WORDS',
+          message: 'No words available in database'
+        }
+      };
+    }
+
+    const randomIndex = Math.floor(Math.random() * this.words.length);
+    return { success: true, data: this.words[randomIndex] };
+  }
+
+  async getDailyWord(date?: string): Promise<Result<Word>> {
+    if (!this.connected) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_CONNECTED',
+          message: 'Database not connected'
+        }
+      };
+    }
+
+    if (this.words.length === 0) {
+      return {
+        success: false,
+        error: {
+          code: 'NO_WORDS',
+          message: 'No words available in database'
+        }
+      };
     }
 
     // Get a random word for development, first word for production
@@ -187,53 +248,44 @@ export class MockClient implements DatabaseClient {
       ? this.words[Math.floor(Math.random() * this.words.length)]
       : this.words[0];
 
-    if (!word) {
-      console.error('Failed to get word from database');
-      throw new Error('Failed to get word from database');
-    }
-
-    console.log('Retrieved word from database:', {
-      id: word.id,
-      length: word.word.length,
-      hasDefinition: !!word.definition
-    });
-
-    return word;
+    return { success: true, data: word };
   }
 
   async setDailyWord(wordId: string, date: string): Promise<void> {
     // No-op for mock
   }
 
-  async getNextUnusedWord(): Promise<Word | null> {
-    return this.words.find(w => !w.times_used) || null;
+  async getNextUnusedWord(): Promise<Result<Word | null>> {
+    return { success: true, data: this.words.find(w => !w.times_used) || null };
   }
 
-  async markAsUsed(wordId: string): Promise<void> {
+  async markAsUsed(wordId: string): Promise<Result<void>> {
     const word = this.words.find(w => w.id === wordId);
     if (word) {
       word.times_used = (word.times_used || 0) + 1;
       word.last_used_at = new Date().toISOString();
     }
+    return { success: true, data: undefined };
   }
 
   // User management
-  async getUserByEmail(email: string): Promise<User | null> {
-    return this.users[email] || null;
+  async getUserByEmail(email: string): Promise<Result<User | null>> {
+    return { success: true, data: this.users[email] || null };
   }
 
-  async getUserByUsername(username: string): Promise<User | null> {
-    return this.users[username] || null;
+  async getUserByUsername(username: string): Promise<Result<User | null>> {
+    const user = this.users[username] || null;
+    return { success: true, data: user };
   }
 
-  async createUser(username: string): Promise<User> {
+  async createUser(username: string): Promise<Result<User>> {
     const user: User = {
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substring(7),
       username,
       created_at: new Date().toISOString()
     };
     this.users[username] = user;
-    return user;
+    return { success: true, data: user };
   }
 
   // Leaderboard management
@@ -265,17 +317,20 @@ export class MockClient implements DatabaseClient {
   }
 
   // Stats management
-  async getUserStats(username: string): Promise<UserStats | null> {
-    return {
+  async getUserStats(username: string): Promise<Result<UserStats | null>> {
+    const stats = {
       username,
-      games_played: 0,
-      games_won: 0,
-      average_guesses: 0,
-      average_time: 0,
-      current_streak: 0,
-      longest_streak: 0,
-      last_played_at: new Date().toISOString()
+      games_played: 10,
+      games_won: 7,
+      average_guesses: 4.2,
+      average_time: 120,
+      current_streak: 3,
+      longest_streak: 5,
+      last_played_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
+    return { success: true, data: stats };
   }
 
   async updateUserStats(
@@ -283,9 +338,9 @@ export class MockClient implements DatabaseClient {
     won: boolean,
     guessesUsed: number,
     timeTaken: number
-  ): Promise<void> {
-    // Mock implementation - no need to store stats
-    return Promise.resolve();
+  ): Promise<Result<void>> {
+    // Mock implementation - just return success
+    return { success: true, data: undefined };
   }
 
   async getDailyStats(): Promise<DailyMetrics> {
@@ -336,72 +391,60 @@ export class MockClient implements DatabaseClient {
     gameId: string,
     guess: string,
     session: GameSession
-  ): Promise<GuessResult> {
-    if (!this.connected) {
-      throw new Error('Database not connected');
-    }
-
-    const wordObj = this.words.find(w => w.id === session.word_id);
-    if (!wordObj) {
-      throw new Error('Word not found');
-    }
-
-    const word = wordObj.word;
-    const isCorrect = guess.toLowerCase() === word.toLowerCase();
-
+  ): Promise<Result<GuessResult>> {
     const result: GuessResult = {
-      isCorrect,
+      isCorrect: guess === session.word,
       guess,
-      gameOver: isCorrect || session.guesses_used >= 5,
+      gameOver: false,
+      correctWord: session.word,
+      nextHint: {
+        type: 'D',
+        hint: 'A mock hint'
+      }
     };
-
-    if (result.gameOver && !isCorrect) {
-      result.correctWord = word;
-    }
-
-    return result;
+    return { success: true, data: result };
   }
 
-  async startGame(): Promise<GameSession> {
-    if (!this.connected) {
-      throw new Error('Database not connected');
+  async startGame(): Promise<Result<GameSession>> {
+    const word = await this.getRandomWord();
+    if (!word.success || !word.data) {
+      return {
+        success: false,
+        error: word.error || {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to get random word'
+        }
+      };
     }
 
-    // Get random word
-    const word = await this.getRandomWord();
-    
-    // Create empty clue status
-    const clue_status: ClueStatus = {
-      D: 'neutral',
-      E2: 'neutral',
-      F: 'neutral',
-      I: 'neutral',
-      N: 'neutral',
-      E: 'neutral'
-    };
-    
-    // Create a new game session
-    const gameId = Math.random().toString(36).substr(2, 9);
     const session: GameSession = {
-      id: gameId,
-      word_id: word.id,
-      word: word.word,
+      id: Math.random().toString(36).substring(7),
+      word_id: word.data.id,
+      word: word.data.word,
       start_time: new Date().toISOString(),
       guesses: [],
       guesses_used: 0,
       revealed_clues: [],
-      clue_status: clue_status,
+      clue_status: {
+        D: 'neutral',
+        E: 'neutral',
+        F: 'neutral',
+        I: 'neutral',
+        N: 'neutral',
+        E2: 'neutral'
+      },
       is_complete: false,
       is_won: false,
       state: 'active'
     };
-    
-    this.gameSessions[gameId] = session;
-    return session;
+
+    this.gameSessions[session.id] = session;
+    return { success: true, data: session };
   }
 
-  async getGameSession(gameId: string): Promise<GameSession | null> {
-    return this.gameSessions[gameId] || null;
+  async getGameSession(gameId: string): Promise<Result<GameSession | null>> {
+    const session = this.gameSessions[gameId] || null;
+    return { success: true, data: session };
   }
 
   async checkGuess(wordId: string, guess: string): Promise<boolean> {
@@ -441,80 +484,88 @@ export class MockClient implements DatabaseClient {
     return session;
   }
 
-  async endGame(gameId: string, won: boolean): Promise<void> {
+  async endGame(gameId: string, won: boolean): Promise<Result<void>> {
     const session = this.gameSessions[gameId];
     if (session) {
       session.is_complete = true;
       session.is_won = won;
       session.end_time = new Date().toISOString();
+      session.state = 'completed';
     }
+    return { success: true, data: undefined };
   }
 
-  async getClue(session: GameSession, clueType: ClueType): Promise<string | number | null> {
-    const word = await this.getWord(session.word_id);
-    
+  async getClue(session: GameSession, clueType: ClueType): Promise<Result<string | number | null>> {
+    const word = this.words.find(w => w.id === session.word_id);
     if (!word) {
-      return null;
-    }
-    
-    switch (clueType) {
-      case 'D': return word.definition;
-      case 'E2': return Array.isArray(word.equivalents) ? word.equivalents.join(', ') : null;
-      case 'F': return word.first_letter;
-      case 'I': return word.in_a_sentence || null;
-      case 'N': return word.number_of_letters;
-      case 'E': return word.etymology || null;
-      default: return null;
-    }
-  }
-
-  async getNextHint(session: GameSession): Promise<{ hint: string; type: ClueType }> {
-    // Collect all available hint types that aren't revealed yet
-    const availableHints: ClueType[] = ['D', 'E2', 'F', 'I', 'N', 'E'].filter(type => 
-      !(session.revealed_clues || []).includes(type as ClueType)
-    ) as ClueType[];
-
-    // If all hints are already revealed, return a fallback hint
-    if (availableHints.length === 0) {
       return {
-        hint: "No more hints available!",
-        type: 'D' // Definition is always available
+        success: false,
+        error: {
+          code: 'WORD_NOT_FOUND',
+          message: 'Word not found'
+        }
       };
     }
 
-    // Pick a random hint type
-    const randomType = availableHints[Math.floor(Math.random() * availableHints.length)];
-    let hintText = '';
-    
-    // Get the actual word
-    const word = this.words.find(w => w.id === session.word_id) || this.words[0];
-    
-    // Generate hint text based on type
-    switch (randomType) {
-      case 'E2':
-        hintText = word.equivalents && word.equivalents.length > 0 
-          ? `Similar words: ${word.equivalents.join(', ')}`
-          : "No synonyms available";
-        break;
-      case 'F':
-        hintText = word.first_letter || word.word.charAt(0);
-        break;
-      case 'I':
-        hintText = word.in_a_sentence || "Example sentence unavailable";
-        break;
-      case 'N':
-        hintText = `This word has ${word.number_of_letters || word.word.length} letters`;
+    let clue: string | number | null = null;
+    switch (clueType) {
+      case 'D':
+        clue = word.definition;
         break;
       case 'E':
-        hintText = word.etymology || "Etymology unavailable";
+        clue = word.etymology || null;
         break;
-      default:
-        hintText = "Hint unavailable";
+      case 'F':
+        clue = word.first_letter;
+        break;
+      case 'I':
+        clue = word.in_a_sentence || null;
+        break;
+      case 'N':
+        clue = word.number_of_letters;
+        break;
+      case 'E2':
+        clue = word.equivalents.join(', ');
+        break;
+    }
+
+    return { success: true, data: clue };
+  }
+
+  async getNextHint(session: GameSession): Promise<Result<{ hint: string; type: ClueType }>> {
+    const availableClues: ClueType[] = ['D', 'E', 'F', 'I', 'N', 'E2'].filter(
+      clue => !session.revealed_clues.includes(clue as ClueType)
+    ) as ClueType[];
+
+    if (availableClues.length === 0) {
+      return {
+        success: false,
+        error: {
+          code: 'NO_HINTS',
+          message: 'No more hints available'
+        }
+      };
+    }
+
+    const nextClueType = availableClues[0];
+    const clueResult = await this.getClue(session, nextClueType);
+
+    if (!clueResult.success || !clueResult.data) {
+      return {
+        success: false,
+        error: clueResult.error || {
+          code: 'HINT_ERROR',
+          message: 'Failed to get hint'
+        }
+      };
     }
 
     return {
-      hint: hintText,
-      type: randomType
+      success: true,
+      data: {
+        hint: String(clueResult.data),
+        type: nextClueType
+      }
     };
   }
 
@@ -525,9 +576,8 @@ export class MockClient implements DatabaseClient {
     usedHint: boolean;
     completionTime: number;
     nickname?: string;
-  }): Promise<void> {
-    // Mock implementation - just log the score
-    console.log('Mock submitScore called with:', score);
-    return Promise.resolve();
+  }): Promise<Result<void>> {
+    // Mock implementation - just return success
+    return { success: true, data: undefined };
   }
 } 

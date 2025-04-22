@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getApiUrl } from '../config';
-import useTheme from './useTheme';
+import { getApiUrl } from '../config.js';
+import useTheme from './useTheme.js';
 
 // Settings interfaces
 export interface NotificationSettings {

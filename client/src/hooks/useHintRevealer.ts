@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { DEBUG_CONFIG } from '../config/debug';
-import { HINT_INDICES } from '../types/index';
+import { DEBUG_CONFIG } from '../config/debug.js';
+import { HINT_INDICES } from '../types/index.js';
 
 const hintOrder = [0, 1, 2, 3, 4, 5] as const;
 type HintIndex = typeof hintOrder[number];

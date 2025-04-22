@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
-import Confetti from './components/Confetti'
-import Leaderboard from './Leaderboard'
-import { getApiUrl } from './config';
-import { useLocalGameState } from './hooks/useLocalGameState';
+import Confetti from './components/Confetti.js'
+import Leaderboard from './Leaderboard.js'
+import { getApiUrl } from './config.js';
+import { useLocalGameState } from './hooks/useLocalGameState.js';
 import { 
   Word,
   GuessResult,
@@ -19,18 +19,18 @@ import {
   GuessHistory,
   Message,
   HINT_INDICES
-} from './types/index';
-import DefineBoxes from './components/DefineBoxes';
-import HintContent from './components/HintContent';
-import GameSummary from './components/GameSummary';
-import { ToastProvider, useToast } from './components/Toast';
-import LoadingSpinner from './components/LoadingSpinner';
-import ErrorMessage from './components/ErrorMessage';
-import Timer from './components/Timer';
-import GameOverModal from './components/GameOverModal';
-import GameLoader from './components/GameLoader';
-import Settings from './components/Settings';
-import Header from './components/Header';
+} from './types/index.js';
+import DefineBoxes from './components/DefineBoxes.js';
+import HintContent from './components/HintContent.js';
+import GameSummary from './components/GameSummary.js';
+import { ToastProvider, useToast } from './components/Toast.js';
+import LoadingSpinner from './components/LoadingSpinner.js';
+import ErrorMessage from './components/ErrorMessage.js';
+import Timer from './components/Timer.js';
+import GameOverModal from './components/GameOverModal.js';
+import GameLoader from './components/GameLoader.js';
+import Settings from './components/Settings.js';
+import Header from './components/Header.js';
 
 // Define local GameState interface
 interface GameState {

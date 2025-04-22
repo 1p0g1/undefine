@@ -1,6 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
-import { SortDirection, WordEntry } from '../types/index.js';
-import { getFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
+import { useState, useCallback } from 'react';
+import { WordEntry } from '@shared/index.js';
+import { getFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage.js';
+
+export type SortDirection = 'asc' | 'desc';
 
 type SortableField = keyof WordEntry;
 
@@ -30,6 +32,14 @@ interface UseSortAndFilterResult {
   setFilter: (key: string, value: string | undefined) => void;
   clearFilters: () => void;
   getSortedFilteredItems: <T extends Partial<WordEntry>>(items: T[]) => T[];
+}
+
+function compareValues<T extends string | number | Date | null | undefined>(a: T, b: T): number {
+  if (a === null || a === undefined) return 1;
+  if (b === null || b === undefined) return -1;
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
 }
 
 /**
@@ -220,7 +230,7 @@ const useSortAndFilter = ({
       if (bValue === null) return sortDirection === 'asc' ? 1 : -1;
       
       // Safe comparison for non-null values
-      const comparison = (aValue as any) < (bValue as any) ? -1 : (aValue as any) > (bValue as any) ? 1 : 0;
+      const comparison = compareValues(aValue as string | number | Date | null | undefined, bValue as string | number | Date | null | undefined);
       return sortDirection === 'asc' ? comparison : -comparison;
     });
     

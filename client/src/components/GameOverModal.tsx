@@ -1,6 +1,6 @@
 import React from 'react';
 import './GameOverModal.css';
-import HintContent from './HintContent';
+import HintContent from './HintContent.js';
 
 // Define WordData interface here instead of importing it
 interface WordData {

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { WordData } from '@shared/utils/word';
+import { WordData } from '@shared/utils/word.js';
 
 export interface GameState {
   currentWord?: {

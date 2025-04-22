@@ -3,19 +3,20 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
+    "module": "Node16",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "composite": true,
     "declaration": true,
     "outDir": "./dist-types",
     "jsx": "react-jsx",
+    "allowJs": true,
     
     /* Linting */
     "strict": true,
@@ -25,6 +26,7 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
+      "@shared/*": ["../packages/shared-types/src/*"],
       "shared-types": ["../packages/shared-types/src/index.ts"]
     }
   },

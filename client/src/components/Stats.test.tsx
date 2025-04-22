@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import Stats from './Stats';
+import Stats from './Stats.js';
 
 // Mock fetch
 const mockFetch = vi.fn();

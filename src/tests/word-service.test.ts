@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WordService } from '../services/WordService';
-import type { WordData } from '../../../packages/shared-types/src/utils/word';
-import { assertNoUndefined } from './test-utils/check-undefined';
+import { WordService } from '../services/WordService.js';
+import type { WordData } from '../../../packages/shared-types/src/utils/word.js';
+import { assertNoUndefined } from './test-utils/check-undefined.js';
 
 // Mock environment variables
 vi.stubEnv('SUPABASE_URL', 'http://localhost:54321');
