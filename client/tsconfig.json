@@ -1,27 +1,40 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ESNext",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Bundler mode */
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "composite": true,
+    "declaration": true,
+    "outDir": "./dist-types",
     "jsx": "react-jsx",
+    
+    /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": false,
+    "typeRoots": ["./types", "./node_modules/@types"],
+    
+    /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@shared/*": ["../packages/shared-types/src/*"]
-    },
-    "types": ["vite/client", "react", "react-dom"]
+      "shared-types": ["../packages/shared-types/src"]
+    }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src", "types", "../packages/shared-types/src"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "../packages/shared-types" }
+  ],
+  "ts-node": {
+    "transpileOnly": true
+  }
 }

@@ -1,12 +1,15 @@
 import { FormState, ValidationError } from '../types/index.js';
 
 // Word form specific type
-interface WordFormData extends FormState {
-  word?: string;
-  partOfSpeech?: string;
-  definition?: string;
+interface WordFormData {
+  word: string;
+  partOfSpeech: string;
+  definition: string;
   dateAdded?: string;
   synonyms?: string[];
+  isSubmitting: boolean;
+  isValid: boolean;
+  errors: Record<string, string>;
 }
 
 /**

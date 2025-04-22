@@ -4,47 +4,49 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-// Debug path resolution
-console.log('🔍 Resolved @shared path:', path.resolve(__dirname, '../packages/shared-types'))
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../packages/shared-types')
+      'shared-types': path.resolve(__dirname, '../packages/shared-types/src')
     }
   },
   server: {
-    port: 3000,
+    port: 5174,
+    strictPort: true,
+    hmr: {
+      overlay: false
+    },
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.VITE_API_URL || 'http://localhost:3001',
         changeOrigin: true,
+        rewrite: (path) => path
       }
     }
   },
   preview: {
-    port: 3000,
+    strictPort: true
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
+    include: ['react', 'react-dom', 'react-router-dom'],
+    force: true,
+    esbuildOptions: {
+      target: 'es2020'
+    }
   },
   build: {
-    outDir: 'dist',
+    target: 'es2020',
     sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          shared: [path.resolve(__dirname, '../packages/shared-types')]
-        },
-      },
-    },
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    }
   },
   define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || '')
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3001')
   },
   test: {
     globals: true,

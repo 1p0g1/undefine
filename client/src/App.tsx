@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
 import Confetti from './components/Confetti'
@@ -6,27 +6,20 @@ import Leaderboard from './Leaderboard'
 import { getApiUrl } from './config';
 import { useLocalGameState } from './hooks/useLocalGameState';
 import { 
-  WordData, 
-  HintIndex, 
-  Message, 
-  GameState, 
-  HINT_INDICES, 
-  clueTypeToNumber, 
-  numberToClueType,
-  isGameLoaded,
-  isGameInProgress as isGameActive,
-  initialGameState, 
+  Word,
   GuessResult,
-  GuessHistory,
-  BaseGameState,
-  LoadingGameState,
-  ActiveGameState,
-  UserStats,
+  GameState as ImportedGameState,
   LeaderboardEntry,
+  UserStats,
+  UserPreferences,
+  GameStats,
+  WordData,
+  ClientGuessResult,
   ClueType,
-  ClientGuessResult
+  GuessHistory,
+  Message,
+  HINT_INDICES
 } from './types/index';
-import { WordClues, GameWord } from '@shared/index';
 import DefineBoxes from './components/DefineBoxes';
 import HintContent from './components/HintContent';
 import GameSummary from './components/GameSummary';
@@ -38,84 +31,107 @@ import GameOverModal from './components/GameOverModal';
 import GameLoader from './components/GameLoader';
 import Settings from './components/Settings';
 import Header from './components/Header';
-import { DEBUG_CONFIG } from './config/debug';
-import { useHintRevealer } from './hooks/useHintRevealer';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { useGameState } from './hooks/useGameState';
-import { useGameSession } from './hooks/useGameSession';
-import { useGameGuess } from './hooks/useGameGuess';
-import { isWordData, validateWordData } from '@shared/utils/word';
-import { WordData as SharedWordData, SafeClueData } from '@undefine/shared-types/utils/word';
-import { AppGameState } from '@reversedefine/shared-types/utils/game';
 
-// Extended game state interfaces
-interface ExtendedBaseGameState extends BaseGameState {
+// Define local GameState interface
+interface GameState {
   gameId: string;
-  error: string | null;
+  word: string;
+  guessCount: number;
+  isGameOver: boolean;
+  isCorrect: boolean;
+  remainingGuesses: number;
+  loading: boolean;
+  showConfetti?: boolean;
+  showLeaderboard?: boolean;
+  message?: Message | null;
+  guess?: string;
+  timer?: number;
+  fuzzyMatchPositions?: number[];
+  guessHistory?: GuessHistory[];
+  correctWord?: string;
+  guessResults?: ('correct' | 'incorrect' | null)[];
+  revealedHints?: number[];
 }
 
-interface ExtendedLoadingGameState extends ExtendedBaseGameState {
-  loading: true;
-  wordData: null;
+// Add TypeScript declarations for our window extensions
+declare global {
+  interface Window {
+    API_BASE_URL?: string;
+    getApiUrl?: (path: string) => string;
+    buildApiUrl?: (endpoint: string) => string;
+    testApiConnection?: () => Promise<void>;
+  }
 }
 
-interface ExtendedActiveGameState extends ExtendedBaseGameState {
-  loading: false;
-  wordData: WordData;
+interface GuessResponse {
+  isCorrect: boolean;
+  correctWord: string;
+  guessedWord: string;
+  isFuzzy: boolean;
+  fuzzyPositions?: number[];
+  leaderboardRank?: number;
 }
 
-type ExtendedGameState = ExtendedLoadingGameState | ExtendedActiveGameState;
+// Define the hint types that correspond to DEFINE
+type HintType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
 
-const isGameInProgress = (state: ExtendedGameState): state is ExtendedActiveGameState => {
-  return !state.loading && !state.isGameOver;
-};
+// Update the Hint interface to track revealed hints
+interface Hint {
+  D: boolean;  // Definition (always revealed)
+  E: boolean;  // Etymology
+  F: boolean;  // First letter
+  I: boolean;  // In a sentence
+  N: boolean;  // Number of letters
+  E2: boolean; // Equivalents (synonyms)
+}
 
-// Helper functions for state transitions
-const toLoadingState = (state: ExtendedGameState): ExtendedLoadingGameState => ({
-  ...state,
-  loading: true,
-  wordData: null,
-  isGameOver: false,
-  hasWon: false,
-  isCorrect: false
-});
-
-const toActiveState = (state: ExtendedGameState, wordData: WordData): ExtendedActiveGameState => ({
-  ...state,
-  loading: false,
-  wordData,
-  isGameOver: false,
-  hasWon: false,
-  isCorrect: false
-});
+interface AppState {
+  wordData: WordData | null;
+  gameId: string;
+  guess: string;
+  message: Message | null;
+  isCorrect: boolean;
+  isGameOver: boolean;
+  timer: number;
+  loading: boolean;
+  error: string;
+  revealedHints: number[];
+  guessCount: number;
+  showConfetti: boolean;
+  showLeaderboard: boolean;
+  fuzzyCount: number;
+  leaderboardRank: number | null;
+  guessHistory: GuessHistory[];
+  remainingGuesses: number;
+  guessResults: ('correct' | 'incorrect' | null)[];
+  fuzzyMatchPositions: number[];
+  correctWord: string;
+  inputRef: React.RefObject<HTMLInputElement>;
+}
 
 function App() {
   // ✅ All useState hooks
-  const [gameState, setGameState] = useState<ExtendedGameState>({
-    loading: true,
-    wordData: null,
-    revealedHints: [],
-    remainingGuesses: 6,
-    isGameOver: false,
-    hasWon: false,
-    isCorrect: false,
-    showConfetti: false,
-    showLeaderboard: false,
-    message: null,
-    guessCount: 0,
-    guessHistory: [],
-    guessResults: [],
-    error: null,
+  const [gameState, setGameState] = useState<GameState>({
     gameId: '',
+    word: '',
+    guessCount: 0,
+    isGameOver: false,
+    isCorrect: false,
+    remainingGuesses: 6,
+    loading: true
   });
+  const [wordData, setWordData] = useState<WordData | null>(null);
   const [guess, setGuess] = useState<string>('');
+  const [message, setMessage] = useState<Message | null>(null);
   const [timer, setTimer] = useState<number>(0);
-  const [revealedHints, setRevealedHints] = useState<HintIndex[]>([HINT_INDICES.D]);
+  const [error, setError] = useState<string>('');
+  const [revealedHints, setRevealedHints] = useState<number[]>([0]);
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
   const [fuzzyCount, setFuzzyCount] = useState<number>(0);
   const [leaderboardRank, setLeaderboardRank] = useState<number | null>(null);
   const [guessHistory, setGuessHistory] = useState<GuessHistory[]>([]);
-  const [guessResults, setGuessResults] = useState<('correct' | 'incorrect' | null)[]>([]);
-  const [gameGuessResults, setGameGuessResults] = useState<GuessResult[]>([]);
+  const [guessResults, setGuessResults] = useState<('correct' | 'incorrect' | null)[]>([null, null, null, null, null, null]);
   const [fuzzyMatchPositions, setFuzzyMatchPositions] = useState<number[]>([]);
 
   // ✅ useRef hooks
@@ -129,175 +145,71 @@ function App() {
   const [showModal, setShowModal] = useState<boolean>(false);
 
   // ✅ All helper functions
-  const convertGameWordToWordData = (gameWord: any): WordData => {
-    return {
-      id: gameWord.id,
-      word: gameWord.word,
-      definition: gameWord.definition,
-      etymology: gameWord.etymology,
-      first_letter: gameWord.first_letter,
-      in_a_sentence: gameWord.in_a_sentence,
-      number_of_letters: gameWord.number_of_letters,
-      equivalents: gameWord.equivalents,
-      difficulty: gameWord.difficulty,
-      created_at: gameWord.created_at,
-      updated_at: gameWord.updated_at,
-      clues: {
-        D: gameWord.clues.D,
-        E: gameWord.clues.E,
-        F: gameWord.clues.F,
-        I: gameWord.clues.I,
-        N: gameWord.clues.N,
-        E2: gameWord.clues.E2
-      }
-    };
-  };
-
   const initializeGame = async () => {
-    try {
-      const loadingState: ExtendedLoadingGameState = {
-        ...initialGameState,
-        loading: true,
-        wordData: null,
-        error: undefined,
-        message: null,
-        gameId: undefined,
-        revealedHints: [],
-        remainingGuesses: 6,
-        guessHistory: [],
-        guessResults: [],
-        fuzzyMatchPositions: [],
-        isGameOver: false,
-        hasWon: false,
-        isCorrect: false,
-        showConfetti: false,
-        showLeaderboard: false,
-        guessCount: 0
-      };
-      setGameState(loadingState);
+    console.log('Initializing game session...');
+    setGameState(prev => ({ ...prev, loading: true, isGameOver: false }));
+    setError('');
 
-      const response = await fetch('/api/game/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(getApiUrl('/api/word'), {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to load game' }));
+        throw new Error(errorData.error || 'Failed to load game');
+      }
+
+      const data = await response.json();
+
+      console.log('Game session response:', {
+        hasGameId: !!data.gameId,
+        hasWord: !!data.word,
+        wordId: data.word?.id
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to initialize game');
+      if (data && data.gameId && data.word) {
+        setGameState({
+          gameId: data.gameId,
+          word: data.word.word,
+          guessCount: 0,
+          isGameOver: false,
+          isCorrect: false,
+          remainingGuesses: 6,
+          loading: false
+        });
+        setWordData(data.word);
+      } else {
+        throw new Error('Invalid game session data');
       }
-
-      const data = await response.json();
-      const wordData = convertGameWordToWordData(data.word);
-
-      const activeState: ExtendedActiveGameState = {
-        loading: false,
-        wordData,
-        gameId: data.gameId,
-        error: undefined,
-        revealedHints: [HINT_INDICES.D],
-        remainingGuesses: 6,
-        isGameOver: false,
-        hasWon: false,
-        isCorrect: false,
-        showConfetti: false,
-        showLeaderboard: false,
-        message: null,
-        guessCount: 0,
-        guessHistory: [],
-        guessResults: [],
-        fuzzyMatchPositions: []
-      };
-      setGameState(activeState);
-    } catch (error) {
-      const errorState: ExtendedLoadingGameState = {
-        ...initialGameState,
-        loading: true,
-        wordData: null,
-        error: error instanceof Error ? error.message : 'An error occurred',
-        gameId: undefined,
-        revealedHints: [],
-        remainingGuesses: 6,
-        guessHistory: [],
-        guessResults: [],
-        fuzzyMatchPositions: [],
-        isGameOver: false,
-        hasWon: false,
-        isCorrect: false,
-        showConfetti: false,
-        showLeaderboard: false,
-        guessCount: 0
-      };
-      setGameState(errorState);
-    }
-  };
-
-  // Function to fetch a random word for testing
-  const fetchRandomWord = async () => {
-    try {
-      const response = await fetch('/api/random-word');
-      if (!response.ok) {
-        throw new Error('Failed to fetch word');
-      }
-      const data = await response.json();
-      const wordData = validateWordData(data);
-      
-      const newState: ExtendedActiveGameState = {
-        ...initialGameState,
-        loading: false,
-        wordData: wordData,
-        revealedHints: [HINT_INDICES.D],
-        message: null,
-        guessHistory: [],
-        guessResults: [],
-        guessCount: 0,
-        remainingGuesses: 6,
-        hasWon: false,
-        isCorrect: false,
-        showConfetti: false,
-        showLeaderboard: false,
-        fuzzyMatchPositions: [],
-        isGameOver: false
-      };
-      
-      setGameState(newState);
     } catch (err) {
-      const errorState: ExtendedLoadingGameState = {
-        ...initialGameState,
-        loading: true,
-        wordData: null,
-        error: err instanceof Error ? err.message : 'Failed to fetch word',
-        message: {
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Failed to fetch word'
-        },
-        revealedHints: [],
-        remainingGuesses: 6,
-        guessHistory: [],
-        guessResults: [],
-        fuzzyMatchPositions: [],
-        isGameOver: false,
-        hasWon: false,
-        isCorrect: false,
-        showConfetti: false,
-        showLeaderboard: false,
-        guessCount: 0
-      };
-      setGameState(errorState);
+      console.error('Failed to initialize game session:', err);
+      setGameState(prev => ({ ...prev, loading: false, isGameOver: true }));
+      setError(err instanceof Error ? err.message : 'Failed to load game. Please try again.');
     }
   };
 
   const validateGameState = () => {
     // Don't validate if session isn't ready
-    if (!isGameLoaded(gameState)) {
+    if (!gameState.gameId || !gameState.word) {
       return;
     }
 
     const isValid = 
-      gameState.wordData.word.length > 0 &&
-      Array.isArray(gameState.guessHistory) &&
+      gameState.gameId.length > 0 &&
+      gameState.word.length > 0 &&
+      typeof gameState.isGameOver === 'boolean' &&
       gameState.remainingGuesses >= 0;
 
     if (!isValid) {
-      console.error('Invalid game state:', gameState);
+      console.warn('Invalid game state detected:', gameState);
+      setGameState(prev => ({ ...prev, loading: true }));
+      initializeGame();
     }
   };
 
@@ -312,35 +224,125 @@ function App() {
     return text.trim().toLowerCase().replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
   };
 
-  const handleGameState = async (result: GuessResult) => {
-    if (!gameState.wordData) return;
+  const handleGameState = async (result: ClientGuessResult) => {
+    console.log('Processing game state update:', {
+      result,
+      currentGameState: gameState,
+      wordData
+    });
+
+    if (!wordData) {
+      console.error('No word data available');
+      toast.error('An error occurred. Starting a new game...');
+      return;
+    }
+
+    const newGuessHistory = [...guessHistory];
+    newGuessHistory.push({
+      word: result.guess,
+      isCorrect: result.isCorrect,
+      isFuzzy: result.isFuzzy
+    });
+    setGuessHistory(newGuessHistory);
+
+    const newGuessCount = gameState.guessCount + 1;
     
-    setGameState((prev: ExtendedGameState) => ({
-      ...prev,
-      guessHistory: {
-        ...prev.guessHistory,
-        gameOver: result.gameOver,
-        isCorrect: result.isCorrect,
-        correctWord: result.isCorrect ? gameState.wordData.word : undefined,
-      },
-      message: result.isCorrect
-        ? {
-            type: 'success',
-            text: `Congratulations! The word was "${gameState.wordData.word}"`,
-          }
-        : {
-            type: 'error',
-            text: `Sorry, the word was "${gameState.wordData.word}"`,
-          },
-    }));
+    console.log('Updating game state:', {
+      newGuessCount,
+      isCorrect: result.isCorrect,
+      gameOver: result.gameOver
+    });
+
+    // Batch state updates together
+    if (result.isCorrect === true) {
+      setGameState(prev => {
+        console.log('Setting winning game state:', {
+          ...prev,
+          guessCount: newGuessCount,
+          remainingGuesses: 6 - newGuessCount,
+          isCorrect: true,
+          isGameOver: true,
+          showConfetti: true,
+          showLeaderboard: true,
+          correctWord: wordData.word
+        });
+        return {
+          ...prev,
+          guessCount: newGuessCount,
+          remainingGuesses: 6 - newGuessCount,
+          isCorrect: true,
+          isGameOver: true,
+          showConfetti: true,
+          showLeaderboard: true,
+          correctWord: wordData.word
+        };
+      });
+      
+      const newGuessResults = [...guessResults];
+      newGuessResults[gameState.guessCount] = 'correct';
+      setGuessResults(newGuessResults);
+      
+      if (updateGameStats) {
+        updateGameStats(true);
+      }
+      
+      toast.success('Congratulations! You got it right!');
+      setShowModal(true);
+      return;
+    }
+
+    // Update state for incorrect guess
+    setGameState(prev => {
+      const newState = {
+        ...prev,
+        guessCount: newGuessCount,
+        remainingGuesses: 6 - newGuessCount,
+        isGameOver: 6 - newGuessCount <= 0,
+        showLeaderboard: 6 - newGuessCount <= 0,
+        correctWord: 6 - newGuessCount <= 0 ? wordData.word : prev.correctWord
+      };
+      console.log('Setting incorrect game state:', newState);
+      return newState;
+    });
+
+    const newGuessResults = [...guessResults];
+    newGuessResults[gameState.guessCount] = 'incorrect';
+    setGuessResults(newGuessResults);
+    
+    if (result.isFuzzy && result.fuzzyPositions) {
+      setFuzzyMatchPositions(result.fuzzyPositions);
+      setFuzzyCount(prev => prev + 1);
+      toast.info('Close! Some letters are in the right position.');
+    } else {
+      setFuzzyMatchPositions([]);
+      toast.warning('Try again!');
+    }
+
+    const hintOrder: ClueType[] = ['D', 'E', 'F', 'I', 'N', 'E2'];
+    if (newGuessCount < hintOrder.length) {
+      const newRevealedHints = [...revealedHints];
+      const hintIndex = HINT_INDICES[hintOrder[newGuessCount]];
+      if (!newRevealedHints.includes(hintIndex)) {
+        newRevealedHints.push(hintIndex);
+        setRevealedHints(newRevealedHints);
+      }
+    }
+    
+    if (6 - newGuessCount <= 0) {
+      if (updateGameStats) {
+        updateGameStats(false);
+      }
+      toast.error(`Game Over! The word was: ${wordData.word}`);
+      setShowModal(true);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const cleanValue = normalize(value);
     
-    if (revealedHints.includes(HINT_INDICES.F) && gameState.wordData?.clues.F) {
-      if (cleanValue.length === 0 || cleanValue[0] === normalize(gameState.wordData.clues.F)) {
+    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F) {
+      if (cleanValue.length === 0 || cleanValue[0] === normalize(wordData.clues.F)) {
         setGuess(cleanValue);
       }
     } else {
@@ -349,7 +351,7 @@ function App() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (revealedHints.includes(HINT_INDICES.F) && gameState.wordData?.clues.F) {
+    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F) {
       if (e.key === 'Backspace' || e.key === 'Delete') {
         const target = e.target as HTMLInputElement;
         if (target.selectionStart === 0 || target.selectionStart === 1) {
@@ -360,69 +362,68 @@ function App() {
   };
 
   const isGuessValid = () => {
-    return guess.trim().length > 0 && !gameState.isGameOver;
+    if (!guess.trim() || gameState.isGameOver) return false;
+    
+    if (revealedHints.includes(HINT_INDICES.N) && wordData?.clues.N) {
+      return guess.length === wordData.clues.N;
+    }
+    
+    return true;
   };
 
-  const handleGuess = async (guess: string) => {
-    if (!isGameInProgress(gameState)) return;
-
-    try {
-      const response = await fetch('/api/game/guess', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ guess, gameId: gameState.gameId }),
+  const handleGuess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!wordData || !gameState.gameId || !guess.trim()) {
+      console.warn('Invalid guess attempt:', {
+        hasWordData: !!wordData,
+        hasGameId: !!gameState.gameId,
+        hasGuess: !!guess.trim()
       });
-
-      const data = await response.json();
+      toast.error('Please enter a valid guess');
+      return;
+    }
+    
+    try {
+      const trimmedGuess = guess.trim();
+      const response = await fetch(getApiUrl('/api/guess'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          gameId: gameState.gameId, 
+          guess: trimmedGuess,
+          username: localGameState.nickname || 'anonymous'
+        })
+      });
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process guess');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to submit guess' }));
+        throw new Error(errorData.error || 'Failed to submit guess');
       }
 
-      const result = data as GuessResult;
-      const newGuessHistory: GuessHistory = {
-        guess,
-        timestamp: Date.now(),
-        result,
+      const result = await response.json();
+      
+      const processedResult: ClientGuessResult = {
+        isCorrect: result.isCorrect === true,
+        guess: trimmedGuess,
+        isFuzzy: !!result.isFuzzy,
+        fuzzyPositions: result.fuzzyPositions || [],
+        gameOver: !!result.gameOver,
+        correctWord: result.correctWord || wordData.word
       };
-
-      setGameState((prev) => {
-        if (!isGameInProgress(prev)) return prev;
-        return {
-          ...prev,
-          guessHistory: [...prev.guessHistory, newGuessHistory],
-          guessResults: [...prev.guessResults, result],
-          guessCount: prev.guessCount + 1,
-          isGameOver: result.isCorrect || prev.remainingGuesses <= 1,
-          hasWon: result.isCorrect,
-          isCorrect: result.isCorrect,
-          remainingGuesses: prev.remainingGuesses - 1,
-          message: {
-            type: result.isCorrect ? 'success' : 'info',
-            text: result.isCorrect ? 'Correct guess!' : 'Try again!',
-          },
-          showConfetti: result.isCorrect,
-          showLeaderboard: result.isCorrect,
-        };
-      });
+      
+      setGuess('');
+      handleGameState(processedResult);
     } catch (error) {
-      setGameState((prev) => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'An error occurred',
-        message: {
-          type: 'error',
-          text: error instanceof Error ? error.message : 'An error occurred',
-        },
-      }));
+      console.error('Error submitting guess:', error instanceof Error ? error.message : 'Unknown error');
+      toast.error('Failed to submit guess. Please try again.');
     }
   };
 
   const handleInputFocus = () => {
-    if (revealedHints.includes(HINT_INDICES.F) && gameState.wordData?.clues.F && inputRef.current) {
+    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F && inputRef.current) {
       if (guess.length === 0) {
-        setGuess(gameState.wordData.clues.F);
+        setGuess(wordData.clues.F);
       }
       const pos = guess.length;
       inputRef.current.setSelectionRange(pos, pos);
@@ -430,15 +431,15 @@ function App() {
   };
 
   const getInputPlaceholder = () => {
-    if (revealedHints.includes(HINT_INDICES.F) && gameState.wordData?.clues.F) {
-      return `${gameState.wordData.clues.F}_______`;
+    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F) {
+      return `${wordData.clues.F}_______`;
     }
     return "Enter your guess...";
   };
 
   const getInputMaxLength = () => {
-    if (revealedHints.includes(HINT_INDICES.N) && gameState.wordData?.clues.N) {
-      return gameState.wordData.clues.N;
+    if (revealedHints.includes(HINT_INDICES.N) && wordData?.clues.N) {
+      return wordData.clues.N;
     }
     return undefined;
   };
@@ -447,8 +448,8 @@ function App() {
   useEffect(() => {
     if (hasPlayedToday()) {
       toast.info('You have already played today. Come back tomorrow for a new word!');
-      setGameState(prev => ({ ...prev, loading: false, guessHistory: { gameOver: true } } as ExtendedLoadingGameState));
-      setGameState(prev => ({ ...prev, showLeaderboard: true }));
+      setGameState(prev => ({ ...prev, loading: false, isGameOver: true }));
+      setShowLeaderboard(true);
     } else {
       initializeGame();
     }
@@ -456,11 +457,11 @@ function App() {
 
   useEffect(() => {
     validateGameState();
-  }, [gameState.gameId, gameState.wordData, gameState.guessHistory.gameOver]);
+  }, [gameState.gameId, gameState.word, gameState.isGameOver]);
 
   useEffect(() => {
     let interval: number | undefined;
-    if (!gameState.guessHistory.gameOver) {
+    if (!gameState.isGameOver) {
       interval = window.setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
@@ -470,138 +471,7 @@ function App() {
         clearInterval(interval);
       }
     };
-  }, [gameState.guessHistory.gameOver]);
-
-  useEffect(() => {
-    const fetchGameSession = async () => {
-      try {
-        const response = await fetch('/api/game');
-        const data = await response.json();
-        
-        if (DEBUG_CONFIG.verboseLogging) {
-          console.log('[DEBUG] Game session response:', data);
-          console.log('[DEBUG] Word data available:', !!data.word);
-          if (data.word) {
-            console.log('[DEBUG] Word data details:', {
-              word: data.word.word,
-              cluesAvailable: !!data.word.clues,
-              clueTypes: data.word.clues ? Object.keys(data.word.clues) : [],
-              definitionLength: data.word.clues?.D?.length || 0,
-              etymologyLength: data.word.clues?.E?.length || 0,
-              exampleLength: data.word.clues?.I?.length || 0,
-              synonymsCount: Array.isArray(data.word.clues?.E2) ? data.word.clues.E2.length : 0
-            });
-          }
-        }
-        
-        setGameState(data);
-        
-        if (DEBUG_CONFIG.verboseLogging) {
-          console.log('[DEBUG] Game state after set:', {
-            gameState: data,
-            wordData: data.word
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching game session:', error);
-      }
-    };
-
-    fetchGameSession();
-  }, []);
-
-  // Replace the old hint revealing useEffect with the hook
-  useHintRevealer({
-    guessCount: gameState.guessCount,
-    isGameOver: gameState.guessHistory.gameOver,
-    revealedHints,
-    setRevealedHints
-  });
-
-  const renderGameContent = () => {
-    if (!isGameInProgress(gameState)) {
-      return <LoadingSpinner />;
-    }
-
-    const guessResultArray: ('correct' | 'incorrect' | null)[] = gameState.guessResults.map(result => 
-      result.isCorrect ? 'correct' : 'incorrect'
-    );
-
-    return (
-      <div className="game-content">
-        <HintContent
-          wordData={gameState.wordData}
-          revealedHints={gameState.revealedHints}
-          onHintReveal={handleHintReveal}
-          isGameOver={gameState.isGameOver}
-          hasWon={gameState.hasWon}
-          guessResults={guessResultArray}
-        />
-        {/* ... rest of the content ... */}
-      </div>
-    );
-  };
-
-  const handleShowLeaderboard = () => {
-    setGameState(prev => ({
-      ...prev,
-      showLeaderboard: true
-    }));
-  };
-
-  const handleHintReveal = async (hintIndex: HintIndex) => {
-    if (!isGameInProgress(gameState)) return;
-
-    try {
-      const response = await fetch('/api/game/hint', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ hintIndex, gameId: gameState.gameId }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to reveal hint');
-      }
-
-      setGameState((prev) => {
-        if (!isGameInProgress(prev)) return prev;
-        return {
-          ...prev,
-          revealedHints: [...prev.revealedHints, hintIndex],
-          message: {
-            type: 'info',
-            text: 'New hint revealed!',
-          },
-        };
-      });
-    } catch (error) {
-      setGameState((prev) => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'An error occurred',
-        message: {
-          type: 'error',
-          text: error instanceof Error ? error.message : 'An error occurred',
-        },
-      }));
-    }
-  };
-
-  const handleRevealedHintsChange = (hints: HintIndex[]) => {
-    setGameState(prevState => {
-      if (!isGameInProgress(prevState)) {
-        return prevState;
-      }
-
-      return {
-        ...prevState,
-        revealedHints: hints
-      };
-    });
-  };
+  }, [gameState.isGameOver]);
 
   // ✅ Single return with conditional rendering
   return (
@@ -612,12 +482,11 @@ function App() {
         <Route path="/" element={
           gameState.loading || !gameState.gameId ? (
             <GameLoader
-              error={gameState.error || undefined}
+              error={error}
               onRetry={() => {
-                setGameState(prev => ({ ...prev, error: null }));
+                setError('');
                 initializeGame();
               }}
-              onRandomWord={fetchRandomWord}
             />
           ) : (
             <>
@@ -627,8 +496,8 @@ function App() {
                 <DefineBoxes 
                   isCorrect={gameState.isCorrect}
                   guessCount={gameState.guessCount}
-                  revealedHints={gameState.revealedHints}
-                  guessResults={gameState.guessResults}
+                  revealedHints={revealedHints}
+                  guessResults={guessResults}
                 />
                 <div className="input-container">
                   <input
@@ -640,7 +509,7 @@ function App() {
                       handleKeyDown(e);
                       if (e.key === 'Enter' && isGuessValid() && !gameState.isGameOver) {
                         e.preventDefault();
-                        handleGuess(guess);
+                        handleGuess(e);
                       }
                     }}
                     onFocus={handleInputFocus}
@@ -650,7 +519,7 @@ function App() {
                     className={`guess-input ${gameState.isGameOver ? 'disabled' : ''}`}
                   />
                   <button
-                    onClick={() => handleGuess(guess)}
+                    onClick={handleGuess}
                     disabled={!isGuessValid() || gameState.isGameOver}
                     className={`guess-button ${(!isGuessValid() || gameState.isGameOver) ? 'disabled' : ''}`}
                   >
@@ -660,33 +529,32 @@ function App() {
                 <div className="guesses-remaining">
                   Guesses remaining: {gameState.remainingGuesses}
                 </div>
-                {gameState.wordData && (
+                {wordData && (
                   <HintContent 
-                    wordData={gameState.wordData}
-                    revealedHints={gameState.revealedHints}
-                    isGameOver={gameState.isGameOver}
+                    wordData={wordData}
+                    revealedHints={revealedHints}
                   />
                 )}
-                {gameState.showConfetti && <Confetti />}
-                {gameState.showLeaderboard && (
+                {showConfetti && <Confetti />}
+                {showLeaderboard && (
                   <Leaderboard 
                     gameId={gameState.gameId}
                     isGameOver={gameState.isGameOver}
                     isCorrect={gameState.isCorrect}
-                    correctWord={gameState.wordData?.word || ''}
-                    onClose={() => setGameState(prev => ({ ...prev, showLeaderboard: false }))}
+                    correctWord={wordData?.word || ''}
+                    onClose={() => setShowLeaderboard(false)}
                   />
                 )}
-                {gameState.message && (
-                  <div className={`message ${gameState.message.type}`}>
-                    {gameState.message.text}
+                {message && (
+                  <div className={`message ${message.type}`}>
+                    {message.text}
                   </div>
                 )}
               </div>
-              {gameState.wordData && (
+              {wordData && (
                 <GameOverModal
                   isOpen={showModal}
-                  wordData={gameState.wordData}
+                  wordData={wordData}
                   isCorrect={gameState.isCorrect}
                   onClose={() => setShowModal(false)}
                 />

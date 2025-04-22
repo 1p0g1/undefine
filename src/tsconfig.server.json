@@ -7,24 +7,12 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../packages/shared-types/src/*"],
-      "shared-types": ["../packages/shared-types/src/index.ts"],
-      "shared-types/*": ["../packages/shared-types/src/*"]
+      "@shared/*": ["../packages/shared-types/src/*"]
     },
     "outDir": "../dist-server",
     "skipLibCheck": true,
-    "types": ["node"],
-    "composite": true,
-    "declaration": true,
-    "rootDir": "."
+    "types": ["node", "react", "react-dom"]
   },
-  "include": ["./**/*.ts"],
-  "exclude": [
-    "**/*.test.*", 
-    "**/*.spec.*",
-    "./tests/api-test.ts"
-  ],
-  "references": [
-    { "path": "../packages/shared-types" }
-  ]
+  "include": ["."],
+  "exclude": ["client", "tests", "**/*.test.*"]
 } 
