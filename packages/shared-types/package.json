@@ -24,6 +24,7 @@
     "verify:render": "rm -rf dist && npx tsc --project tsconfig.json && ls dist/index.d.ts"
   },
   "devDependencies": {
+    "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "eslint": "^8.56.0",
