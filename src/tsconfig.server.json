@@ -12,7 +12,7 @@
     },
     "outDir": "../dist-server",
     "skipLibCheck": true,
-    "types": ["node", "react", "react-dom"],
+    "types": ["node"],
     "declaration": true,
     "declarationDir": "../dist-server",
     "composite": true,
