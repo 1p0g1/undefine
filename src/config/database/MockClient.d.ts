@@ -1,4 +1,4 @@
-import { ClueType, DatabaseClient, GameSession, GuessResult, User, UserStats, Word } from 'shared-types';
+import { ClueType, DatabaseClient, GameSession, GuessResult, User, UserStats, Word } from '@undefine/shared-types';
 interface DailyMetrics {
     totalGames: number;
     averageTime: number;

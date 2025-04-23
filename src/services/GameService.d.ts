@@ -1,4 +1,4 @@
-import type { Word } from 'shared-types';
+import type { Word } from '@undefine/shared-types';
 export interface GameState {
     word: Word;
     startTime: Date;

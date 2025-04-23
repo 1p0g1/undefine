@@ -1,4 +1,4 @@
-import { ValidationError } from 'shared-types';
+import { ValidationError } from '@undefine/shared-types';
 
 // Define a custom form type for word validation without extending FormState
 interface WordFormData {

@@ -1,4 +1,4 @@
-import { ValidationError } from 'shared-types';
+import { ValidationError } from '@undefine/shared-types';
 interface WordFormData {
     word?: string;
     partOfSpeech?: string;

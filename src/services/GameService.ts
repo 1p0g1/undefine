@@ -1,5 +1,5 @@
 import { getDb } from '../config/database/db.js';
-import type { Word, GameSession } from 'shared-types';
+import type { Word, GameSession } from '@undefine/shared-types';
 
 export interface GameState {
   word: Word;

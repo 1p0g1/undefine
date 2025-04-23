@@ -14,111 +14,70 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
-// Get directory name in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '../../');
 
-// Directories to search in
-const searchDirs = [
-  path.join(rootDir, 'src'),
-];
-
-// Extensions to process
-const extensions = ['.ts', '.tsx', '.js', '.jsx'];
-
-// Import patterns to replace
-const importPatterns = [
-  {
-    regex: /import\s+([^;]+?)\s+from\s+['"]([^'"]*?\/types\/shared\.js)['"]/g,
-    replacement: "import $1 from 'shared-types'"
-  },
-  {
-    regex: /import\s+([^;]+?)\s+from\s+['"]([^'"]*?\/shared\/types\/shared\.js)['"]/g,
-    replacement: "import $1 from 'shared-types'"
-  },
-  {
-    regex: /import\s+\*\s+as\s+([^;]+?)\s+from\s+['"]([^'"]*?\/types\/shared\.js)['"]/g,
-    replacement: "import * as $1 from 'shared-types'"
-  },
-  {
-    regex: /import\s+\*\s+as\s+([^;]+?)\s+from\s+['"]([^'"]*?\/shared\/types\/shared\.js)['"]/g,
-    replacement: "import * as $1 from 'shared-types'"
-  }
-];
-
-/**
- * Process a file to update import statements
- * @param {string} filePath - Path to the file
- * @returns {boolean} - Whether the file was updated
- */
-function processFile(filePath) {
-  try {
-    let content = fs.readFileSync(filePath, 'utf8');
-    let updated = false;
-    let originalContent = content;
-
-    for (const pattern of importPatterns) {
-      content = content.replace(pattern.regex, pattern.replacement);
-    }
-
-    // Check if anything was changed
-    if (content !== originalContent) {
-      fs.writeFileSync(filePath, content, 'utf8');
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error(`Error processing file ${filePath}:`, error);
-    return false;
-  }
+// Function to update imports in a file
+function updateImports(filePath) {
+  let content = fs.readFileSync(filePath, 'utf8');
+  
+  // Update import statements
+  content = content.replace(
+    /import\s+{([^}]+)}\s+from\s+['"]shared-types['"]/g,
+    'import {$1} from \'@undefine/shared-types\''
+  );
+  
+  content = content.replace(
+    /import\s+type\s+{([^}]+)}\s+from\s+['"]shared-types['"]/g,
+    'import type {$1} from \'@undefine/shared-types\''
+  );
+  
+  content = content.replace(
+    /import\s+(\w+)\s+from\s+['"]shared-types['"]/g,
+    'import $1 from \'@undefine/shared-types\''
+  );
+  
+  content = content.replace(
+    /import\s+\*\s+as\s+(\w+)\s+from\s+['"]shared-types['"]/g,
+    'import * as $1 from \'@undefine/shared-types\''
+  );
+  
+  fs.writeFileSync(filePath, content);
+  console.log(`Updated imports in ${filePath}`);
 }
 
-/**
- * Walk through a directory recursively to find files
- * @param {string} dir - Directory to search
- * @param {Function} callback - Callback for each file
- */
-function walkDir(dir, callback) {
+// Function to recursively find all TypeScript files
+function findTypeScriptFiles(dir) {
   const files = fs.readdirSync(dir);
-
-  files.forEach(file => {
+  const tsFiles = [];
+  
+  for (const file of files) {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
-
-    if (stat.isDirectory() && 
-        !filePath.includes('node_modules') && 
-        !filePath.includes('dist')) {
-      walkDir(filePath, callback);
-    } else if (stat.isFile() && extensions.includes(path.extname(filePath))) {
-      callback(filePath);
+    
+    if (stat.isDirectory() && !filePath.includes('node_modules')) {
+      tsFiles.push(...findTypeScriptFiles(filePath));
+    } else if (stat.isFile() && /\.(ts|tsx)$/.test(file)) {
+      tsFiles.push(filePath);
     }
-  });
-}
-
-/**
- * Main execution function
- */
-function main() {
-  console.log('🔄 Updating import statements to use path aliases...');
+  }
   
-  let totalFiles = 0;
-  let updatedFiles = 0;
-
-  searchDirs.forEach(dir => {
-    walkDir(dir, (filePath) => {
-      totalFiles++;
-      const wasUpdated = processFile(filePath);
-      if (wasUpdated) {
-        updatedFiles++;
-        console.log(`✅ Updated: ${path.relative(rootDir, filePath)}`);
-      }
-    });
-  });
-
-  console.log(`\n📊 Summary: Updated ${updatedFiles} of ${totalFiles} files`);
+  return tsFiles;
 }
 
-main(); 
+// Main execution
+try {
+  const rootDir = path.resolve(__dirname, '../..');
+  const tsFiles = findTypeScriptFiles(rootDir);
+  
+  for (const file of tsFiles) {
+    updateImports(file);
+  }
+  
+  console.log('Import updates completed successfully');
+} catch (error) {
+  console.error('Error updating imports:', error);
+  process.exit(1);
+} 

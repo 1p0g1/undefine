@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../config/database/db.js';
-import type { Word, ClueType } from 'shared-types';
+import type { Word, ClueType } from '@undefine/shared-types';
 
 const router = Router();
 
