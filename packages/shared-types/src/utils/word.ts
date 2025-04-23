@@ -220,4 +220,24 @@ export function validateWordDataComprehensive(data: WordData): boolean {
     validateWordId(data.id) &&
     isValidClueData(data.clues)
   );
+}
+
+/**
+ * Safely normalizes equivalents to a string array
+ * Handles all possible DB shapes (undefined, null, string, string[])
+ * @param equivalents The equivalents value from the database
+ * @returns A normalized string array
+ */
+export function normalizeEquivalents(equivalents: unknown): string[] {
+  if (Array.isArray(equivalents)) {
+    return equivalents;
+  }
+  
+  if (typeof equivalents === 'string') {
+    // Handle comma-separated string case
+    return equivalents.split(',').filter(Boolean);
+  }
+  
+  // Handle null, undefined, or any other type
+  return [];
 } 
