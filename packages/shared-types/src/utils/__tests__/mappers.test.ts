@@ -1,3 +1,4 @@
+// All test inputs are defined inline — no external mock imports.
 import { describe, it, expect } from 'vitest';
 import { mapDBWordToGameWord } from '../mappers.js';
 import { DBWord } from '../../types/db.js';
