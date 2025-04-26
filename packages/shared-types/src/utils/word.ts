@@ -171,15 +171,19 @@ export function validateWordDataComprehensive(data: WordData): boolean {
  * @returns A normalized string array
  */
 export function normalizeEquivalents(equivalents: unknown): string[] {
+  if (!equivalents) {
+    return [];
+  }
+
   if (Array.isArray(equivalents)) {
-    return equivalents;
+    return equivalents.filter(e => typeof e === 'string');
   }
   
   if (typeof equivalents === 'string') {
     // Handle comma-separated string case
-    return equivalents.split(',').filter(Boolean);
+    return equivalents.split(',').map(s => s.trim()).filter(Boolean);
   }
   
-  // Handle null, undefined, or any other type
+  // Handle any other type
   return [];
 } 

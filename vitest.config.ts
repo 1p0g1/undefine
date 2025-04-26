@@ -5,22 +5,31 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/tests/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/client/dist/**'],
+    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     coverage: {
-      provider: 'istanbul',
+      provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['**/node_modules/**', '**/tests/**', '**/dist/**']
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.d.ts',
+        '**/*.test.ts',
+        '**/*.spec.ts',
+        '**/types/**',
+        '**/test/**',
+      ],
     },
+    setupFiles: ['./src/test/setup.ts'],
     alias: {
       '@': path.resolve(__dirname, './src'),
-      'shared-types': path.resolve(__dirname, './packages/shared-types/src')
+      '@shared-types': path.resolve(__dirname, './packages/shared-types/src')
     }
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      'shared-types': path.resolve(__dirname, './packages/shared-types/src')
+      '@shared-types': path.resolve(__dirname, './packages/shared-types/src')
     }
   }
 }); 

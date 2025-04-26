@@ -1,0 +1,40 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist-server",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared-types/*": ["./packages/shared-types/src/*"],
+      "@undefine/shared-types": ["./packages/shared-types/src/index.js"],
+      "@undefine/shared-types/*": ["./packages/shared-types/src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-server",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**",
+    "**/vitest.config.ts",
+    "**/vitest.config.js",
+    "**/jest.config.ts",
+    "**/jest.config.js",
+    "**/cypress/**",
+    "**/playwright/**",
+    "**/test/**",
+    "**/tests/**"
+  ],
+  "references": [
+    { "path": "./packages/shared-types" }
+  ]
+} 

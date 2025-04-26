@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist-test",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["vitest/globals"],
+    "paths": {
+      "@shared-types/*": ["./packages/shared-types/src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "packages/shared-types/src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-test",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.mock.ts",
+    "**/*.mock.tsx",
+    "**/__mocks__/**"
+  ]
+} 

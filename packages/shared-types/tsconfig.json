@@ -1,43 +1,26 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "declaration": true,
     "composite": true,
-    "incremental": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "preserveSymlinks": true,
-    "traceResolution": false,
-    "sourceMap": true,
+    "declaration": true,
     "declarationMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@undefine/shared-types": ["src"]
     },
-    "types": ["vitest/globals"],
-    "allowJs": true,
+    "sourceMap": true,
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/__tests__",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/__mocks__",
-    "**/__fixtures__"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/__tests__/**/*", "**/*.test.ts", "**/*.spec.ts"]
 } 

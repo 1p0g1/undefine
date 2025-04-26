@@ -1,0 +1,1 @@
+{"version":3,"file":"GameProvider.d.ts","sourceRoot":"","sources":["../../../src/contexts/GameProvider.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAwE,MAAM,OAAO,CAAC;AAC7F,OAAO,KAAK,EAAyB,WAAW,IAAI,eAAe,EAAa,MAAM,oBAAoB,CAAC;AAkF3G,wBAAgB,YAAY,CAAC,EAAE,QAAQ,EAAE,EAAE;IAAE,QAAQ,EAAE,KAAK,CAAC,SAAS,CAAA;CAAE,2CAyCvE;AAED,wBAAgB,OAAO,oBAMtB"}

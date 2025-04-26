@@ -61,9 +61,9 @@ if [ ! -f "dist/index.d.ts" ]; then
 fi
 cd ../..
 
-# Build server
-echo "Building server..."
-npm run build:server
+# Build server with production configuration
+echo "Building server with production configuration..."
+npm run build:server:prod
 
 # Install client dependencies and build
 echo "Building client..."

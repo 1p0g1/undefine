@@ -76,7 +76,7 @@ describe('mapDBWordToGameWord', () => {
     expect(gameWord.equivalents).toEqual([]);
   });
 
-  it('should handle non-array equivalents by returning an empty array', () => {
+  it('should handle non-array equivalents by splitting the string', () => {
     const dbWord: DBWord = {
       id: '1',
       word: 'test',
@@ -93,6 +93,6 @@ describe('mapDBWordToGameWord', () => {
 
     const gameWord = mapDBWordToGameWord(dbWord);
 
-    expect(gameWord.equivalents).toEqual([]);
+    expect(gameWord.equivalents).toEqual(['synonym1', 'synonym2']);
   });
 }); 
