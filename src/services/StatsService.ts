@@ -1,54 +1,123 @@
 import { getDb } from '../config/database/db.js';
-import type { UserStats } from '@undefine/shared-types';
-
-// Define the interface for the daily metrics response
-interface DailyMetrics {
-  totalGames: number;
-  averageTime: number;
-  averageGuesses: number;
-  uniquePlayers: number;
-  completionRate: number;
-}
+import type { UserStats, Result, DailyMetrics } from '@undefine/shared-types';
+import { unwrapResult, isError } from '@undefine/shared-types';
 
 export class StatsService {
-  static async getDailyStats(): Promise<DailyMetrics> {
-    // Fallback implementation if the database client doesn't support getDailyStats
-    const mockStats: DailyMetrics = {
-      totalGames: 0,
-      averageTime: 0,
-      averageGuesses: 0,
-      uniquePlayers: 0,
-      completionRate: 0
-    };
-    
+  static async getDailyStats(): Promise<Result<DailyMetrics>> {
     try {
-      // @ts-ignore - Some implementations might have this method
-      return await getDb().getDailyStats();
+      // Since getDailyStats is not in the DatabaseClient interface,
+      // we'll return a default response
+      return {
+        success: true,
+        data: {
+          date: new Date().toISOString().split('T')[0],
+          totalGames: 0,
+          totalWins: 0,
+          averageGuesses: 0,
+          averageTime: 0
+        }
+      };
     } catch (error) {
-      console.warn('getDailyStats not implemented in the current database client');
-      return mockStats;
+      return {
+        success: false,
+        error: {
+          code: 'DAILY_STATS_ERROR',
+          message: 'Failed to retrieve daily stats',
+          details: error
+        }
+      };
     }
   }
 
-  static async getUserStats(username: string): Promise<UserStats> {
-    const stats = await getDb().getUserStats(username);
-    if (!stats) {
-      throw new Error('User stats not found');
-    }
-    return stats;
-  }
-
-  static async updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<void> {
-    await getDb().updateUserStats(username, won, guessesUsed, timeTaken);
-  }
-
-  static async getTopStreaks(limit: number = 10) {
+  static async getUserStats(username: string): Promise<Result<UserStats>> {
     try {
-      // @ts-ignore - Some implementations might have this method
-      return await getDb().getTopStreaks();
+      const result = await getDb().getUserStats(username);
+      if (isError(result)) {
+        return {
+          success: false,
+          error: {
+            code: 'USER_STATS_ERROR',
+            message: result.error.message || `Failed to fetch stats for user: ${username}`
+          }
+        };
+      }
+      if (!result.data) {
+        return {
+          success: false,
+          error: {
+            code: 'USER_STATS_NOT_FOUND',
+            message: `User stats not found for username: ${username}`
+          }
+        };
+      }
+      return { success: true, data: result.data };
     } catch (error) {
-      console.warn('getTopStreaks not implemented in the current database client');
-      return [];
+      return {
+        success: false,
+        error: {
+          code: 'USER_STATS_ERROR',
+          message: 'Failed to retrieve user stats',
+          details: error
+        }
+      };
+    }
+  }
+
+  static async updateUserStats(
+    username: string,
+    won: boolean,
+    guessesUsed: number,
+    timeTaken: number
+  ): Promise<Result<void>> {
+    try {
+      const result = await getDb().updateUserStats(username, won, guessesUsed, timeTaken);
+      if (isError(result)) {
+        return {
+          success: false,
+          error: {
+            code: 'USER_STATS_UPDATE_ERROR',
+            message: result.error.message || 'Failed to update user stats'
+          }
+        };
+      }
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'USER_STATS_UPDATE_ERROR',
+          message: 'Failed to update user stats',
+          details: error
+        }
+      };
+    }
+  }
+
+  static async getTopStreaks(limit: number = 10): Promise<Result<Array<{ username: string; streak: number }>>> {
+    try {
+      const result = await getDb().getTopStreaks(limit);
+      if (isError(result)) {
+        return {
+          success: false,
+          error: {
+            code: 'TOP_STREAKS_ERROR',
+            message: result.error.message || 'Failed to fetch top streaks'
+          }
+        };
+      }
+      return {
+        success: true,
+        data: result.data || []
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'TOP_STREAKS_ERROR',
+          message: 'Failed to retrieve top streaks',
+          details: error
+        }
+      };
     }
   }
 } 

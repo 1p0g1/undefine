@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SupabaseClient } from '../config/database/SupabaseClient.js';
-import type { GameSession } from '@undefine/shared-types';
+import type { GameSession, Result } from '../../packages/shared-types/src/index.js';
 
 const db = SupabaseClient.getInstance();
 
@@ -14,13 +14,13 @@ export async function handler(req: Request, res: Response) {
 
     try {
       // Get game session and process guess
-      const session = await db.getGameSession(gameId);
-      if (!session) {
+      const sessionResult = await db.getGameSession(gameId);
+      if (!sessionResult.success || !sessionResult.data) {
         return res.status(404).json({ error: 'Game session not found' });
       }
 
       // Process the guess
-      const result = await db.processGuess(gameId, guess, session);
+      const result = await db.processGuess(gameId, guess, sessionResult.data);
 
       // Return result
       return res.status(200).json(result);

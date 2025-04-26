@@ -2,11 +2,13 @@
  * Shared types for Un-Define game
  */
 
-import { HintIndex, Message, GuessHistory, AppGameState, HINT_INDICES, INDEX_TO_HINT, clueTypeToNumber, numberToClueType, isHintAvailable, getHintContent } from './utils/game.js';
+import { HINT_INDICES, INDEX_TO_HINT, clueTypeToNumber, numberToClueType, isHintAvailable, getHintContent } from './utils/game.js';
 import { validateWordData, isWordData, validateClues, validateWordId, validateWordLength, validateFirstLetter, joinEquivalents, splitEquivalents, getSynonyms, normalizeEquivalents } from './utils/word.js';
-import { GameState, ClueType, ClueStatus, GuessResult, WordClues, WordData, SafeClueData } from './types/core.js';
-import { GameWord, UserStats, GameSession, LeaderboardEntry, StreakLeader, DailyMetrics } from './types/app.js';
-import { DBWord, DBUserStats, DBGameSession, DBLeaderboardEntry, DBStreakLeader, DBDailyMetrics } from './types/db.js';
+import type { GameState, ClueType, ClueStatus, GuessResult, WordClues, WordData, SafeClueData } from './types/core.js';
+import type { GameWord, UserStats, GameSession, LeaderboardEntry, StreakLeader, DailyMetrics } from './types/app.js';
+import type { DBWord, DBUserStats, DBGameSession, DBLeaderboardEntry, DBStreakLeader, DBDailyMetrics } from './types/db.js';
+import type { HintIndex, Message, GuessHistory, AppGameState } from './utils/game.js';
+import { unwrapResult, unwrapResultOr, mapResult, isSuccess, isError } from './utils/result.js';
 
 // Result type for better error handling
 export type Result<T> = {
@@ -143,6 +145,15 @@ export {
   getSynonyms,
   normalizeEquivalents
 } from './utils/word.js';
+
+// Result utility functions
+export {
+  unwrapResult,
+  unwrapResultOr,
+  mapResult,
+  isSuccess,
+  isError
+} from './utils/result.js';
 
 // Mapper functions
 export {

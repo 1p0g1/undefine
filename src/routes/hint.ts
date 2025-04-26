@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../config/database/db.js';
 import type { Word, ClueType } from '@undefine/shared-types';
+import { unwrapResult, isError } from '@undefine/shared-types';
 
 const router = Router();
 
@@ -18,7 +19,11 @@ router.get('/:gameId/:hintType', async (req, res) => {
   
   try {
     // Get the current game session
-    const game = await getDb().getGameSession(gameId);
+    const gameResult = await getDb().getGameSession(gameId);
+    if (isError(gameResult)) {
+      return res.status(404).json({ error: gameResult.error.message || 'Game not found' });
+    }
+    const game = gameResult.data;
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
     }
@@ -37,7 +42,11 @@ router.get('/:gameId/:hintType', async (req, res) => {
                     hintType === 'num-letters' ? 'N' :
                     hintType === 'equivalents' ? 'E2' : 'D' as ClueType;
     
-    const hint = await getDb().getClue(game, clueType);
+    const clueResult = await getDb().getClue(game, clueType);
+    if (isError(clueResult)) {
+      return res.status(500).json({ error: clueResult.error.message || 'Failed to get hint' });
+    }
+    const hint = clueResult.data;
     
     // Return the hint
     return res.json({ 
@@ -46,7 +55,7 @@ router.get('/:gameId/:hintType', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting hint:', error);
-    return res.status(500).json({ error: 'Failed to get hint' });
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to get hint' });
   }
 });
 

@@ -9,7 +9,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@shared-types/*": ["../packages/shared-types/src/*"]
+      "@shared-types/*": ["../packages/shared-types/dist/*"],
+      "@undefine/shared-types": ["../packages/shared-types/dist/index.js"],
+      "@undefine/shared-types/*": ["../packages/shared-types/dist/*"]
     }
   },
   "include": [

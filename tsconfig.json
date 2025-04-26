@@ -1,50 +1,49 @@
 {
   "compilerOptions": {
-    "composite": true,
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist-server",
+    "rootDir": ".",
     "strict": true,
+    "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "jsx": "react-jsx",
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@shared-types/*": ["./packages/shared-types/src/*"]
+      "@undefine/shared-types": ["packages/shared-types/dist/index.js"],
+      "@undefine/shared-types/*": ["packages/shared-types/dist/*"],
+      "@shared-types/*": ["packages/shared-types/dist/*"]
     },
-    "skipLibCheck": true,
+    "sourceMap": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "outDir": "dist",
-    "types": ["vite/client"],
-    "forceConsistentCasingInFileNames": true,
-    "preserveSymlinks": true,
-    "traceResolution": false,
-    "sourceMap": true,
-    "declarationMap": true
+    "jsx": "react-jsx"
   },
+  "references": [
+    { "path": "./packages/shared-types" }
+  ],
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx",
-    "packages/**/*.ts",
-    "packages/**/*.tsx"
+    "src/**/*.tsx"
   ],
   "exclude": [
-    "**/node_modules",
-    "**/dist",
-    "**/build",
-    "**/.next",
-    "**/coverage",
-    "**/__tests__",
+    "node_modules",
+    "dist",
+    "dist-server",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "**/__mocks__",
-    "**/__fixtures__"
-  ],
-  "references": [
-    { "path": "./packages/shared-types" }
+    "**/__tests__/**",
+    "**/vitest.config.ts",
+    "**/vitest.config.js",
+    "**/test/**",
+    "**/tests/**"
   ]
 }

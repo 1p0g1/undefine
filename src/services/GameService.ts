@@ -1,5 +1,6 @@
 import { getDb } from '../config/database/db.js';
 import type { Word, GameSession } from '@undefine/shared-types';
+import { unwrapResult, isError } from '@undefine/shared-types';
 
 export interface GameState {
   word: Word;
@@ -44,7 +45,8 @@ export class GameService {
   static async getRandomWord(): Promise<Word> {
     try {
       console.log('[GameService.getRandomWord] Attempting to fetch random word from database');
-      const word = await getDb().getRandomWord();
+      const wordResult = await getDb().getRandomWord();
+      const word = unwrapResult(wordResult);
       console.log('[GameService.getRandomWord] Successfully fetched word:', { word: word.word });
       return word;
     } catch (error) {
@@ -60,7 +62,8 @@ export class GameService {
     try {
       console.log('[GameService.startGame] Starting new game');
       const word = await this.getRandomWord();
-      const session = await getDb().startGame();
+      const sessionResult = await getDb().startGame();
+      const session = unwrapResult(sessionResult);
       
       console.log('[GameService.startGame] Creating game state:', { 
         gameId: session.id,
@@ -109,21 +112,27 @@ export class GameService {
 
   static async processGuess(gameId: string, guess: string): Promise<GuessResult> {
     try {
-      const session = await getDb().getGameSession(gameId);
+      const sessionResult = await getDb().getGameSession(gameId);
+      if (isError(sessionResult)) {
+        throw new Error(sessionResult.error.message || 'Game session not found');
+      }
+      const session = sessionResult.data;
+      
       if (!session) {
         throw new Error('Game session not found');
       }
 
       const result = await getDb().processGuess(gameId, guess, session);
+      const guessResult = unwrapResult(result);
       
       // Map the database response to our GuessResult interface
       return {
-        isCorrect: result.isCorrect,
-        guess: result.guess,
+        isCorrect: guessResult.isCorrect,
+        guess: guessResult.guess,
         isFuzzy: false, // Default values since actual properties may vary
         fuzzyPositions: [], // Default values since actual properties may vary
-        gameOver: result.gameOver,
-        correctWord: result.correctWord
+        gameOver: guessResult.gameOver,
+        correctWord: guessResult.correctWord
       };
     } catch (error) {
       console.error('[GameService.processGuess] Error processing guess:', error);
@@ -180,7 +189,8 @@ export class GameService {
       const targetDate = date || new Date().toISOString().split('T')[0];
       
       // Try to get today's word
-      let word = await getDb().getDailyWord();
+      const wordResult = await getDb().getDailyWord();
+      const word = unwrapResult(wordResult);
       
       /* Comment out the code that uses missing methods
       // If no word is set for today, select one and mark it

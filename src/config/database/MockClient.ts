@@ -9,7 +9,7 @@ import {
   UserStats,
   WordData,
   Result,
-  LeaderboardEntry as SharedLeaderboardEntry,
+  LeaderboardEntry,
   StreakLeader as SharedStreakLeader
 } from '../../../packages/shared-types/src/index.js';
 
@@ -98,7 +98,7 @@ export class MockClient implements DatabaseClient {
     guess: string,
     session: GameSession
   ): Promise<Result<GuessResult>> {
-    const word = this.words.find(w => w.id === session.word_id);
+    const word = this.words.find(w => w.id === session.wordId);
     if (!word) {
       return {
         success: false,
@@ -125,11 +125,15 @@ export class MockClient implements DatabaseClient {
     };
   }
 
-  async getLeaderboard(limit?: number): Promise<Result<SharedLeaderboardEntry[]>> {
+  async getLeaderboard(limit?: number): Promise<Result<LeaderboardEntry[]>> {
     return {
       success: true,
       data: this.leaderboard.slice(0, limit).map((entry, index) => ({
         username: entry.username,
+        wordId: entry.wordId,
+        word: entry.word,
+        timeTaken: entry.timeTaken,
+        guessesUsed: entry.guessesUsed,
         score: entry.timeTaken,
         rank: index + 1
       }))
@@ -155,7 +159,7 @@ export class MockClient implements DatabaseClient {
       };
     }
 
-    const word = this.words.find(w => w.id === session.word_id);
+    const word = this.words.find(w => w.id === session.wordId);
     if (!word) {
       return {
         success: false,
@@ -193,12 +197,12 @@ export class MockClient implements DatabaseClient {
   async createGameSession(wordId: string, word: string): Promise<GameSession> {
     const session: GameSession = {
       id: crypto.randomUUID(),
-      user_id: 'mock-user',
-      word_id: wordId,
+      userId: 'mock-user',
+      wordId,
       word,
-      start_time: new Date().toISOString(),
+      startTime: new Date().toISOString(),
       guesses: [],
-      hints_revealed: [],
+      hintsRevealed: [],
       completed: false,
       won: false
     };
@@ -211,14 +215,111 @@ export class MockClient implements DatabaseClient {
       success: true,
       data: {
         username,
-        games_played: 0,
-        games_won: 0,
-        average_guesses: 0,
-        average_time: 0,
-        current_streak: 0,
-        longest_streak: 0,
-        last_played_at: new Date().toISOString()
+        gamesPlayed: 0,
+        gamesWon: 0,
+        averageGuesses: 0,
+        averageTime: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        lastPlayedAt: new Date().toISOString()
       }
     };
+  }
+
+  async updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<Result<void>> {
+    return { success: true };
+  }
+
+  async getGameSession(gameId: string): Promise<Result<GameSession>> {
+    const session = this.gameSessions[gameId];
+    if (!session) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Game session not found'
+        }
+      };
+    }
+    return { success: true, data: session };
+  }
+
+  async startGame(): Promise<Result<GameSession>> {
+    const word = await this.getRandomWord();
+    if (!word.success || !word.data) {
+      return {
+        success: false,
+        error: {
+          code: 'NO_WORDS',
+          message: 'No words available'
+        }
+      };
+    }
+    const session = await this.createGameSession(word.data.id, word.data.word);
+    return { success: true, data: session };
+  }
+
+  async endGame(gameId: string, won: boolean): Promise<Result<void>> {
+    const session = this.gameSessions[gameId];
+    if (!session) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Game session not found'
+        }
+      };
+    }
+    session.completed = true;
+    session.won = won;
+    return { success: true };
+  }
+
+  async getClue(session: GameSession, clueType: ClueType): Promise<Result<string>> {
+    const word = this.words.find(w => w.id === session.wordId);
+    if (!word) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Word not found'
+        }
+      };
+    }
+    return { success: true, data: word.definition };
+  }
+
+  async getUserByUsername(username: string): Promise<Result<User | null>> {
+    const user = Object.values(this.users).find(u => u.username === username);
+    return { success: true, data: user || null };
+  }
+
+  async createUser(username: string): Promise<Result<User>> {
+    const user: User = {
+      id: crypto.randomUUID(),
+      username,
+      created_at: new Date().toISOString()
+    };
+    this.users[user.id] = user;
+    return { success: true, data: user };
+  }
+
+  async addLeaderboardEntry(entry: LeaderboardEntry): Promise<Result<void>> {
+    this.leaderboard.push({
+      id: crypto.randomUUID(),
+      username: entry.username,
+      wordId: entry.wordId,
+      word: entry.word,
+      timeTaken: entry.timeTaken,
+      guessesUsed: entry.guessesUsed,
+      fuzzyMatches: 0,
+      hintsUsed: 0,
+      createdAt: new Date().toISOString()
+    });
+    return { success: true };
+  }
+
+  async markAsUsed(wordId: string): Promise<Result<void>> {
+    return { success: true };
   }
 } 

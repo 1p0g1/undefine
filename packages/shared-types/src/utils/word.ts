@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { validate as uuidValidate } from 'uuid';
-import { WordData, SafeClueData, WordClues } from '../types/core.js';
+import type { WordData, SafeClueData, WordClues } from '../types/core.js';
 
 /**
  * Represents the core clue data that is guaranteed to be present and valid.

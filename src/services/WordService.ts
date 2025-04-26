@@ -1,5 +1,5 @@
 import { SupabaseClient } from '../config/database/SupabaseClient.js';
-import { GameWord, WordData, WordClues, Result, GameSession, GuessResult } from '../../packages/shared-types/src/index.js';
+import { GameWord, WordData, WordClues, Result, GameSession, GuessResult, unwrapResult, isError, mapDBWordToGameWord, normalizeEquivalents } from '@undefine/shared-types';
 
 // Constants for word validation
 const MAX_WORD_LENGTH = 100;
@@ -14,13 +14,21 @@ export class WordService {
     static async getWord(wordId: string): Promise<Result<GameWord | null>> {
         try {
             const sessionResult = await this.supabase.getGameSession(wordId);
-            if (!sessionResult.success || !sessionResult.data) {
-                return { success: false, data: null };
+            if (isError(sessionResult)) {
+                return { 
+                    success: false, 
+                    error: { 
+                        code: 'GAME_SESSION_NOT_FOUND', 
+                        message: sessionResult.error.message || 'Game session not found' 
+                    } 
+                };
+            }
+            if (!sessionResult.data) {
+                return { success: true, data: null };
             }
             return { success: true, data: sessionResult.data.words };
         }
         catch (error) {
-            console.error('Failed to get word:', error);
             return { 
                 success: false, 
                 error: { 
@@ -38,13 +46,36 @@ export class WordService {
     static async getDailyWord(): Promise<Result<GameWord | null>> {
         try {
             const result = await this.supabase.getDailyWord();
-            if (!result.success || !result.data) {
-                return { success: false, data: null };
+            if (isError(result)) {
+                return { 
+                    success: false, 
+                    error: { 
+                        code: 'DAILY_WORD_FETCH_ERROR', 
+                        message: result.error.message || 'Failed to get daily word' 
+                    } 
+                };
             }
-            return { success: true, data: this.mapToGameWord(result.data) };
+            if (!result.data) {
+                return { success: true, data: null };
+            }
+            return { 
+                success: true, 
+                data: {
+                    id: result.data.id,
+                    word: result.data.word,
+                    definition: result.data.definition,
+                    etymology: result.data.etymology,
+                    firstLetter: result.data.first_letter,
+                    inASentence: result.data.in_a_sentence,
+                    numberOfLetters: result.data.number_of_letters,
+                    equivalents: normalizeEquivalents(result.data.equivalents),
+                    difficulty: result.data.difficulty || 'medium',
+                    createdAt: result.data.created_at,
+                    updatedAt: result.data.updated_at
+                }
+            };
         }
         catch (error) {
-            console.error('Failed to get daily word:', error);
             return { 
                 success: false, 
                 error: { 
@@ -62,13 +93,36 @@ export class WordService {
     static async getRandomWord(): Promise<Result<GameWord | null>> {
         try {
             const result = await this.supabase.getRandomWord();
-            if (!result.success || !result.data) {
-                return { success: false, data: null };
+            if (isError(result)) {
+                return { 
+                    success: false, 
+                    error: { 
+                        code: 'RANDOM_WORD_FETCH_ERROR', 
+                        message: result.error.message || 'Failed to get random word' 
+                    } 
+                };
             }
-            return { success: true, data: this.mapToGameWord(result.data) };
+            if (!result.data) {
+                return { success: true, data: null };
+            }
+            return { 
+                success: true, 
+                data: {
+                    id: result.data.id,
+                    word: result.data.word,
+                    definition: result.data.definition,
+                    etymology: result.data.etymology,
+                    firstLetter: result.data.first_letter,
+                    inASentence: result.data.in_a_sentence,
+                    numberOfLetters: result.data.number_of_letters,
+                    equivalents: normalizeEquivalents(result.data.equivalents),
+                    difficulty: result.data.difficulty || 'medium',
+                    createdAt: result.data.created_at,
+                    updatedAt: result.data.updated_at
+                }
+            };
         }
         catch (error) {
-            console.error('Failed to get random word:', error);
             return { 
                 success: false, 
                 error: { 
@@ -86,7 +140,16 @@ export class WordService {
     static async checkGuess(gameId: string, guess: string): Promise<Result<GuessResult>> {
         try {
             const sessionResult = await this.supabase.getGameSession(gameId);
-            if (!sessionResult.success || !sessionResult.data) {
+            if (isError(sessionResult)) {
+                return { 
+                    success: false, 
+                    error: { 
+                        code: 'GAME_SESSION_NOT_FOUND', 
+                        message: sessionResult.error.message || 'Game session not found' 
+                    } 
+                };
+            }
+            if (!sessionResult.data) {
                 return { 
                     success: false, 
                     error: { 
@@ -98,7 +161,6 @@ export class WordService {
             return await this.supabase.processGuess(gameId, guess, sessionResult.data);
         }
         catch (error) {
-            console.error('Failed to check guess:', error);
             return { 
                 success: false, 
                 error: { 
@@ -117,7 +179,16 @@ export class WordService {
         try {
             this.validateWordData(wordData);
             const sessionResult = await this.supabase.startGame();
-            if (!sessionResult.success || !sessionResult.data) {
+            if (isError(sessionResult)) {
+                return { 
+                    success: false, 
+                    error: { 
+                        code: 'WORD_ADD_ERROR', 
+                        message: sessionResult.error.message || 'Failed to add word' 
+                    } 
+                };
+            }
+            if (!sessionResult.data) {
                 return { 
                     success: false, 
                     error: { 
@@ -129,7 +200,6 @@ export class WordService {
             return { success: true, data: sessionResult.data.words };
         }
         catch (error) {
-            console.error('Failed to add word:', error);
             return { 
                 success: false, 
                 error: { 
@@ -148,7 +218,16 @@ export class WordService {
         try {
             this.validateWordData(wordData);
             const sessionResult = await this.supabase.getGameSession(wordId);
-            if (!sessionResult.success || !sessionResult.data) {
+            if (isError(sessionResult)) {
+                return { 
+                    success: false, 
+                    error: { 
+                        code: 'WORD_UPDATE_ERROR', 
+                        message: sessionResult.error.message || 'Failed to update word' 
+                    } 
+                };
+            }
+            if (!sessionResult.data) {
                 return { 
                     success: false, 
                     error: { 
@@ -160,7 +239,6 @@ export class WordService {
             return { success: true, data: sessionResult.data.words };
         }
         catch (error) {
-            console.error('Failed to update word:', error);
             return { 
                 success: false, 
                 error: { 
@@ -177,12 +255,34 @@ export class WordService {
      */
     static async searchWords(query: string): Promise<Result<GameWord[]>> {
         try {
-            // Note: Search functionality not available in current DatabaseClient interface
-            // Return empty array for now
-            return { success: true, data: [] };
+            const result = await this.supabase.searchWords(query);
+            if (isError(result)) {
+                return { 
+                    success: false, 
+                    error: { 
+                        code: 'WORD_SEARCH_ERROR', 
+                        message: result.error.message || 'Failed to search words' 
+                    } 
+                };
+            }
+            return { 
+                success: true, 
+                data: result.data ? result.data.map(word => ({
+                    id: word.id,
+                    word: word.word,
+                    definition: word.definition,
+                    etymology: word.etymology,
+                    firstLetter: word.first_letter,
+                    inASentence: word.in_a_sentence,
+                    numberOfLetters: word.number_of_letters,
+                    equivalents: normalizeEquivalents(word.equivalents),
+                    difficulty: word.difficulty || 'medium',
+                    createdAt: word.created_at,
+                    updatedAt: word.updated_at
+                })) : []
+            };
         }
         catch (error) {
-            console.error('Failed to search words:', error);
             return { 
                 success: false, 
                 error: { 
@@ -197,31 +297,12 @@ export class WordService {
     /**
      * Validate word data
      */
-    static validateWordData(wordData: Partial<WordData>): void {
+    private static validateWordData(wordData: Partial<WordData>): void {
         if (wordData.word && wordData.word.length > MAX_WORD_LENGTH) {
             throw new Error(`Word length exceeds maximum of ${MAX_WORD_LENGTH} characters`);
         }
         if (wordData.definition && wordData.definition.length > MAX_DEFINITION_LENGTH) {
             throw new Error(`Definition length exceeds maximum of ${MAX_DEFINITION_LENGTH} characters`);
         }
-    }
-
-    /**
-     * Map WordData to GameWord
-     */
-    static mapToGameWord(word: WordData): GameWord {
-        return {
-            id: word.id,
-            word: word.word,
-            definition: word.definition,
-            etymology: word.etymology || null,
-            firstLetter: word.first_letter,
-            inASentence: word.in_a_sentence || null,
-            numberOfLetters: word.number_of_letters,
-            equivalents: word.equivalents ? word.equivalents.split(',').filter(Boolean) : [],
-            difficulty: word.difficulty || 'medium',
-            createdAt: word.created_at,
-            updatedAt: word.updated_at
-        };
     }
 }

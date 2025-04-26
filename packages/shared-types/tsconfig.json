@@ -19,8 +19,10 @@
     },
     "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "emitDeclarationOnly": false,
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*"],
-  "exclude": ["src/**/__tests__/**/*", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["src/**/__tests__/**/*", "**/*.test.ts", "**/*.spec.ts", "node_modules", "dist"]
 } 

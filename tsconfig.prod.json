@@ -1,17 +1,25 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": "dist-server",
+    "declaration": true,
+    "composite": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "types": ["node"],
+    "sourceMap": true,
+    "declarationMap": true,
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@shared-types/*": ["./packages/shared-types/src/*"],
-      "@undefine/shared-types": ["./packages/shared-types/src/index.js"],
-      "@undefine/shared-types/*": ["./packages/shared-types/src/*"]
+      "@undefine/shared-types": ["packages/shared-types/src"],
+      "@undefine/shared-types/*": ["packages/shared-types/src/*"],
+      "@shared-types/*": ["packages/shared-types/src/*"]
     }
   },
+  "references": [
+    { "path": "./packages/shared-types/tsconfig.prod.json" }
+  ],
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx"
@@ -27,14 +35,7 @@
     "**/__tests__/**",
     "**/vitest.config.ts",
     "**/vitest.config.js",
-    "**/jest.config.ts",
-    "**/jest.config.js",
-    "**/cypress/**",
-    "**/playwright/**",
     "**/test/**",
     "**/tests/**"
-  ],
-  "references": [
-    { "path": "./packages/shared-types" }
   ]
 } 
