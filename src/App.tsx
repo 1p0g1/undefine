@@ -3,7 +3,7 @@ import { ToastProvider, useToast } from './components/Toast.js';
 import DefineHints from './components/DefineHints.js';
 import DefineBoxes from './components/DefineBoxes.js';
 import GameOverModal from './components/GameOverModal.js';
-import { useGameState } from './hooks/useGameState.js';
+import { useGameState } from '../client/src/hooks/useGameState.js';
 import { WordData, HintIndex } from './types/game.js';
 import './App.css';
 

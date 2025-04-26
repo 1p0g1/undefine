@@ -21,7 +21,7 @@
     "allowImportingTsExtensions": false,
     "allowJs": true,
     "checkJs": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": false
   },
   "include": [
     "src/**/*.ts",
