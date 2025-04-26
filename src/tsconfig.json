@@ -1,27 +1,43 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "strict": true,
     "esModuleInterop": true,
-    "target": "ES2022",
+    "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../packages/shared-types/src/*"]
+      "@/*": ["./*"],
+      "@shared-types/*": ["../packages/shared-types/src/*"]
     },
-    "outDir": "../dist-server",
-    "rootDir": ".",
     "skipLibCheck": true,
-    "types": ["node"],
-    "composite": true,
-    "declaration": true
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "outDir": "dist",
+    "types": ["vite/client"],
+    "forceConsistentCasingInFileNames": true,
+    "preserveSymlinks": true,
+    "traceResolution": false,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true
   },
-  "include": ["./**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
   "exclude": [
-    "**/*.test.*", 
-    "**/*.spec.*",
-    "./tests/api-test.ts"
+    "node_modules",
+    "dist",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__mocks__",
+    "**/__fixtures__"
   ],
   "references": [
     { "path": "../packages/shared-types" }

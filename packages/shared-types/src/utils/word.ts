@@ -1,29 +1,12 @@
 import { z } from 'zod';
 import { validate as uuidValidate } from 'uuid';
+import { WordData, SafeClueData, WordClues } from '../types/core.js';
 
 /**
  * Represents the core clue data that is guaranteed to be present and valid.
  * This interface is used for runtime validation and type safety.
  */
-export interface SafeClueData {
-  /** The primary definition of the word - always required and non-empty */
-  D: string;
-  
-  /** Etymology (word origin) - optional, can be null */
-  E: string | null;
-  
-  /** First letter of the word - always required, exactly one character */
-  F: string;
-  
-  /** Example sentence using the word - optional, can be null */
-  I: string | null;
-  
-  /** Number of letters in the word - always required, positive integer */
-  N: number;
-  
-  /** Synonyms as comma-separated string - optional, can be null */
-  E2: string | null;
-}
+// Removing local SafeClueData interface since it's imported from core.ts
 
 /**
  * Runtime type guard to validate clue data structure.
@@ -31,26 +14,9 @@ export interface SafeClueData {
  */
 export function isValidClueData(clues: unknown): clues is SafeClueData {
   if (!clues || typeof clues !== 'object') return false;
-  const c = clues as Record<string, unknown>;
   
-  // Check for required fields
-  if (!('D' in c) || !('F' in c) || !('N' in c)) return false;
-  
-  // Validate definition
-  if (typeof c.D !== 'string' || c.D.trim().length === 0) return false;
-  
-  // Validate first letter
-  if (typeof c.F !== 'string' || c.F.length !== 1 || !/^[a-zA-Z]$/.test(c.F)) return false;
-  
-  // Validate number of letters
-  if (typeof c.N !== 'number' || !Number.isInteger(c.N) || c.N <= 0) return false;
-  
-  // Validate optional fields
-  if (c.E !== null && typeof c.E !== 'string') return false;
-  if (c.I !== null && typeof c.I !== 'string') return false;
-  if (c.E2 !== null && typeof c.E2 !== 'string') return false;
-  
-  return true;
+  const requiredFields: (keyof SafeClueData)[] = ['D', 'E', 'F', 'I', 'N', 'E2'];
+  return requiredFields.every(field => field in clues);
 }
 
 // Zod schema for clue validation with enhanced rules
@@ -83,43 +49,7 @@ export const WordSchema = z.object({
  * Represents a complete word entry with all its metadata and clues.
  * This type is used throughout the application for type safety.
  */
-export type WordData = {
-  /** Unique identifier for the word */
-  id: string;
-  
-  /** The actual word */
-  word: string;
-  
-  /** Primary definition of the word */
-  definition: string;
-  
-  /** Word origin/etymology - optional */
-  etymology: string | null;
-  
-  /** First letter of the word (always single character) */
-  first_letter: string;
-  
-  /** Example sentence using the word - optional */
-  in_a_sentence: string | null;
-  
-  /** Length of the word (positive integer) */
-  number_of_letters: number;
-  
-  /** Comma-separated list of synonyms - optional */
-  equivalents: string | null;
-  
-  /** Difficulty rating - optional */
-  difficulty: string | null;
-  
-  /** Creation timestamp - optional */
-  created_at: string | null;
-  
-  /** Last update timestamp - optional */
-  updated_at: string | null;
-  
-  /** Validated clue data - always present */
-  clues: SafeClueData;
-};
+// Removing local WordData type since it's imported from core.ts
 
 /**
  * Utility function to join an array of equivalents into a comma-separated string
@@ -151,18 +81,25 @@ export const getSynonyms = (equivalents: string | null): string[] => {
  * Throws if the data is invalid or missing required fields.
  */
 export const validateWordData = (data: unknown): WordData => {
-  try {
-    const parsed = WordSchema.parse(data);
-    if (!isValidClueData(parsed.clues)) {
-      throw new Error('Invalid clue data structure');
-    }
-    return parsed as WordData;
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw new Error(`Validation failed: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
-    }
-    throw error;
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid word data: must be an object');
   }
+
+  const wordData = data as WordData;
+  
+  if (!wordData.word || typeof wordData.word !== 'string') {
+    throw new Error('Invalid word data: word must be a string');
+  }
+
+  if (!wordData.clues || typeof wordData.clues !== 'object') {
+    throw new Error('Invalid word data: clues must be an object');
+  }
+
+  if (!isValidClueData(wordData.clues)) {
+    throw new Error('Invalid word data: clues must contain all required fields');
+  }
+
+  return wordData;
 };
 
 /**
@@ -170,8 +107,8 @@ export const validateWordData = (data: unknown): WordData => {
  */
 export const isWordData = (data: unknown): data is WordData => {
   try {
-    const parsed = WordSchema.parse(data);
-    return isValidClueData(parsed.clues);
+    validateWordData(data);
+    return true;
   } catch {
     return false;
   }
@@ -188,12 +125,10 @@ export function validateWordId(id: string): boolean {
  * Validates clue data structure and returns a type guard.
  */
 export function validateClues(clues: unknown): clues is SafeClueData {
-  try {
-    ClueValueSchema.parse(clues);
-    return isValidClueData(clues);
-  } catch {
-    return false;
-  }
+  if (!clues || typeof clues !== 'object') return false;
+  
+  const requiredFields: (keyof SafeClueData)[] = ['D', 'E', 'F', 'I', 'N', 'E2'];
+  return requiredFields.every(field => field in clues);
 }
 
 /**
@@ -214,12 +149,19 @@ export function validateFirstLetter(word: string, firstLetter: string): boolean 
  * Comprehensive validation of a WordData object including cross-field validations.
  */
 export function validateWordDataComprehensive(data: WordData): boolean {
-  return (
-    validateWordLength(data.word, data.number_of_letters) &&
-    validateFirstLetter(data.word, data.first_letter) &&
-    validateWordId(data.id) &&
-    isValidClueData(data.clues)
-  );
+  if (!data || typeof data !== 'object') return false;
+  
+  // Check required fields
+  const requiredFields: (keyof WordData)[] = ['word', 'clues'];
+  if (!requiredFields.every(field => field in data)) return false;
+  
+  // Validate word
+  if (typeof data.word !== 'string' || data.word.length === 0) return false;
+  
+  // Validate clues
+  if (!validateClues(data.clues)) return false;
+  
+  return true;
 }
 
 /**

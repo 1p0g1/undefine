@@ -41,6 +41,9 @@ export interface Database {
           completed: boolean
           created_at: string
           updated_at: string
+          users: {
+            username: string
+          }[]
         }
         Insert: {
           id?: string
@@ -89,6 +92,29 @@ export interface Database {
           total_score?: number
           average_score?: number
           highest_score?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      users: {
+        Row: {
+          id: string
+          username: string
+          email: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          username: string
+          email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          username?: string
+          email?: string | null
           created_at?: string
           updated_at?: string
         }

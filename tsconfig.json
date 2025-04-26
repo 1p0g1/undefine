@@ -10,31 +10,41 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@shared/*": ["packages/shared-types/src/*"],
-      "shared-types": ["packages/shared-types/src/index.ts"],
-      "shared-types/*": ["packages/shared-types/src/*"],
-      "@undefine/shared-types": ["packages/shared-types/src/index.ts"],
-      "@undefine/shared-types/*": ["packages/shared-types/src/*"]
+      "@/*": ["./src/*"],
+      "@shared-types/*": ["./packages/shared-types/src/*"]
     },
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "outDir": "dist-types",
-    "types": ["vite/client"]
+    "outDir": "dist",
+    "types": ["vite/client"],
+    "forceConsistentCasingInFileNames": true,
+    "preserveSymlinks": true,
+    "traceResolution": false,
+    "sourceMap": true,
+    "declarationMap": true
   },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "packages/**/*.ts",
+    "packages/**/*.tsx"
+  ],
   "exclude": [
-    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/.next",
+    "**/coverage",
+    "**/__tests__",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "archive/**",
-    "deprecated/**"
+    "**/__mocks__",
+    "**/__fixtures__"
   ],
   "references": [
-    { "path": "./packages/shared-types" },
-    { "path": "./src" },
-    { "path": "./client" }
+    { "path": "./packages/shared-types" }
   ]
-} 
+}

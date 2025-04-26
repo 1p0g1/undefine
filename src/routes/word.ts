@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { WordService } from '../services/WordService.js';
 import { getDb } from '../config/database/db.js';
-import type { ApiWord, GameWord } from '@undefine/shared-types';
+import type { WordData, GameWord, Result } from '@shared-types/index.js';
 
 const router = Router();
 
@@ -9,12 +9,14 @@ const router = Router();
 router.get('/api/word', async (req, res) => {
   try {
     const db = getDb();
-    const wordData = await db.getRandomWord() as ApiWord;
+    const wordResult = await db.getRandomWord();
 
-    if (!wordData) {
+    if (!wordResult.success || !wordResult.data) {
       console.error('No word found in database');
       return res.status(500).json({ error: 'No word found' });
     }
+
+    const wordData = wordResult.data;
 
     // Log the raw word data for debugging
     console.log('Raw word data:', {
@@ -23,30 +25,34 @@ router.get('/api/word', async (req, res) => {
       hasDefinition: !!wordData.definition,
       hasEtymology: !!wordData.etymology,
       hasFirstLetter: !!wordData.first_letter,
-      hasInSentence: !!wordData.in_a_sentence,
+      hasInASentence: !!wordData.in_a_sentence,
       hasEquivalents: !!wordData.equivalents,
       equivalentsType: typeof wordData.equivalents
     });
 
     // Create a new game session
-    const session = await db.startGame();
+    const sessionResult = await db.startGame();
 
-    if (!session) {
+    if (!sessionResult.success || !sessionResult.data) {
       console.error('Failed to create game session');
       return res.status(500).json({ error: 'Failed to create game session' });
     }
+
+    const session = sessionResult.data;
 
     // Transform snake_case API data to camelCase game format
     const transformedWord: GameWord = {
       id: wordData.id,
       word: wordData.word,
       definition: wordData.definition,
-      etymology: wordData.etymology || '',
+      etymology: wordData.etymology || null,
       firstLetter: wordData.first_letter,
-      inASentence: wordData.in_a_sentence || '',
+      inASentence: wordData.in_a_sentence || null,
       numberOfLetters: wordData.number_of_letters,
-      equivalents: Array.isArray(wordData.equivalents) ? wordData.equivalents : wordData.equivalents?.split(',').map((s: string): string => s.trim()) || [],
-      difficulty: wordData.difficulty
+      equivalents: wordData.equivalents ? wordData.equivalents.split(',').filter(Boolean) : [],
+      difficulty: wordData.difficulty || 'medium',
+      createdAt: wordData.created_at,
+      updatedAt: wordData.updated_at
     };
 
     // Log the transformed word data for debugging
@@ -106,8 +112,11 @@ router.get('/api/word', async (req, res) => {
 // Get a random word
 router.get('/random', async (req, res) => {
   try {
-    const word = await WordService.getRandomWord();
-    res.json(word);
+    const wordResult = await WordService.getRandomWord();
+    if (!wordResult.success || !wordResult.data) {
+      return res.status(500).json({ error: 'Failed to get random word' });
+    }
+    res.json(wordResult.data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get random word' });
   }
@@ -116,8 +125,11 @@ router.get('/random', async (req, res) => {
 // Get today's word
 router.get('/daily', async (req, res) => {
   try {
-    const word = await WordService.getDailyWord();
-    res.json(word);
+    const wordResult = await WordService.getDailyWord();
+    if (!wordResult.success || !wordResult.data) {
+      return res.status(500).json({ error: 'Failed to get daily word' });
+    }
+    res.json(wordResult.data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get daily word' });
   }
@@ -126,8 +138,11 @@ router.get('/daily', async (req, res) => {
 // Admin routes
 router.post('/add', async (req, res) => {
   try {
-    const word = await WordService.addWord(req.body);
-    res.json(word);
+    const wordResult = await WordService.addWord(req.body);
+    if (!wordResult.success || !wordResult.data) {
+      return res.status(500).json({ error: 'Failed to add word' });
+    }
+    res.json(wordResult.data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to add word' });
   }

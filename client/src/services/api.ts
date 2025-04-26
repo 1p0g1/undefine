@@ -188,6 +188,24 @@ export const importWords = async (file: File): Promise<ApiResponse<{ importedCou
   });
 };
 
+/**
+ * Search for words
+ */
+export const searchWords = async (query: string): Promise<ApiResponse<WordsResponse>> => {
+  // Return empty results with pagination info
+  return {
+    data: {
+      words: [],
+      pagination: {
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+        total: 0
+      }
+    }
+  };
+};
+
 export default {
   getWords,
   getWord,
@@ -197,5 +215,6 @@ export default {
   bulkDeleteWords,
   bulkUpdateWords,
   exportWords,
-  importWords
+  importWords,
+  searchWords
 }; 

@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "module": "Node16",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
     /* Bundler mode */
-    "moduleResolution": "node16",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "composite": true,
@@ -26,12 +26,17 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../packages/shared-types/dist/*"],
-      "shared-types": ["../packages/shared-types/dist/index.js"]
-    }
+      "@/*": ["./src/*"],
+      "@undefine/shared-types": ["../packages/shared-types/src"],
+      "@undefine/shared-types/*": ["../packages/shared-types/src/*"]
+    },
+    
+    /* Source maps */
+    "sourceMap": true,
+    "declarationMap": true
   },
-  "include": ["src", "types"],
-  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test"],
+  "include": ["src", "types", "vite.config.ts"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test", "node_modules"],
   "references": [
     { "path": "./tsconfig.node.json" },
     { "path": "../packages/shared-types" }

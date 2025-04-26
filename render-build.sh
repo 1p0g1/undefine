@@ -16,9 +16,9 @@ echo "Build log: $BUILD_LOG"
 
 # Debug path resolution
 echo "Current directory: $(pwd)"
-echo "Does @shared point to: $(realpath client/../packages/shared-types)"
+echo "Does @undefine/shared-types point to: $(realpath packages/shared-types/src)"
 echo "Shared types directory contents:"
-ls -la client/../packages/shared-types/src
+ls -la packages/shared-types/src
 
 # Validate environment variables
 echo "Validating environment..."
@@ -53,7 +53,7 @@ echo "Building shared types..."
 cd packages/shared-types
 npm install --legacy-peer-deps
 npm run clean
-tsc
+npm run build
 # Verify the build output
 if [ ! -f "dist/index.d.ts" ]; then
   echo "❌ Failed to generate dist/index.d.ts"
@@ -71,10 +71,9 @@ cd client
 npm install --legacy-peer-deps
 npm run build
 
-# Verify path alias configuration
-echo "✅ Verifying path alias configuration..."
-echo "✅ Vite client alias: @shared -> ../packages/shared-types/dist"
-echo "✅ TypeScript path alias: @shared/* -> ../packages/shared-types/dist/*"
+# Run the verification script
+echo "Running build verification..."
+node scripts/verify-build.js
 
 # Final verification
 echo "Verifying build outputs..."

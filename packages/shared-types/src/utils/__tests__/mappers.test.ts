@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { mapDBWordToGameWord } from '../mappers';
-import { DBWord } from '../../types/db';
-import { GameWord } from '../../types/app';
+import { mapDBWordToGameWord } from '../mappers.js';
+import { DBWord } from '../../types/db.js';
+import { GameWord } from '../../types/app.js';
 
 describe('mapDBWordToGameWord', () => {
   it('should map a valid DBWord to GameWord', () => {

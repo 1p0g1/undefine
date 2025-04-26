@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
-import { configDefaults, defineConfig as defineVitestConfig } from 'vitest/config'
+import { configDefaults } from 'vitest/config'
 // @ts-ignore - The module works but TypeScript doesn't recognize its exports correctly
 import react from '@vitejs/plugin-react'
 import path from 'path'
@@ -9,11 +9,11 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../packages/shared-types/dist'),
-      'shared-types': path.resolve(__dirname, '../packages/shared-types/dist')
-    }
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      { find: '@undefine/shared-types', replacement: path.resolve(__dirname, '../packages/shared-types/src') },
+      { find: '@undefine/shared-types/', replacement: path.resolve(__dirname, '../packages/shared-types/src/') }
+    ]
   },
   server: {
     port: 5174,
@@ -36,11 +36,11 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom'],
     force: true,
     esbuildOptions: {
-      target: 'es2020'
+      target: 'es2022'
     }
   },
   build: {
-    target: 'es2020',
+    target: 'es2022',
     sourcemap: true,
     commonjsOptions: {
       include: [/node_modules/],

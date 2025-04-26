@@ -169,6 +169,24 @@ interface Database {
   };
 }
 
+interface LeaderboardQueryResult {
+  id: string;
+  user_id: string;
+  word_id: string;
+  word: string;
+  guesses_used: number;
+  end_time: string;
+  start_time: string;
+  score: number;
+  duration: number;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+  users: {
+    username: string;
+  }[];
+}
+
 export class SupabaseClient implements DatabaseClient {
   private client: SupabaseClientType<Database>;
   private static instance: SupabaseClient;
@@ -182,17 +200,17 @@ export class SupabaseClient implements DatabaseClient {
 
   static getInstance(): SupabaseClient {
     if (!SupabaseClient.instance) {
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_ANON_KEY;
+            const supabaseUrl = process.env.SUPABASE_URL;
+            const supabaseKey = process.env.SUPABASE_ANON_KEY;
       
-      if (!supabaseUrl || !supabaseKey) {
+            if (!supabaseUrl || !supabaseKey) {
         throw new Error('Missing Supabase environment variables');
       }
       
       SupabaseClient.instance = new SupabaseClient(supabaseUrl, supabaseKey);
+        }
+        return SupabaseClient.instance;
     }
-    return SupabaseClient.instance;
-  }
 
   async connect(): Promise<Result<void>> {
     try {
@@ -215,19 +233,19 @@ export class SupabaseClient implements DatabaseClient {
 
   async getRandomWord(): Promise<Result<WordData>> {
     try {
-      const { data, error } = await this.client
-        .from('words')
+            const { data, error } = await this.client
+                .from('words')
         .select('*')
         .order('RANDOM()')
-        .limit(1)
+                .limit(1)
         .single();
 
       if (error || !data) {
-        throw new Error('Failed to fetch random word');
-      }
+                throw new Error('Failed to fetch random word');
+            }
 
       // Convert database row to WordData format
-      return {
+            return {
         success: true,
         data: {
           id: data.id,
@@ -268,36 +286,78 @@ export class SupabaseClient implements DatabaseClient {
 
   async processGuess(gameId: string, guess: string, session: GameSession): Promise<Result<GuessResult>> {
     try {
-      const { data: wordData, error: wordError } = await this.client
+      // Get the word from the database
+      const { data: word, error } = await this.client
         .from('words')
         .select('*')
-        .eq('id', session.word_id)
+        .eq('id', session.wordId)
         .single();
 
-      if (wordError || !wordData) {
-        throw new Error('Word not found');
+      if (error) {
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
 
-      const isCorrect = wordData.word.toLowerCase() === guess.toLowerCase();
-      const gameOver = isCorrect || (session.guesses_used || 0) >= 6;
+      if (!word) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Word not found'
+          }
+        };
+      }
+
+      const isCorrect = guess.toLowerCase() === word.word.toLowerCase();
+      const gameOver = isCorrect || (session.guessesUsed || 0) >= 6;
+
+      // Update game session
+      const { error: updateError } = await this.client
+        .from('game_sessions')
+        .update({
+          guesses: [...(session.guesses || []), guess],
+          guesses_used: (session.guessesUsed || 0) + 1,
+          is_complete: gameOver,
+          is_won: isCorrect,
+          end_time: gameOver ? new Date().toISOString() : undefined
+        })
+        .eq('id', gameId);
+
+      if (updateError) {
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: updateError.message,
+            details: updateError
+          }
+        };
+      }
 
       return {
         success: true,
         data: {
           isCorrect,
           guess,
-          gameOver,
           isFuzzy: false,
           fuzzyPositions: [],
-          correctWord: gameOver ? wordData.word : undefined
+          gameOver,
+          correctWord: gameOver ? word.word : undefined
         }
       };
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'GUESS_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to process guess'
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to process guess',
+          details: error
         }
       };
     }
@@ -305,34 +365,50 @@ export class SupabaseClient implements DatabaseClient {
 
   async getUserStats(username: string): Promise<Result<UserStats | null>> {
     try {
-      const { data, error } = await this.client
+      const { data: stats, error } = await this.client
         .from('user_stats')
         .select('*')
         .eq('username', username)
         .single();
-        
-      if (error) throw error;
-      if (!data) return { success: true, data: null };
+
+      if (error) {
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
+      }
+
+      if (!stats) {
+        return {
+          success: true,
+          data: null
+        };
+      }
 
       return {
         success: true,
         data: {
-          username,
-          games_played: data.games_played,
-          games_won: data.games_won,
-          average_guesses: data.average_guesses,
-          average_time: data.average_time,
-          current_streak: data.current_streak,
-          longest_streak: data.longest_streak,
-          last_played_at: data.last_played_at
+          username: stats.username,
+          gamesPlayed: stats.games_played,
+          gamesWon: stats.games_won,
+          averageGuesses: stats.average_guesses,
+          averageTime: stats.average_time,
+          currentStreak: stats.current_streak,
+          longestStreak: stats.longest_streak,
+          lastPlayedAt: stats.last_played_at
         }
       };
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'STATS_ERROR',
-          message: error instanceof Error ? error.message : 'Unknown error'
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to get user stats',
+          details: error
         }
       };
     }
@@ -345,8 +421,8 @@ export class SupabaseClient implements DatabaseClient {
     timeTaken: number
   ): Promise<Result<void>> {
     try {
-      const { error } = await this.client
-        .from('user_stats')
+            const { error } = await this.client
+                .from('user_stats')
         .upsert({
           username,
           games_played: 1,
@@ -371,215 +447,224 @@ export class SupabaseClient implements DatabaseClient {
     }
   }
 
-  async getGameSession(gameId: string): Promise<GameSession | null> {
+  async getGameSession(gameId: string): Promise<Result<GameSession>> {
     try {
-      // Join with words table to get the canonical word
-      const { data: rawData, error } = await this.client
+      const { data: session, error } = await this.client
         .from('game_sessions')
-        .select(`
-          id,
-          word_id,
-          guesses,
-          guesses_used,
-          revealed_clues,
-          clue_status,
-          is_complete,
-          is_won,
-          start_time,
-          end_time,
-          state,
-          canonical_word:words!word_id(
-            id,
-            word,
-            definition,
-            first_letter,
-            number_of_letters,
-            equivalents
-          )
-        `)
+        .select('*')
         .eq('id', gameId)
         .single();
-        
+
       if (error) {
-        console.error('Error fetching game session:', {
-          error,
-          gameId,
-          code: error.code,
-          details: error.details
-        });
-        return null;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
-      
-      if (!rawData) {
-        console.error('No game session found:', { gameId });
-        return null;
+
+      if (!session) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Game session not found'
+          }
+        };
       }
-      
-      // Ensure canonical_word is properly typed as a single object
-      const data = {
-        ...rawData,
-        canonical_word: Array.isArray(rawData.canonical_word)
-          ? rawData.canonical_word[0]
-          : rawData.canonical_word
+
+      return {
+        success: true,
+        data: {
+          id: session.id,
+          userId: session.user_id,
+          wordId: session.word_id,
+          word: session.word,
+          startTime: session.start_time,
+          endTime: session.end_time || undefined,
+          guesses: session.guesses || [],
+          hintsRevealed: session.revealed_clues || [],
+          completed: session.is_complete,
+          won: session.is_won,
+          guessesUsed: session.guesses_used,
+          revealedClues: session.revealed_clues,
+          isComplete: session.is_complete,
+          isWon: session.is_won,
+          state: session.state
+        }
       };
-      
-      // Validate canonical word data is present
-      if (!data.canonical_word?.word) {
-        console.error('Game session missing canonical word:', {
-          gameId,
-          wordId: data.word_id,
-          hasCanonicalWord: !!data.canonical_word
-        });
-        return null;
-      }
-      
-      // Construct session with canonical word data
-      const session: GameSession = {
-        id: data.id,
-        word_id: data.word_id,
-        word: data.canonical_word?.word ?? '',
-        start_time: data.start_time,
-        guesses: data.guesses || [],
-        guesses_used: data.guesses_used || 0,
-        revealed_clues: data.revealed_clues || [],
-        clue_status: data.clue_status || {
-          D: 'grey',
-          E: 'grey',
-          F: 'grey',
-          I: 'grey',
-          N: 'grey',
-          E2: 'grey'
-        },
-        is_complete: data.is_complete || false,
-        is_won: data.is_won || false,
-        state: data.state || 'active'
-      };
-      
-      return session;
     } catch (error) {
-      console.error('Error in getGameSession:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        gameId
-      });
-      return null;
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to get game session',
+          details: error
+        }
+      };
     }
   }
 
-  async startGame(): Promise<GameSession> {
+  async startGame(): Promise<Result<GameSession>> {
     try {
-      // Get today's word - this ensures we use the same word for clues and gameplay
-      const dailyWordResult = await this.getDailyWord();
-      if (!dailyWordResult.success || !dailyWordResult.data) {
-        throw new Error('No daily word available');
+      // Get a random word
+      const wordResult = await this.getRandomWord();
+      if (!wordResult.success || !wordResult.data) {
+        return {
+          success: false,
+          error: {
+            code: 'WORD_ERROR',
+            message: 'Failed to get random word',
+            details: wordResult.error
+          }
+        };
       }
-      
-      const dailyWord = dailyWordResult.data;
-      
-      // Debug log to confirm word ID consistency
-      console.log('Starting game with word:', {
-        id: dailyWord.id,
-        wordLength: dailyWord.word.length,
-        source: 'getDailyWord'
-      });
-      
-      // Validate word data before creating session
-      if (!dailyWord.id || !dailyWord.word || !dailyWord.definition) {
-        throw new Error('Invalid word data for game session');
-      }
-      
-      const initialClueStatus: Record<ClueType, string> = {
-        D: 'neutral',
-        E2: 'neutral',
-        F: 'neutral',
-        I: 'neutral',
-        N: 'neutral',
-        E: 'neutral'
-      };
-      
-      const session = {
-        id: randomUUID(),
-        word_id: dailyWord.id,
-        word: dailyWord.word,
-        start_time: new Date().toISOString(),
-        guesses: [],
-        guesses_used: 0,
-        revealed_clues: [],
-        clue_status: initialClueStatus,
-        is_complete: false,
-        is_won: false,
-        state: 'active'
-      };
-      
-      // Create game session with the word
-      const { data, error } = await this.client
+
+      const word = wordResult.data;
+
+      // Create a new game session
+      const { data: session, error } = await this.client
         .from('game_sessions')
-        .insert(session)
-        .select('*, words:word_id(*)') // Join with words table to ensure word exists
+        .insert({
+          id: randomUUID(),
+          user_id: 'anonymous', // TODO: Replace with actual user ID
+          word_id: word.id,
+          word: word.word,
+          start_time: new Date().toISOString(),
+          guesses: [],
+          guesses_used: 0,
+          revealed_clues: [],
+          is_complete: false,
+          is_won: false,
+          state: 'active'
+        })
+        .select()
         .single();
-        
+
       if (error) {
-        console.error('Error creating game session:', {
-          error,
-          wordId: dailyWord.id,
-          sessionId: session.id
-        });
-        throw error;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
-      
-      if (!data) {
-        throw new Error('Failed to create game session');
-      }
-      
-      // Debug log to confirm word consistency
-      console.log('Game session created with word:', {
-        sessionId: data.id,
-        wordId: data.word_id,
-        word: data.word,
-        hasCanonicalWord: !!data.canonical_word?.word,
-        canonicalWord: data.canonical_word?.word,
-        match: data.word === data.canonical_word?.word
-      });
-      
-      return data as unknown as GameSession;
+
+      return {
+        success: true,
+        data: {
+          id: session.id,
+          userId: session.user_id,
+          wordId: session.word_id,
+          word: session.word,
+          startTime: session.start_time,
+          endTime: session.end_time || undefined,
+          guesses: session.guesses || [],
+          hintsRevealed: session.revealed_clues || [],
+          completed: session.is_complete,
+          won: session.is_won,
+          guessesUsed: session.guesses_used,
+          revealedClues: session.revealed_clues,
+          isComplete: session.is_complete,
+          isWon: session.is_won,
+          state: session.state
+        }
+      };
     } catch (error) {
-      console.error('Error in startGame:', error);
-      throw error;
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to start game',
+          details: error
+        }
+      };
     }
   }
 
-  async getClue(session: GameSession, clueType: ClueType): Promise<string | null> {
+  async getClue(session: GameSession, clueType: ClueType): Promise<Result<string>> {
     try {
-      const { data, error } = await this.client
+      const { data: word, error } = await this.client
         .from('words')
         .select('*')
-        .eq('id', session.word_id)
+        .eq('id', session.wordId)
         .single();
-        
+
       if (error) {
-        throw error;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
-      
-      if (!data) {
-        return null;
+
+      if (!word) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Word not found'
+          }
+        };
       }
-      
+
+      let clue: string | null = null;
       switch (clueType) {
-        case 'D': return data.definition;
-        case 'E': return data.etymology;
-        case 'F': return data.first_letter;
-        case 'I': return data.in_a_sentence;
-        case 'N': return data.number_of_letters?.toString() || null;
-        case 'E2': return data.equivalents ? data.equivalents.join(', ') : null;
-        default: return null;
+        case 'D':
+          clue = word.definition;
+          break;
+        case 'E':
+          clue = word.etymology;
+          break;
+        case 'F':
+          clue = word.first_letter;
+          break;
+        case 'I':
+          clue = word.in_a_sentence;
+          break;
+        case 'N':
+          clue = word.number_of_letters?.toString() || null;
+          break;
+        case 'E2':
+          clue = word.equivalents?.join(', ') || null;
+          break;
       }
+
+      if (!clue) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Clue not found'
+          }
+        };
+      }
+
+      return {
+        success: true,
+        data: clue
+      };
     } catch (error) {
-      console.error('Error in getClue:', error);
-      return null;
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to get clue',
+          details: error
+        }
+      };
     }
   }
 
-  async endGame(gameId: string, won: boolean): Promise<void> {
+  async endGame(gameId: string, won: boolean): Promise<Result<void>> {
     try {
       const { error } = await this.client
         .from('game_sessions')
@@ -589,56 +674,121 @@ export class SupabaseClient implements DatabaseClient {
           end_time: new Date().toISOString()
         })
         .eq('id', gameId);
-        
+
       if (error) {
-        throw error;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
+
+      return { success: true };
     } catch (error) {
-      console.error('Error in endGame:', error);
-      throw error;
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to end game',
+          details: error
+        }
+      };
     }
   }
 
-  async getUserByUsername(username: string): Promise<User | null> {
+  async getUserByUsername(username: string): Promise<Result<User | null>> {
     try {
-      const { data, error } = await this.client
+      const { data: user, error } = await this.client
         .from('users')
         .select('*')
         .eq('username', username)
         .single();
-        
+
       if (error) {
-        console.error('Error getting user:', error);
-        return null;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
-      
-      return data;
+
+      if (!user) {
+        return {
+          success: true,
+          data: null
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          id: user.id,
+          username: user.username,
+          email: user.email || undefined,
+          created_at: user.created_at,
+          last_login: user.last_login || undefined
+        }
+      };
     } catch (error) {
-      console.error('Error in getUserByUsername:', error);
-      return null;
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to get user',
+          details: error
+        }
+      };
     }
   }
 
-  async createUser(username: string): Promise<User> {
+  async createUser(username: string): Promise<Result<User>> {
     try {
-      const user = {
-        id: randomUUID(),
-        username,
-        created_at: new Date().toISOString()
-      };
-      
-      const { error } = await this.client
+      const { data: user, error } = await this.client
         .from('users')
-        .insert(user);
-        
+        .insert({
+          id: randomUUID(),
+          username,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
       if (error) {
-        throw error;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
-      
-      return user;
+
+      return {
+        success: true,
+        data: {
+          id: user.id,
+          username: user.username,
+          email: user.email || undefined,
+          created_at: user.created_at,
+          last_login: user.last_login || undefined
+        }
+      };
     } catch (error) {
-      console.error('Error in createUser:', error);
-      throw error;
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to create user',
+          details: error
+        }
+      };
     }
   }
 
@@ -655,13 +805,13 @@ export class SupabaseClient implements DatabaseClient {
       }
 
       const { data: wordData, error: wordError } = await this.client
-        .from('words')
-        .select('*')
+            .from('words')
+            .select('*')
         .eq('id', sessionData.word_id)
-        .single();
+            .single();
 
       if (wordError || !wordData) {
-        throw new Error('Word not found');
+            throw new Error('Word not found');
       }
 
       return {
@@ -703,50 +853,74 @@ export class SupabaseClient implements DatabaseClient {
   }
 
   async checkGuess(wordId: string, guess: string): Promise<boolean> {
-    try {
-      const { data, error } = await this.client
-        .from('words')
-        .select('word')
-        .eq('id', wordId)
-        .single();
+        try {
+            const { data, error } = await this.client
+                .from('words')
+                .select('word')
+                .eq('id', wordId)
+                .single();
         
       if (error) {
-        throw error;
+                throw error;
       }
       
-      return data.word.toLowerCase() === guess.toLowerCase();
+            return data.word.toLowerCase() === guess.toLowerCase();
     } catch (error) {
-      console.error('Error in checkGuess:', error);
-      throw error;
+            console.error('Error in checkGuess:', error);
+            throw error;
+        }
     }
-  }
 
   async getLeaderboard(limit?: number): Promise<Result<LeaderboardEntry[]>> {
     try {
       const { data, error } = await this.client
-        .from('user_stats')
-        .select('username, games_won')
-        .order('games_won', { ascending: false })
+        .from('game_sessions')
+        .select(`
+          id,
+          user_id,
+          word_id,
+          word,
+          guesses_used,
+          end_time,
+          start_time,
+          users!user_id(username)
+        `)
+        .eq('is_complete', true)
+        .eq('is_won', true)
+        .order('guesses_used', { ascending: true })
+        .order('end_time', { ascending: true })
         .limit(limit || 10);
-        
+
       if (error) {
-        throw error;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
-      
+
       return {
         success: true,
-        data: data.map((entry, index) => ({
-          username: entry.username,
-          score: entry.games_won,
-          rank: index + 1
+        data: (data as LeaderboardQueryResult[]).map((entry, index) => ({
+          username: entry.users[0].username,
+          score: 100 - (entry.guesses_used * 10),
+          rank: index + 1,
+          wordId: entry.word_id,
+          word: entry.word,
+          timeTaken: new Date(entry.end_time).getTime() - new Date(entry.start_time).getTime(),
+          guessesUsed: entry.guesses_used
         }))
       };
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'LEADERBOARD_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch leaderboard'
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to get leaderboard',
+          details: error
         }
       };
     }
@@ -757,27 +931,150 @@ export class SupabaseClient implements DatabaseClient {
       const { data, error } = await this.client
         .from('user_stats')
         .select('username, current_streak, longest_streak')
-        .order('longest_streak', { ascending: false })
+        .order('current_streak', { ascending: false })
         .limit(limit || 10);
-        
+
       if (error) {
-        throw error;
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
       }
-      
+
       return {
         success: true,
         data: data.map(entry => ({
           username: entry.username,
-          current_streak: entry.current_streak,
-          longest_streak: entry.longest_streak
+          currentStreak: entry.current_streak,
+          longestStreak: entry.longest_streak,
+          streak: entry.current_streak
         }))
       };
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'STREAK_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch streak leaders'
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to get top streaks',
+          details: error
+        }
+      };
+    }
+  }
+
+  async addLeaderboardEntry(entry: LeaderboardEntry): Promise<Result<void>> {
+    try {
+      const { error } = await this.client
+        .from('game_sessions')
+        .update({
+          score: entry.score,
+          guesses_used: entry.guessesUsed,
+          end_time: new Date().toISOString()
+        })
+        .eq('word_id', entry.wordId);
+
+      if (error) {
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to add leaderboard entry',
+          details: error
+        }
+      };
+    }
+  }
+
+  async markAsUsed(wordId: string): Promise<Result<void>> {
+    try {
+      const { error } = await this.client
+        .from('words')
+        .update({ last_used: new Date().toISOString() })
+        .eq('id', wordId);
+      
+      if (error) {
+        return {
+          success: false,
+          error: {
+            code: 'DB_ERROR',
+            message: error.message,
+            details: error
+          }
+        };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to mark word as used',
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Search for words using case-insensitive matching
+   * @param query The search query (minimum 2 characters)
+   * @returns A list of matching words
+   */
+  async searchWords(query: string): Promise<Result<WordData[]>> {
+    try {
+      if (!query || query.length < 2) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_QUERY',
+            message: 'Search query must be at least 2 characters long'
+          }
+        };
+      }
+
+      const { data, error } = await this.client
+        .from('words')
+        .select('*')
+        .ilike('word', `%${query}%`)
+        .limit(20);
+
+      if (error) {
+        return {
+          success: false,
+          error: {
+            code: 'SEARCH_ERROR',
+            message: error.message
+          }
+        };
+      }
+
+      return {
+        success: true,
+        data: data as WordData[]
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'UNEXPECTED_ERROR',
+          message: error instanceof Error ? error.message : 'An unexpected error occurred'
         }
       };
     }

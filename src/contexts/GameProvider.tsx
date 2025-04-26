@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import type { GameState, GameAction, GameContext as GameContextType, GameStats } from '../config/types.js';
-import type { Word } from '@undefine/shared-types';
+import type { Word, LeaderboardEntry } from '@shared-types/index.js';
 import { useDatabase } from './DatabaseProvider.js';
 import { calculateFuzzyMatch } from '../utils/calculateFuzzyMatch.js';
 
@@ -101,16 +101,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const stats = getGameStats();
     if (stats && state.word && user) {
-      db.addLeaderboardEntry({
+      const entry: LeaderboardEntry = {
         username: user.username || 'anonymous',
         wordId: state.word.id,
         word: state.word.word,
         timeTaken: stats.timeTaken,
         guessesUsed: stats.guessesUsed,
-        fuzzyMatches: stats.fuzzyMatches,
-        hintsUsed: stats.hintsUsed
-      });
-      db.updateUserStats(user.username || 'anonymous');
+        score: 100 - (stats.guessesUsed * 10),
+        rank: 0 // Will be calculated by the database
+      };
+
+      db.addLeaderboardEntry(entry);
+      db.updateUserStats(user.username || 'anonymous', state.isWon, stats.guessesUsed, stats.timeTaken);
       db.markAsUsed(state.word.id);
     }
   }, [state.isComplete]);

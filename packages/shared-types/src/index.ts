@@ -3,8 +3,10 @@
  */
 
 import { HintIndex, Message, GuessHistory, AppGameState, HINT_INDICES, INDEX_TO_HINT, clueTypeToNumber, numberToClueType, isHintAvailable, getHintContent } from './utils/game.js';
-import { WordData, SafeClueData, validateWordData, isWordData, validateClues, validateWordId, validateWordLength, validateFirstLetter } from './utils/word.js';
-import { GameState, ClueType, ClueStatus, GuessResult, WordClues } from './utils/types.js';
+import { validateWordData, isWordData, validateClues, validateWordId, validateWordLength, validateFirstLetter, joinEquivalents, splitEquivalents, getSynonyms, normalizeEquivalents } from './utils/word.js';
+import { GameState, ClueType, ClueStatus, GuessResult, WordClues, WordData, SafeClueData } from './types/core.js';
+import { GameWord, UserStats, GameSession, LeaderboardEntry, StreakLeader, DailyMetrics } from './types/app.js';
+import { DBWord, DBUserStats, DBGameSession, DBLeaderboardEntry, DBStreakLeader, DBDailyMetrics } from './types/db.js';
 
 // Result type for better error handling
 export type Result<T> = {
@@ -17,6 +19,47 @@ export type Result<T> = {
   };
 };
 
+// Core types
+export type {
+  GameState,
+  ClueType,
+  ClueStatus,
+  GuessResult,
+  WordClues,
+  WordData as Word,
+  WordData,
+  SafeClueData
+} from './types/core.js';
+
+// Game types
+export type {
+  HintIndex,
+  Message,
+  GuessHistory,
+  AppGameState
+} from './utils/game.js';
+
+// Application types
+export type {
+  GameWord,
+  UserStats,
+  GameSession,
+  LeaderboardEntry,
+  StreakLeader,
+  DailyMetrics
+} from './types/app.js';
+
+// Database types
+export type {
+  DBWord,
+  DBUserStats,
+  DBGameSession,
+  DBLeaderboardEntry,
+  DBStreakLeader,
+  DBDailyMetrics
+} from './types/db.js';
+
+// User types
 export type User = {
   id: string;
   username: string;
@@ -25,73 +68,26 @@ export type User = {
   last_login?: string;
 };
 
-// Re-export all types and functions
-export type {
-  // Game types
-  HintIndex,
-  Message,
-  GuessHistory,
-  AppGameState,
-  GameState,
-  ClueType,
-  ClueStatus,
-  GuessResult,
-  WordClues,
-  
-  // Word types
-  WordData as Word,
-  WordData,
-  SafeClueData
+// Form types
+export type FormState = {
+  isValid: boolean;
+  errors: string[];
 };
 
-export {
-  // Game functions
-  HINT_INDICES,
-  INDEX_TO_HINT,
-  clueTypeToNumber,
-  numberToClueType,
-  isHintAvailable,
-  getHintContent,
-  
-  // Word functions
-  validateWordData,
-  isWordData,
-  validateClues,
-  validateWordId,
-  validateWordLength,
-  validateFirstLetter
-};
-
-// Database models
-export type GameSession = {
+// Word entry type
+export type WordEntry = {
   id: string;
-  user_id: string;
-  word_id: string;
   word: string;
-  words?: WordData;
-  word_snapshot?: string;
-  start_time: string;
-  end_time?: string;
-  guesses: string[];
-  hints_revealed: number[];
-  completed: boolean;
-  won: boolean;
-  score?: number;
-  guesses_used?: number;
-  revealed_clues?: number[];
-  is_complete?: boolean;
-  is_won?: boolean;
-  state?: string;
+  definition: string;
+  etymology?: string;
+  in_a_sentence?: string;
+  first_letter?: string;
+  number_of_letters?: number;
+  equivalents?: string[];
+  difficulty?: string;
+  created_at?: string;
+  updated_at?: string;
 };
-
-// API interfaces
-export type GameResponse = {
-  gameId: string;
-  word: WordData;
-};
-
-// Game word type
-export type GameWord = WordData;
 
 // Database client interface
 export interface DatabaseClient {
@@ -105,30 +101,55 @@ export interface DatabaseClient {
   getTopStreaks(limit?: number): Promise<Result<StreakLeader[]>>;
   submitScore(gameId: string, score: number): Promise<Result<void>>;
   getNextHint(gameId: string): Promise<Result<string>>;
+  updateUserStats(username: string, won: boolean, guessesUsed: number, timeTaken: number): Promise<Result<void>>;
+  getGameSession(gameId: string): Promise<Result<GameSession>>;
+  startGame(): Promise<Result<GameSession>>;
+  endGame(gameId: string, won: boolean): Promise<Result<void>>;
+  getClue(session: GameSession, clueType: ClueType): Promise<Result<string>>;
+  getUserByUsername(username: string): Promise<Result<User | null>>;
+  createUser(username: string): Promise<Result<User>>;
+  addLeaderboardEntry(entry: LeaderboardEntry): Promise<Result<void>>;
+  markAsUsed(wordId: string): Promise<Result<void>>;
 }
 
-// User stats interface
-export type UserStats = {
-  username: string;
-  games_played: number;
-  games_won: number;
-  average_guesses: number;
-  average_time: number;
-  current_streak: number;
-  longest_streak: number;
-  last_played_at: string;
-};
+// Error handling
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
 
-// Leaderboard entry interface
-export type LeaderboardEntry = {
-  username: string;
-  score: number;
-  rank: number;
-};
+// Game functions
+export {
+  HINT_INDICES,
+  INDEX_TO_HINT,
+  clueTypeToNumber,
+  numberToClueType,
+  isHintAvailable,
+  getHintContent
+} from './utils/game.js';
 
-// Streak leader interface
-export type StreakLeader = {
-  username: string;
-  current_streak: number;
-  longest_streak: number;
-}; 
+// Word functions
+export {
+  validateWordData,
+  isWordData,
+  validateClues,
+  validateWordId,
+  validateWordLength,
+  validateFirstLetter,
+  joinEquivalents,
+  splitEquivalents,
+  getSynonyms,
+  normalizeEquivalents
+} from './utils/word.js';
+
+// Mapper functions
+export {
+  mapDBWordToGameWord,
+  mapDBUserStatsToUserStats,
+  mapDBGameSessionToGameSession,
+  mapDBLeaderboardEntryToLeaderboardEntry,
+  mapDBStreakLeaderToStreakLeader,
+  mapDBDailyMetricsToDailyMetrics
+} from './utils/mappers.js';

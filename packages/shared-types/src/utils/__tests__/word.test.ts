@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeEquivalents } from '../word';
+import { normalizeEquivalents } from '../word.js';
 
 describe('normalizeEquivalents', () => {
   it('should return the array if equivalents is already a string array', () => {

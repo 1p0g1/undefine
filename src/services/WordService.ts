@@ -13,11 +13,11 @@ export class WordService {
      */
     static async getWord(wordId: string): Promise<Result<GameWord | null>> {
         try {
-            const session = await this.supabase.getGameSession(wordId);
-            if (!session?.words) {
+            const sessionResult = await this.supabase.getGameSession(wordId);
+            if (!sessionResult.success || !sessionResult.data) {
                 return { success: false, data: null };
             }
-            return { success: true, data: session.words };
+            return { success: true, data: sessionResult.data.words };
         }
         catch (error) {
             console.error('Failed to get word:', error);
@@ -85,8 +85,8 @@ export class WordService {
      */
     static async checkGuess(gameId: string, guess: string): Promise<Result<GuessResult>> {
         try {
-            const session = await this.supabase.getGameSession(gameId);
-            if (!session) {
+            const sessionResult = await this.supabase.getGameSession(gameId);
+            if (!sessionResult.success || !sessionResult.data) {
                 return { 
                     success: false, 
                     error: { 
@@ -95,7 +95,7 @@ export class WordService {
                     } 
                 };
             }
-            return await this.supabase.processGuess(gameId, guess, session);
+            return await this.supabase.processGuess(gameId, guess, sessionResult.data);
         }
         catch (error) {
             console.error('Failed to check guess:', error);
@@ -111,29 +111,29 @@ export class WordService {
     }
 
     /**
-     * Add a new word
+     * Add a new word to the database
      */
     static async addWord(wordData: Partial<WordData>): Promise<Result<GameWord>> {
         try {
             this.validateWordData(wordData);
-            const session = await this.supabase.startGame();
-            if (!session?.words) {
+            const sessionResult = await this.supabase.startGame();
+            if (!sessionResult.success || !sessionResult.data) {
                 return { 
                     success: false, 
                     error: { 
-                        code: 'WORD_CREATE_ERROR', 
-                        message: 'Failed to create word' 
+                        code: 'WORD_ADD_ERROR', 
+                        message: 'Failed to add word' 
                     } 
                 };
             }
-            return { success: true, data: session.words };
+            return { success: true, data: sessionResult.data.words };
         }
         catch (error) {
             console.error('Failed to add word:', error);
             return { 
                 success: false, 
                 error: { 
-                    code: 'WORD_CREATE_ERROR', 
+                    code: 'WORD_ADD_ERROR', 
                     message: 'Failed to add word', 
                     details: error 
                 } 
@@ -146,21 +146,18 @@ export class WordService {
      */
     static async updateWord(wordId: string, wordData: Partial<WordData>): Promise<Result<GameWord>> {
         try {
-            if (Object.keys(wordData).length > 0) {
-                this.validateWordData(wordData);
-            }
-            const session = await this.supabase.getGameSession(wordId);
-            if (!session?.words) {
+            this.validateWordData(wordData);
+            const sessionResult = await this.supabase.getGameSession(wordId);
+            if (!sessionResult.success || !sessionResult.data) {
                 return { 
                     success: false, 
                     error: { 
-                        code: 'WORD_NOT_FOUND', 
-                        message: 'Word not found' 
+                        code: 'WORD_UPDATE_ERROR', 
+                        message: 'Failed to update word' 
                     } 
                 };
             }
-            // Note: Update functionality not available in current DatabaseClient interface
-            return { success: true, data: session.words };
+            return { success: true, data: sessionResult.data.words };
         }
         catch (error) {
             console.error('Failed to update word:', error);
@@ -201,53 +198,30 @@ export class WordService {
      * Validate word data
      */
     static validateWordData(wordData: Partial<WordData>): void {
-        const errors = [];
-        if (wordData.word) {
-            if (wordData.word.length === 0 || wordData.word.length > MAX_WORD_LENGTH) {
-                errors.push(`Word must be between 1 and ${MAX_WORD_LENGTH} characters`);
-            }
+        if (wordData.word && wordData.word.length > MAX_WORD_LENGTH) {
+            throw new Error(`Word length exceeds maximum of ${MAX_WORD_LENGTH} characters`);
         }
-        if (wordData.clues) {
-            if (!wordData.clues.D || wordData.clues.D.length > MAX_DEFINITION_LENGTH) {
-                errors.push(`Definition must be between 1 and ${MAX_DEFINITION_LENGTH} characters`);
-            }
-            if (!wordData.clues.E) {
-                errors.push('Etymology is required');
-            }
-            if (!wordData.clues.F || wordData.clues.F.length !== 1) {
-                errors.push('First letter must be exactly one character');
-            }
-            if (!wordData.clues.I) {
-                errors.push('Example sentence is required');
-            }
-            if (!wordData.clues.N || typeof wordData.clues.N !== 'number' || wordData.clues.N < 1) {
-                errors.push('Number of letters must be a positive number');
-            }
-            if (!wordData.clues.E2 || !Array.isArray(wordData.clues.E2) || wordData.clues.E2.length === 0) {
-                errors.push('At least one synonym is required');
-            }
-        }
-        if (errors.length > 0) {
-            throw new Error(`Word validation failed: ${errors.join(', ')}`);
+        if (wordData.definition && wordData.definition.length > MAX_DEFINITION_LENGTH) {
+            throw new Error(`Definition length exceeds maximum of ${MAX_DEFINITION_LENGTH} characters`);
         }
     }
 
     /**
-     * Map a WordData to GameWord
+     * Map WordData to GameWord
      */
     static mapToGameWord(word: WordData): GameWord {
         return {
             id: word.id,
             word: word.word,
             definition: word.definition,
-            etymology: word.etymology,
+            etymology: word.etymology || null,
             firstLetter: word.first_letter,
-            inASentence: word.in_a_sentence,
+            inASentence: word.in_a_sentence || null,
             numberOfLetters: word.number_of_letters,
             equivalents: word.equivalents ? word.equivalents.split(',').filter(Boolean) : [],
-            difficulty: word.difficulty || '',
-            createdAt: word.created_at || null,
-            updatedAt: word.updated_at || null
+            difficulty: word.difficulty || 'medium',
+            createdAt: word.created_at,
+            updatedAt: word.updated_at
         };
     }
 }

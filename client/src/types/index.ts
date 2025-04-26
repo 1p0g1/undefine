@@ -1,4 +1,4 @@
-import { WordData } from '@shared/utils/word.js';
+import { WordData } from '@undefine/shared-types/index.js';
 
 export interface Word {
   id: string;
@@ -121,4 +121,55 @@ export const HINT_INDICES = {
 export type { WordData };
 
 // Re-export types from game.ts
-export * from './game.js'; 
+export * from './game.js';
+
+export interface WordEntry extends Word {
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+export interface FormState {
+  word: string;
+  definition: string;
+  etymology?: string;
+  first_letter?: string;
+  in_a_sentence?: string;
+  number_of_letters?: number;
+  equivalents?: string[];
+}
+
+export interface WordResponse {
+  word: WordEntry;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+}
+
+export interface GameSessionResponse {
+  session: GameSession;
+}
+
+export interface UserStatsResponse {
+  stats: UserStats;
+}
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface DailyWord extends Word {
+  date: string;
+} 

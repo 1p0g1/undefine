@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsc || (echo '❌ TypeScript failed to emit files' && exit 1)",
+    "build": "tsc --build --clean && tsc --build",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "prepare": "npm run build",
@@ -21,7 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "verify:render": "rm -rf dist && npx tsc --project tsconfig.json && ls dist/index.d.ts"
+    "verify:build": "test -f dist/index.d.ts && test -f dist/index.js && echo '✅ Shared types build verified'"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
