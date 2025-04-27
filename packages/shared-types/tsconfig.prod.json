@@ -12,7 +12,7 @@
     "sourceMap": true,
     "emitDeclarationOnly": false,
     "noEmit": false,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -21,7 +21,8 @@
     "allowImportingTsExtensions": false,
     "allowJs": true,
     "checkJs": true,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": true,
+    "declarationDir": "dist/types"
   },
   "include": [
     "src/**/*.ts",

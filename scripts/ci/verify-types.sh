@@ -26,4 +26,46 @@ if grep -r "from ['\"].*shared-types/src" --include="*.ts" --include="*.tsx" ../
   exit 1
 fi
 
+# Check for required @types packages
+echo "Checking for required @types packages..."
+cd ../..
+node scripts/check-types.js
+
+# Verify tsconfig settings
+echo "Verifying tsconfig settings..."
+for tsconfig in $(find . -name "tsconfig*.json" -not -path "*/node_modules/*"); do
+  echo "Checking $tsconfig..."
+  
+  # Check for required settings
+  if ! grep -q '"declaration": true' "$tsconfig"; then
+    echo "❌ Missing 'declaration: true' in $tsconfig"
+    exit 1
+  fi
+  
+  if ! grep -q '"skipLibCheck": false' "$tsconfig"; then
+    echo "❌ Missing 'skipLibCheck: false' in $tsconfig"
+    exit 1
+  fi
+  
+  if ! grep -q '"forceConsistentCasingInFileNames": true' "$tsconfig"; then
+    echo "❌ Missing 'forceConsistentCasingInFileNames: true' in $tsconfig"
+    exit 1
+  fi
+  
+  if ! grep -q '"strict": true' "$tsconfig"; then
+    echo "❌ Missing 'strict: true' in $tsconfig"
+    exit 1
+  fi
+  
+  if ! grep -q '"moduleResolution": "NodeNext"' "$tsconfig"; then
+    echo "❌ Missing 'moduleResolution: NodeNext' in $tsconfig"
+    exit 1
+  fi
+  
+  if ! grep -q '"module": "NodeNext"' "$tsconfig"; then
+    echo "❌ Missing 'module: NodeNext' in $tsconfig"
+    exit 1
+  fi
+done
+
 echo "✅ Type definitions verified successfully" 

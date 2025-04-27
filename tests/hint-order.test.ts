@@ -1,5 +1,5 @@
 import { HINT_INDICES } from '../client/src/types/index';
-import { WordData } from '../packages/shared-types/src/utils/word';
+import { WordData } from "@undefine/shared-types";
 
 describe('Hint Order Tests', () => {
   test('HINT_INDICES should have the correct order', () => {

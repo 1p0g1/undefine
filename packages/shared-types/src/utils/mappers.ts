@@ -1,5 +1,5 @@
-import { DBWord, DBUserStats, DBGameSession, DBLeaderboardEntry, DBStreakLeader, DBDailyMetrics } from '../types/db.js';
-import { GameWord, UserStats, GameSession, LeaderboardEntry, StreakLeader, DailyMetrics } from '../types/app.js';
+import type { DBWord, DBUserStats, DBGameSession, DBLeaderboardEntry, DBStreakLeader, DBDailyMetrics } from '../types/db.js';
+import type { GameWord, UserStats, GameSession, LeaderboardEntry, StreakLeader, DailyMetrics } from '../types/app.js';
 import { normalizeEquivalents } from './word.js';
 
 /**
@@ -16,7 +16,6 @@ export function mapDBWordToGameWord(dbWord: DBWord): GameWord {
     firstLetter: dbWord.first_letter,
     inASentence: dbWord.in_a_sentence,
     numberOfLetters: dbWord.number_of_letters,
-    // Use the centralized utility function to normalize equivalents
     equivalents: normalizeEquivalents(dbWord.equivalents),
     difficulty: dbWord.difficulty,
     createdAt: dbWord.created_at,

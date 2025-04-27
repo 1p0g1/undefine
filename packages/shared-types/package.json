@@ -14,7 +14,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist dist-test",
-    "build": "npm run clean && tsc --build tsconfig.prod.json",
+    "build": "npm run clean && tsc -p tsconfig.prod.json && test -f dist/types/index.d.ts || (echo '❌ Failed to generate dist/types/index.d.ts' && exit 1)",
     "build:dev": "npm run clean && tsc --build",
     "build:test": "npm run clean && tsc --build tsconfig.test.json",
     "typecheck": "tsc --noEmit",

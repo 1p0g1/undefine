@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WordService } from '../src/services/WordService';
-import { GameWord } from '../packages/shared-types/src/index.js';
+import { GameWord } from "@undefine/shared-types";
 import { SupabaseClient } from '../src/config/database/SupabaseClient';
 
 const mockWordData = {

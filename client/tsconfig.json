@@ -4,7 +4,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "NodeNext",
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
@@ -33,7 +33,8 @@
     
     /* Source maps */
     "sourceMap": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src", "types", "vite.config.ts"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test", "node_modules"],

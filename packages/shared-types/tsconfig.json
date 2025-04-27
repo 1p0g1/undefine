@@ -9,7 +9,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],

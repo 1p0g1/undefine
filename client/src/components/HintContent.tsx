@@ -1,9 +1,7 @@
-import { getSynonyms } from '@shared/utils/word';
+import { getSynonyms, isWordData, type WordData, type HintIndex, HINT_INDICES } from '@undefine/shared-types';
 import React, { useEffect } from 'react';
-import { DEBUG_CONFIG } from '../config/debug';
+import { DEBUG_CONFIG } from '../config/debug.js';
 import './HintContent.css';
-import { isWordData } from '@undefine/shared-types/utils/word.js';
-import { HINT_INDICES } from '@undefine/shared-types';
 
 interface HintContentProps {
   wordData: WordData;
