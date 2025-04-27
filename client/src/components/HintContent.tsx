@@ -1,23 +1,25 @@
-import { getSynonyms, isWordData, type WordData, type HintIndex, HINT_INDICES } from '@undefine/shared-types';
 import React, { useEffect } from 'react';
+import { HintIndex, GuessResult, WordClues } from '@undefine/shared-types';
 import { DEBUG_CONFIG } from '../config/debug.js';
 import './HintContent.css';
 
 interface HintContentProps {
-  wordData: WordData;
+  wordData: WordClues | null;
   revealedHints: HintIndex[];
   onHintReveal: (hint: HintIndex) => void;
   isGameOver: boolean;
-  hasWon: boolean;
-  guessResults: ('correct' | 'incorrect' | null)[];
+  isCorrect: boolean;
+  guessCount: number;
+  guessResults: GuessResult[];
 }
 
-export const HintContent: React.FC<HintContentProps> = ({ 
-  wordData, 
-  revealedHints, 
+const HintContent: React.FC<HintContentProps> = ({
+  wordData,
+  revealedHints,
   onHintReveal,
   isGameOver,
-  hasWon,
+  isCorrect,
+  guessCount,
   guessResults,
 }) => {
   useEffect(() => {
@@ -30,50 +32,43 @@ export const HintContent: React.FC<HintContentProps> = ({
     }
   }, [wordData, revealedHints, isGameOver]);
 
-  // Early validation
-  if (!isWordData(wordData)) {
-    console.error('Invalid word data structure:', wordData);
+  useEffect(() => {
+    if (isGameOver) {
+      // Reveal all hints when game is over
+      revealedHints.forEach(hint => onHintReveal(hint));
+    }
+  }, [isGameOver, revealedHints, onHintReveal]);
+
+  if (!wordData) {
     return <div className="error">Error: Invalid word data</div>;
   }
 
-  if (!wordData.clues) {
-    console.error('Missing clues in word data:', wordData);
-    return <div className="error">Error: Missing clues</div>;
-  }
-
-  const synonyms = getSynonyms(wordData.clues.E2);
-
-  const hintLetters = Object.values(HINT_INDICES);
-  
   return (
-    <div className="hint-content-container">
-      <div className="hint-content">
-        {hintLetters.map((letter, index) => {
-          let boxClass = 'hint-box';
-          
-          // Only highlight the correct box for the winning guess
-          if (hasWon && index === guessResults.length - 1) {
-            boxClass += ' correct';
-          }
-          // Show incorrect for past guesses
-          else if (index < guessResults.length) {
-            boxClass += ' incorrect';
-          }
-          // Show hint revealed state for current guess
-          else if (index === guessResults.length && revealedHints.includes(letter)) {
-            boxClass += ' hint-revealed';
-          }
-          
-          return (
-            <div
-              key={letter}
-              className={boxClass}
-              onClick={() => onHintReveal(letter)}
-            >
-              {Object.keys(HINT_INDICES)[letter]}
-            </div>
-          );
-        })}
+    <div className="hints-container">
+      <div className="hints-content">
+        <p className={`definition-entry ${revealedHints.includes(0) ? 'visible' : ''}`}>
+          <strong>Definition:</strong> {wordData.D}
+        </p>
+        
+        <p className={`etymology-entry ${revealedHints.includes(1) ? 'visible' : ''}`}>
+          <strong>Etymology:</strong> {wordData.E}
+        </p>
+        
+        <p className={`first-letter-entry ${revealedHints.includes(2) ? 'visible' : ''}`}>
+          <strong>First Letter:</strong> {wordData.F}
+        </p>
+        
+        <p className={`example-entry ${revealedHints.includes(3) ? 'visible' : ''}`}>
+          <strong>Example:</strong> {wordData.I}
+        </p>
+        
+        <p className={`letter-count-entry ${revealedHints.includes(4) ? 'visible' : ''}`}>
+          <strong>Letter Count:</strong> {wordData.N}
+        </p>
+        
+        <p className={`synonyms-entry ${revealedHints.includes(5) ? 'visible' : ''}`}>
+          <strong>Synonyms:</strong> {wordData.E2}
+        </p>
       </div>
     </div>
   );

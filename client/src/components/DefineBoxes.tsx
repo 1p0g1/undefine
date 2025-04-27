@@ -1,22 +1,24 @@
 import React from 'react';
-import { HINT_INDICES, HintIndex } from '../types/index';
+import { HintIndex, HINT_INDICES, GuessResult } from '@undefine/shared-types';
 
 interface DefineBoxesProps {
   revealedHints: HintIndex[];
   onHintReveal: (hint: HintIndex) => void;
   isGameOver: boolean;
-  hasWon: boolean;
-  guessResults: ('correct' | 'incorrect' | null)[];
+  isCorrect: boolean;
+  guessCount: number;
+  guessResults: GuessResult[];
 }
 
 const DefineBoxes: React.FC<DefineBoxesProps> = ({
   revealedHints,
   onHintReveal,
   isGameOver,
-  hasWon,
+  isCorrect,
+  guessCount,
   guessResults,
 }) => {
-  const defineLetters = Object.values(HINT_INDICES);
+  const defineLetters = Object.values(HINT_INDICES) as HintIndex[];
   
   return (
     <div className="define-boxes-container">
@@ -26,7 +28,7 @@ const DefineBoxes: React.FC<DefineBoxesProps> = ({
           let boxClass = 'define-box';
           
           // Only highlight the correct box for the winning guess
-          if (hasWon && index === guessResults.length - 1) {
+          if (isCorrect && index === guessResults.length - 1) {
             boxClass += ' correct';
           }
           // Show incorrect for past guesses

@@ -1,20 +1,23 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "dist-server",
+    "rootDir": "src",
+    "outDir": "dist",
     "declaration": true,
+    "declarationDir": "dist",
     "composite": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "types": ["node"],
     "sourceMap": true,
     "declarationMap": true,
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
     "baseUrl": ".",
     "paths": {
-      "@undefine/shared-types": ["packages/shared-types/src"],
-      "@undefine/shared-types/*": ["packages/shared-types/src/*"],
-      "@shared-types/*": ["packages/shared-types/src/*"]
+      "@undefine/shared-types": ["src"],
+      "@undefine/shared-types/*": ["src/*"],
+      "@shared-types/*": ["src/*"]
     }
   },
   "references": [
@@ -27,7 +30,6 @@
   "exclude": [
     "node_modules",
     "dist",
-    "dist-server",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",

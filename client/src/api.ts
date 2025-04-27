@@ -1,8 +1,7 @@
-import { WordData } from '@shared/utils/word.js';
+import { type Word, type GuessResult } from '@undefine/shared-types/index.js';
 import { getApiUrl } from './config.js';
-import { GuessResult } from './types/index.js';
 
-export const fetchWord = async (): Promise<WordData> => {
+export const fetchWord = async (): Promise<Word> => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 

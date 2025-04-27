@@ -1,12 +1,8 @@
 import * as React from 'react';
-import { WordData } from '@shared/utils/word.js';
+import { WordData, HintIndex, GuessResult } from '@undefine/shared-types';
 
 export interface GameState {
-  currentWord?: {
-    word: string;
-    definition: string;
-    part_of_speech: string;
-  };
+  wordData: WordData | null;
   guesses: string[];
   isCorrect: boolean;
   isGameOver: boolean;
@@ -14,6 +10,9 @@ export interface GameState {
   error?: string;
   timer: number;
   hintLevel: number;
+  revealedHints: HintIndex[];
+  guessCount: number;
+  guessResults: GuessResult[];
 }
 
 export interface GameAction {
@@ -34,6 +33,6 @@ export enum GameActionTypes {
 }
 
 export interface GameContext {
-  state: WordData | null;
+  state: GameState;
   dispatch: React.Dispatch<GameAction>;
 } 

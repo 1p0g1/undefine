@@ -1,17 +1,17 @@
-import { UserStats } from '../types/index';
+import { type UserStats } from '@undefine/shared-types/index.js';
 
 interface StatsProps {
   stats: UserStats;
 }
 
-export default function Stats({ stats }: StatsProps) {
+export const Stats = ({ stats }: StatsProps) => {
   return (
     <div className="stats">
       <h2>Your Stats</h2>
       <div className="stats-grid">
         <div className="stat">
           <h3>Total Games</h3>
-          <p>{stats.totalGames}</p>
+          <p>{stats.gamesPlayed}</p>
         </div>
         <div className="stat">
           <h3>Games Won</h3>
@@ -20,6 +20,10 @@ export default function Stats({ stats }: StatsProps) {
         <div className="stat">
           <h3>Average Guesses</h3>
           <p>{stats.averageGuesses.toFixed(1)}</p>
+        </div>
+        <div className="stat">
+          <h3>Average Time</h3>
+          <p>{Math.round(stats.averageTime / 1000)}s</p>
         </div>
         <div className="stat">
           <h3>Current Streak</h3>
@@ -32,4 +36,4 @@ export default function Stats({ stats }: StatsProps) {
       </div>
     </div>
   );
-} 
+}; 

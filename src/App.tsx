@@ -1,14 +1,27 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ToastProvider, useToast } from './components/Toast.js';
 import DefineHints from './components/DefineHints.js';
+import { type Word, type GuessResult, type HintIndex, HINT_INDICES } from '@undefine/shared-types/index.js';
+import { getRandomWord, submitGuess } from './api.js';
 import DefineBoxes from './components/DefineBoxes.js';
-import GameOverModal from './components/GameOverModal.js';
-import { useGameState } from '../client/src/hooks/useGameState.js';
-import { WordData, HintIndex } from './types/game.js';
+import { HintContent } from './components/HintContent.js';
+import { Settings } from './components/Settings.js';
+import { Stats } from './components/Stats.js';
+import { useGameState } from './hooks/useGameState.js';
 import './App.css';
+import GameOverModal from './components/GameOverModal.js';
+
+interface GameState {
+  wordData: Word | null;
+  isGameOver: boolean;
+  isCorrect: boolean;
+  guessCount: number;
+  revealedHints: number[];
+  guessResults: ("correct" | "incorrect" | null)[];
+}
 
 // TODO: Replace with actual API call
-const mockWordData: WordData = {
+const mockWordData: Word = {
   id: '1',
   word: 'example',
   clues: {
@@ -30,7 +43,7 @@ function Game() {
     startNewGame(mockWordData);
   }, [startNewGame]);
 
-  const handleHintReveal = (hintIndex: HintIndex) => {
+  const handleHintReveal = (hintIndex: number) => {
     revealHint(hintIndex);
     toast.info('Hint revealed!');
   };

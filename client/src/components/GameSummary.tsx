@@ -1,5 +1,5 @@
 import React from 'react';
-import type { WordData } from '../types/index';
+import type { WordData } from '@undefine/shared-types';
 
 interface GameSummaryProps {
   wordData: WordData;

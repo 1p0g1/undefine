@@ -5,17 +5,18 @@
   "private": true,
   "description": "Shared type definitions for the Undefine project",
   "main": "dist/index.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc -p tsconfig.prod.json && [ -f dist/types/index.d.ts ] || (echo '❌ Failed to generate dist/types/index.d.ts' && exit 1)",
+    "prebuild": "tsc --noEmit",
+    "build": "npm run clean && tsc -p tsconfig.prod.json && npm run verify:build",
     "build:dev": "npm run clean && tsc --build",
     "build:test": "npm run clean && tsc --build tsconfig.test.json",
     "test": "vitest run",
@@ -23,7 +24,7 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "verify:build": "[ -f dist/types/index.d.ts ] && echo '✅ Types built successfully!' || (echo '❌ Types build failed!' && exit 1)"
+    "verify:build": "[ -f dist/types/index.d.ts ] || (echo '❌ Types build failed!' && exit 1)"
   },
   "keywords": [],
   "author": "",

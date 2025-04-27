@@ -3,13 +3,15 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "NodeNext",
+    "module": "ESNext",
     "skipLibCheck": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
     /* Bundler mode */
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "composite": true,
@@ -27,8 +29,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@undefine/shared-types": ["../packages/shared-types/dist"],
-      "@undefine/shared-types/*": ["../packages/shared-types/dist/*"]
+      "@undefine/shared-types": ["../packages/shared-types/dist/types"],
+      "@undefine/shared-types/*": ["../packages/shared-types/dist/types/*"]
     },
     
     /* Source maps */
@@ -39,8 +41,7 @@
   "include": ["src", "types", "vite.config.ts"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test", "node_modules"],
   "references": [
-    { "path": "./tsconfig.node.json" },
-    { "path": "../packages/shared-types" }
+    { "path": "./tsconfig.node.json" }
   ],
   "ts-node": {
     "transpileOnly": true

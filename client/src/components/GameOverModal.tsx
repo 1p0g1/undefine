@@ -1,51 +1,41 @@
 import React from 'react';
 import './GameOverModal.css';
-import HintContent from './HintContent.js';
-
-// Define WordData interface here instead of importing it
-interface WordData {
-  id: string;
-  word: string;
-  clues: {
-    D: string;  // Definition
-    E: string;  // Etymology
-    F: string;  // First letter
-    I: string;  // In a sentence
-    N: number;  // Number of letters
-    E2: string[];  // Equivalents/synonyms
-  };
-}
+import { WordData } from '@undefine/shared-types';
 
 interface GameOverModalProps {
   isOpen: boolean;
-  wordData: WordData;
+  onClose: () => void;
   isCorrect: boolean;
-  onClose?: () => void;
+  wordData: WordData;
+  guessCount: number;
+  timeTaken: number;
+  onPlayAgain: () => void;
 }
 
-const GameOverModal: React.FC<GameOverModalProps> = ({ isOpen, wordData, isCorrect, onClose }) => {
+const GameOverModal: React.FC<GameOverModalProps> = ({
+  isOpen,
+  onClose,
+  isCorrect,
+  wordData,
+  guessCount,
+  timeTaken,
+  onPlayAgain
+}) => {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <div className="modal-header">
-          <h2 className="word-title">{wordData.word}</h2>
-          {onClose && (
-            <button className="modal-close" onClick={onClose}>
-              ×
-            </button>
-          )}
-        </div>
-        <div className="modal-body">
-          <p className="game-result">
-            {isCorrect ? 'Congratulations! You got it!' : 'Better luck next time!'}
-          </p>
-          <HintContent 
-            wordData={wordData}
-            revealedHints={[0, 1, 2, 3, 4, 5]} // Show all hints in summary
-            isGameOver={true}
-          />
+        <h2>{isCorrect ? 'Congratulations!' : 'Game Over'}</h2>
+        <p>
+          {isCorrect
+            ? `You won in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}!`
+            : `The word was: ${wordData.word}`}
+        </p>
+        <p>Time taken: {timeTaken} seconds</p>
+        <div className="modal-buttons">
+          <button onClick={onPlayAgain}>Play Again</button>
+          <button onClick={onClose}>Close</button>
         </div>
       </div>
     </div>

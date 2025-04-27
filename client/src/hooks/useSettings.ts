@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '../config.js';
-import useTheme from './useTheme.js';
+import { useTheme } from './useTheme.js';
 
 // Settings interfaces
 export interface NotificationSettings {
@@ -197,31 +197,19 @@ export const useSettings = () => {
             if (data.settings.theme) {
               setTheme(data.settings.theme);
             }
-            
-            setIsLoading(false);
-            return;
+          }
+        } else {
+          // If API fails, try to load from localStorage
+          const storedSettings = loadSettingsFromStorage();
+          if (storedSettings) {
+            const validatedSettings = validateSettings(storedSettings);
+            setSettingsState(validatedSettings);
           }
         }
-        
-        // If API fails, try localStorage
-        const storedSettings = loadSettingsFromStorage();
-        if (storedSettings) {
-          const validatedSettings = validateSettings(storedSettings);
-          setSettingsState(validatedSettings);
-          setIsLoading(false);
-          return;
-        }
-        
-        // If all else fails, use default settings
-        setSettingsState(DEFAULT_SETTINGS);
-        saveSettingsToStorage(DEFAULT_SETTINGS);
       } catch (err) {
         console.error('Failed to initialize settings:', err);
-        setError('Failed to load settings. Using defaults instead.');
-        
-        // Use default settings on error
+        // If both API and localStorage fail, use defaults
         setSettingsState(DEFAULT_SETTINGS);
-        saveSettingsToStorage(DEFAULT_SETTINGS);
       } finally {
         setIsLoading(false);
       }
