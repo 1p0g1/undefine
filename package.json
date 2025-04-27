@@ -15,7 +15,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "./scripts/build.sh",
+    "build": "npm run clean && tsc -p tsconfig.prod.json && npm run verify:build",
     "build:dev": "npm run clean && tsc --build",
     "build:test": "npm run clean && tsc --build tsconfig.test.json",
     "test": "vitest run",
