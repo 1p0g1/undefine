@@ -7,7 +7,7 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "src"
+    "client"
   ],
   "scripts": {
     "setup": "node scripts/setup-monorepo.js",
