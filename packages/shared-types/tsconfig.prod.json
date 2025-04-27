@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
+    "declarationDir": "dist/types",
     "declaration": true,
     "declarationMap": true,
     "composite": true,
@@ -21,8 +22,7 @@
     "allowImportingTsExtensions": false,
     "allowJs": true,
     "checkJs": true,
-    "verbatimModuleSyntax": true,
-    "declarationDir": "dist/types"
+    "verbatimModuleSyntax": true
   },
   "include": [
     "src/**/*.ts",

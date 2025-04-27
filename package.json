@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "setup": "node scripts/setup-monorepo.js",
-    "prebuild": "node scripts/check-types.js && npm run build:types && npm run typecheck:server && npm run lint > /dev/null 2>&1 || echo '⚠️ Skipping lint errors...'",
+    "prebuild": "./scripts/prebuild.sh && node scripts/check-types.js && npm run verify:types",
     "typecheck": "npm run build:types && tsc --noEmit",
     "typecheck:server": "npm run build:types && tsc -p src/tsconfig.server.json --noEmit",
     "typecheck:client": "cd client && npm run typecheck",
@@ -33,7 +33,7 @@
     "dev:client": "cd client && npm run dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "vitest",
+    "test": "npm run test:types && npm run test:client",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
@@ -43,7 +43,11 @@
     "test:debug": "vitest run src/tests/debug-mode.test.ts",
     "verify:build": "node scripts/verify-build.js",
     "ci:verify-types": "./scripts/ci/verify-types.sh",
-    "check:types": "node scripts/check-types.js"
+    "check:types": "node scripts/check-types.js",
+    "test:types": "cd packages/shared-types && npm test",
+    "test:client": "cd client && npm test",
+    "typecheck:types": "cd packages/shared-types && npm run typecheck",
+    "verify:types": "cd packages/shared-types && ./scripts/verify-types.sh"
   },
   "ts-node": {
     "esm": true,

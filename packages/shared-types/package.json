@@ -3,27 +3,31 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "description": "Shared type definitions for the Undefine project",
+  "main": "dist/index.js",
+  "types": "dist/types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
   },
   "scripts": {
-    "clean": "rm -rf dist dist-test",
-    "build": "npm run clean && tsc -p tsconfig.prod.json && test -f dist/types/index.d.ts || (echo '❌ Failed to generate dist/types/index.d.ts' && exit 1)",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc -p tsconfig.prod.json && [ -f dist/types/index.d.ts ] || (echo '❌ Failed to generate dist/types/index.d.ts' && exit 1)",
     "build:dev": "npm run clean && tsc --build",
     "build:test": "npm run clean && tsc --build tsconfig.test.json",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "verify:build": "npm run build && echo '✅ Production build OK!'"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "verify:build": "[ -f dist/types/index.d.ts ] && echo '✅ Types built successfully!' || (echo '❌ Types build failed!' && exit 1)"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
