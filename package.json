@@ -15,21 +15,22 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc -p tsconfig.prod.json && npm run verify:build",
+    "prebuild": "tsc --noEmit",
+    "build": "npm run clean && tsc --build tsconfig.prod.json --force && [ -f dist/index.d.ts ] || (echo '❌ Types build failed!' && exit 1)",
     "build:dev": "npm run clean && tsc --build",
     "build:test": "npm run clean && tsc --build tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "verify:build": "[ -f dist/types/index.d.ts ] || (echo '❌ Types build failed!' && exit 1)"
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.2",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "eslint": "^8.56.0",
@@ -37,8 +38,7 @@
     "vitest": "^1.2.2"
   },
   "dependencies": {
-    "react-router-dom": "^7.5.2",
-    "react-toastify": "^11.0.5",
+    "uuid": "^11.1.0",
     "zod": "^3.24.3"
   }
 }

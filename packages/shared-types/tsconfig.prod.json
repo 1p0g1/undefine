@@ -3,10 +3,10 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "declarationDir": "dist/types",
+    "declarationDir": "dist",
     "declaration": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "target": "ES2022",
     "skipLibCheck": false,
     "esModuleInterop": true,
@@ -17,13 +17,14 @@
     "composite": true,
     "allowJs": true,
     "checkJs": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "sourceMap": true,
     "removeComments": false,
     "preserveConstEnums": true,
-    "emitDeclarationOnly": true,
+    "emitDeclarationOnly": false,
     "isolatedModules": false,
-    "noEmit": false
+    "noEmit": false,
+    "incremental": true
   },
   "include": [
     "src/**/*.ts",

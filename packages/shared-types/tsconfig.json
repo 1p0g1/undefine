@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist",
-    "declarationDir": "dist/types",
+    "declarationDir": "dist",
     "rootDir": "src",
     "strict": true,
     "skipLibCheck": false,
