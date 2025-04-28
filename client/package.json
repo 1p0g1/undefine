@@ -14,7 +14,7 @@
     "audit:prod": "npm audit --production && npm outdated",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "clean": "rm -rf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "node ../scripts/check-vite-env.js && npm run clean"
   },
   "dependencies": {
     "@supabase/auth-helpers-react": "^0.4.2",
