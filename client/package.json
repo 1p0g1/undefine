@@ -22,6 +22,7 @@
     "@undefine/shared-types": "1.0.0",
     "jsdom": "^24.0.0",
     "react": "^18.2.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {

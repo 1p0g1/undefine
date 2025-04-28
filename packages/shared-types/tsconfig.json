@@ -5,9 +5,8 @@
     "moduleResolution": "NodeNext",
     "composite": true,
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "outDir": "dist",
-    "declarationDir": "dist",
     "rootDir": "src",
     "strict": true,
     "skipLibCheck": false,
@@ -22,7 +21,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "emitDeclarationOnly": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": false,
+    "noEmit": false
   },
   "include": ["src/**/*"],
   "exclude": ["src/**/__tests__/**/*", "**/*.test.ts", "**/*.spec.ts", "node_modules", "dist"]

@@ -1,4 +1,4 @@
-import { type UserStats } from '@undefine/shared-types/index.js';
+import { type UserStats } from '@undefine/shared-types';
 
 interface StatsProps {
   stats: UserStats;

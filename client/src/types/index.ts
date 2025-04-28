@@ -1,4 +1,4 @@
-import { WordData } from '@undefine/shared-types/index.js';
+import { WordData } from '@undefine/shared-types';
 
 export interface Word {
   id: string;

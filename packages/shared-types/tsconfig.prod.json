@@ -3,7 +3,6 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "declarationDir": "dist",
     "declaration": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -15,8 +14,8 @@
     "types": ["node"],
     "jsx": "preserve",
     "composite": true,
-    "allowJs": true,
-    "checkJs": true,
+    "allowJs": false,
+    "checkJs": false,
     "declarationMap": false,
     "sourceMap": true,
     "removeComments": false,
@@ -24,7 +23,8 @@
     "emitDeclarationOnly": false,
     "isolatedModules": false,
     "noEmit": false,
-    "incremental": true
+    "incremental": true,
+    "allowImportingTsExtensions": false
   },
   "include": [
     "src/**/*.ts",

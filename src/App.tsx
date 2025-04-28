@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ToastProvider, useToast } from './components/Toast.js';
 import DefineHints from './components/DefineHints.js';
-import { type Word, type GuessResult, type HintIndex, HINT_INDICES } from '@undefine/shared-types/index.js';
+import { type Word, type GuessResult, type HintIndex, HINT_INDICES } from '@undefine/shared-types';
 import { getRandomWord, submitGuess } from './api.js';
 import DefineBoxes from './components/DefineBoxes.js';
 import { HintContent } from './components/HintContent.js';
