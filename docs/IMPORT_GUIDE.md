@@ -15,6 +15,7 @@
   - Pass connection to all `executeQuery` calls
 
 ### Types
+- Import shared types from `@undefine/shared-types`
 - All services export their own interfaces
 - Database query results are typed using generics with `executeQuery<T>`
 
@@ -22,25 +23,32 @@
 
 ### Service Imports
 ```typescript
-import { ServiceName } from '../services/ServiceName.js';
+import { ServiceName } from '../services/ServiceName';
 ```
 
 ### Database Imports
 ```typescript
-import { connectionManager } from '../config/snowflake.js';
+import { connectionManager } from '../config/snowflake';
 ```
 
 ### Type Imports
 ```typescript
-import type { InterfaceName } from '../services/ServiceName.js';
+import type { InterfaceName } from '../services/ServiceName';
+```
+
+### Shared Types Imports
+```typescript
+import { type Word, type GuessResult } from '@undefine/shared-types';
 ```
 
 ## Best Practices
 
-1. Always use `.js` extension in imports
+1. **NEVER use `.js` extension in imports** - this will cause build failures
 2. Use relative paths from the importing file
 3. Import types using `type` keyword when possible
 4. Group imports by category (core, database, types)
 5. Use named exports for better tree-shaking
 6. Always handle database connections in try/finally blocks
-7. Type all database query results 
+7. Type all database query results
+8. Import shared types from `@undefine/shared-types` package
+9. Follow the import path standardization in Clean_Up.md 

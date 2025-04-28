@@ -16,6 +16,24 @@ N: Number of Letters
 
 E2: Equivalents (Synonyms)
 
+## Project Structure
+
+The project follows a monorepo structure with npm workspaces:
+
+- **client**: React frontend application
+- **server**: Express backend API
+- **packages/shared-types**: Shared TypeScript type definitions
+- **packages/***: Other shared packages
+
+## Type System
+
+The project uses a centralized type system in the `packages/shared-types` package:
+
+- All shared types are defined in this package
+- Types are exported and imported by both client and server
+- Type definitions must be built before the rest of the application
+- Import paths should use `@undefine/shared-types` without `/index.js`
+
 🔧 Backend Architecture
 
 Tech Stack
@@ -142,6 +160,9 @@ Daily stats table for top scorers.
 - All imports should omit extensions entirely:
   ✅ `import { GameService } from './services/GameService'`
 - This project uses `ts-node/esm` or `tsx`, which resolves `.ts` files natively.
+- Import shared types from `@undefine/shared-types` without `/index.js`:
+  ✅ `import { type Word } from '@undefine/shared-types'`
+  ❌ `import { type Word } from '@undefine/shared-types/index.js'`
 
 Why? Using `.js` will crash runtime unless you're compiling to `.js` files.
 
