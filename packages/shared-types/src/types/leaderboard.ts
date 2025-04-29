@@ -1,4 +1,4 @@
-export interface LeaderboardEntry {
+export interface ExtendedLeaderboardEntry {
   username: string;
   score: number;
   rank: number;
@@ -10,7 +10,7 @@ export interface LeaderboardEntry {
 }
 
 export interface LeaderboardState {
-  entries: LeaderboardEntry[];
+  entries: ExtendedLeaderboardEntry[];
   isLoading: boolean;
   error: string | null;
   lastUpdated: string | null;

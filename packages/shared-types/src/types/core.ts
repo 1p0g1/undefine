@@ -3,7 +3,37 @@
  */
 
 // Game core types
-export type GameState = 'active' | 'completed' | 'expired';
+export type GameStateStatus = 'active' | 'completed' | 'expired';
+
+// Game state type
+export interface GameState {
+  wordData: WordData | null;
+  guesses: string[];
+  isCorrect: boolean;
+  isGameOver: boolean;
+  loading: boolean;
+  error?: string;
+  timer: number;
+  hintLevel: number;
+  revealedHints: HintIndex[];
+  guessCount: number;
+  guessResults: GuessResult[];
+}
+
+// Word type
+export interface Word {
+  id: string;
+  word: string;
+  definition: string;
+  etymology?: string;
+  first_letter: string;
+  in_a_sentence?: string;
+  number_of_letters: number;
+  equivalents?: string[];
+  difficulty?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // Clue types
 export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
@@ -11,6 +41,9 @@ export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
 export type ClueStatus = {
   [key in ClueType]: 'neutral' | 'grey' | 'correct' | 'incorrect';
 };
+
+// Hint index type
+export type HintIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
 // Guess result type
 export interface GuessResult {
@@ -56,4 +89,29 @@ export interface SafeClueData {
   I: string | null;
   N: number;
   E2: string | null;
+}
+
+// Message type for notifications
+export interface Message {
+  type: 'success' | 'error' | 'info' | 'warning';
+  text: string;
+  duration?: number;
+}
+
+// Guess history type
+export interface GuessHistory {
+  guess: string;
+  result: GuessResult;
+  timestamp: string;
+}
+
+// Leaderboard entry type
+export interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  score: number;
+  gamesWon: number;
+  gamesPlayed: number;
+  averageGuesses: number;
+  lastPlayed: string;
 } 

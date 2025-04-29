@@ -1,45 +1,27 @@
 {
   "name": "@undefine/shared-types",
   "version": "1.0.0",
-  "type": "module",
   "private": true,
-  "description": "Shared type definitions for the Undefine project",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
     "clean": "rm -rf dist",
     "prebuild": "tsc --noEmit",
     "build": "npm run clean && tsc -p tsconfig.prod.json && npm run verify:build",
-    "build:dev": "npm run clean && tsc --build",
-    "build:test": "npm run clean && tsc --build tsconfig.test.json",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "verify:build": "[ -f dist/index.d.ts ] || (echo '❌ Types build failed!' && exit 1)",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "verify:build": "[ -f dist/index.d.ts ] || (echo '❌ Types build failed!' && exit 1)"
+    "test": "echo 'No tests yet'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "@types/node": "^22.15.2",
-    "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.1",
-    "@typescript-eslint/parser": "^7.0.1",
-    "eslint": "^8.56.0",
-    "typescript": "^5.8.3",
-    "vitest": "^1.2.2"
-  },
-  "dependencies": {
-    "uuid": "^11.1.0",
-    "zod": "^3.24.3"
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   }
 }

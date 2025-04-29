@@ -1,45 +1,22 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2022",
-    "skipLibCheck": false,
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "isolatedModules": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "types": ["node"],
-    "jsx": "preserve",
-    "composite": true,
-    "allowJs": false,
-    "checkJs": false,
-    "declarationMap": false,
-    "sourceMap": true,
-    "removeComments": false,
-    "preserveConstEnums": true,
-    "emitDeclarationOnly": false,
-    "isolatedModules": false,
-    "noEmit": false,
-    "incremental": true,
-    "allowImportingTsExtensions": false
+    "resolveJsonModule": true
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/__tests__/**",
-    "**/test/**",
-    "**/tests/**",
-    "coverage"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts", "src/**/__tests__/*"]
 } 

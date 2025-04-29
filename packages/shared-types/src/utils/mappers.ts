@@ -1,6 +1,7 @@
 import type { DBWord, DBUserStats, DBGameSession, DBLeaderboardEntry, DBStreakLeader, DBDailyMetrics } from '../types/db.js';
 import type { GameWord, UserStats, GameSession, LeaderboardEntry, StreakLeader, DailyMetrics } from '../types/app.js';
 import { normalizeEquivalents } from './word.js';
+import type { WordData, WordClues } from '../types/core.js';
 
 /**
  * Safely maps a DBWord to a GameWord, ensuring equivalents is always a string[]
@@ -88,4 +89,29 @@ export function mapDBDailyMetricsToDailyMetrics(dbMetrics: DBDailyMetrics): Dail
     averageGuesses: dbMetrics.average_guesses,
     averageTime: dbMetrics.average_time
   };
-} 
+}
+
+/**
+ * Maps a full WordData object to a WordClues object for frontend use.
+ * This ensures we only pass the necessary clue data to the UI components.
+ */
+export const mapWordDataToWordClues = (data: WordData): WordClues => {
+  return {
+    D: data.definition,
+    E: data.etymology,
+    F: data.first_letter,
+    I: data.in_a_sentence,
+    N: data.number_of_letters,
+    E2: data.equivalents || null
+  };
+};
+
+/**
+ * Type guard to check if an object is a valid WordClues object
+ */
+export const isWordClues = (obj: unknown): obj is WordClues => {
+  if (!obj || typeof obj !== 'object') return false;
+  
+  const requiredFields: (keyof WordClues)[] = ['D', 'E', 'F', 'I', 'N', 'E2'];
+  return requiredFields.every(field => field in obj);
+}; 

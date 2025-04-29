@@ -2,13 +2,93 @@
  * Shared types for Un-Define game
  */
 
-import { HINT_INDICES, INDEX_TO_HINT, clueTypeToNumber, numberToClueType, isHintAvailable, getHintContent } from './utils/game.js';
-import { validateWordData, isWordData, validateClues, validateWordId, validateWordLength, validateFirstLetter, joinEquivalents, splitEquivalents, getSynonyms, normalizeEquivalents } from './utils/word.js';
-import type { GameState, ClueType, ClueStatus, GuessResult, WordClues, WordData, SafeClueData } from './types/core.js';
-import type { GameWord, UserStats, GameSession, LeaderboardEntry, StreakLeader, DailyMetrics } from './types/app.js';
-import type { DBWord, DBUserStats, DBGameSession, DBLeaderboardEntry, DBStreakLeader, DBDailyMetrics } from './types/db.js';
-import type { HintIndex, Message, GuessHistory, AppGameState } from './utils/game.js';
-import { unwrapResult, unwrapResultOr, mapResult, isSuccess, isError } from './utils/result.js';
+// Import types needed for the DatabaseClient interface
+import type { 
+  WordData, 
+  ClueType, 
+  GuessResult, 
+  Word,
+  GameState,
+  ClueStatus,
+  WordClues,
+  SafeClueData,
+  Message,
+  GuessHistory
+} from './types/core.js';
+import type { 
+  GameSession, 
+  UserStats, 
+  LeaderboardEntry, 
+  StreakLeader,
+  GameWord,
+  DailyMetrics
+} from './types/app.js';
+import type {
+  DBWord,
+  DBUserStats,
+  DBGameSession,
+  DBLeaderboardEntry,
+  DBStreakLeader,
+  DBDailyMetrics
+} from './types/db.js';
+import type {
+  ExtendedLeaderboardEntry,
+  LeaderboardState,
+  LeaderboardFilters
+} from './types/leaderboard.js';
+import type { HintIndex } from './utils/game.js';
+import { HINT_INDICES } from './utils/game.js';
+
+// Core types
+export type {
+  GameState,
+  WordData,
+  ClueType,
+  GuessResult,
+  Word,
+  WordClues,
+  Message,
+  GuessHistory,
+  ClueStatus,
+  SafeClueData
+};
+
+// Application types
+export type {
+  GameWord,
+  UserStats,
+  GameSession,
+  LeaderboardEntry,
+  StreakLeader,
+  DailyMetrics
+};
+
+// Database types
+export type {
+  DBWord,
+  DBUserStats,
+  DBGameSession,
+  DBLeaderboardEntry,
+  DBStreakLeader,
+  DBDailyMetrics
+};
+
+// Leaderboard types
+export type {
+  ExtendedLeaderboardEntry,
+  LeaderboardState,
+  LeaderboardFilters
+};
+
+// Game utilities and types
+export type { HintIndex };
+export { HINT_INDICES };
+
+// Re-export all utility functions and types
+export * from './utils/game.js';
+export * from './utils/result.js';
+export * from './utils/word.js';
+export * from './utils/mappers.js';
 
 // Result type for better error handling
 export type Result<T> = {
@@ -21,47 +101,7 @@ export type Result<T> = {
   };
 };
 
-// Core types
-export type {
-  GameState,
-  ClueType,
-  ClueStatus,
-  GuessResult,
-  WordClues,
-  WordData as Word,
-  WordData,
-  SafeClueData
-} from './types/core.js';
-
-// Game types
-export type {
-  HintIndex,
-  Message,
-  GuessHistory,
-  AppGameState
-} from './utils/game.js';
-
-// Application types
-export type {
-  GameWord,
-  UserStats,
-  GameSession,
-  LeaderboardEntry,
-  StreakLeader,
-  DailyMetrics
-} from './types/app.js';
-
-// Database types
-export type {
-  DBWord,
-  DBUserStats,
-  DBGameSession,
-  DBLeaderboardEntry,
-  DBStreakLeader,
-  DBDailyMetrics
-} from './types/db.js';
-
-// User types
+// User type
 export type User = {
   id: string;
   username: string;
@@ -90,6 +130,36 @@ export type WordEntry = {
   created_at?: string;
   updated_at?: string;
 };
+
+// API types
+export type PaginationParams = {
+  page: number;
+  limit: number;
+};
+
+export type PaginationInfo = {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+};
+
+export type ApiResponse<T> = {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+};
+
+export type WordResponse = ApiResponse<WordData>;
+export type LeaderboardResponse = ApiResponse<LeaderboardEntry[]>;
+export type GameSessionResponse = ApiResponse<GameSession>;
+export type UserStatsResponse = ApiResponse<UserStats>;
+export type ErrorResponse = ApiResponse<never>;
+export type DailyWord = WordData;
 
 // Database client interface
 export interface DatabaseClient {
@@ -121,46 +191,3 @@ export class ValidationError extends Error {
     this.name = 'ValidationError';
   }
 }
-
-// Game functions
-export {
-  HINT_INDICES,
-  INDEX_TO_HINT,
-  clueTypeToNumber,
-  numberToClueType,
-  isHintAvailable,
-  getHintContent
-} from './utils/game.js';
-
-// Word functions
-export {
-  validateWordData,
-  isWordData,
-  validateClues,
-  validateWordId,
-  validateWordLength,
-  validateFirstLetter,
-  joinEquivalents,
-  splitEquivalents,
-  getSynonyms,
-  normalizeEquivalents
-} from './utils/word.js';
-
-// Result utility functions
-export {
-  unwrapResult,
-  unwrapResultOr,
-  mapResult,
-  isSuccess,
-  isError
-} from './utils/result.js';
-
-// Mapper functions
-export {
-  mapDBWordToGameWord,
-  mapDBUserStatsToUserStats,
-  mapDBGameSessionToGameSession,
-  mapDBLeaderboardEntryToLeaderboardEntry,
-  mapDBStreakLeaderToStreakLeader,
-  mapDBDailyMetricsToDailyMetrics
-} from './utils/mappers.js';
