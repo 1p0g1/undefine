@@ -1,4 +1,6 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
@@ -20,9 +22,15 @@
     "paths": {
       "@/*": ["./src/*"],
       "@undefine/shared-types": ["../packages/shared-types/dist"]
-    }
+    },
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "types": ["react", "react-dom", "node"]
   },
   "include": ["src"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "../packages/shared-types" }
   ]

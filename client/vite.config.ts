@@ -35,7 +35,7 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom'],
     force: true,
     esbuildOptions: {
-      target: 'es2022'
+      target: 'es2020'
     }
   },
   build: {
