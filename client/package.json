@@ -4,11 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "tsc -p tsconfig.dev.json --noEmit && vite",
+    "build": "tsc -p tsconfig.prod.json && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "tsc -p tsconfig.dev.json --noEmit && vitest",
+    "type-check": "tsc -p tsconfig.dev.json --noEmit",
+    "type-check:prod": "tsc -p tsconfig.prod.json --noEmit"
   },
   "dependencies": {
     "@undefine/shared-types": "file:../packages/shared-types",
