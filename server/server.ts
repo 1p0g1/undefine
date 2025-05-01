@@ -1,16 +1,33 @@
 import express from 'express';
 import cors from 'cors';
-import { SupabaseClient } from '../src/config/database/SupabaseClient.js';
-import dotenv from 'dotenv';
+import { SupabaseClient } from './SupabaseClient';
+import type { WordData } from '@undefine/shared-types';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import * as path from 'path';
+import { env } from './config/env';
 // Unused imports commented out
 // import crypto from 'crypto';
 // import { GameService } from './services/GameService.js';
 // import { StatsService } from './services/StatsService.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+console.log('Current directory:', process.cwd());
+console.log('__dirname:', __dirname);
+console.log('Environment:', {
+  nodeEnv: env.nodeEnv,
+  port: env.port,
+  isDevelopment: env.isDevelopment
+});
+
+// Validate environment variables
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('Missing required Supabase environment variables');
+}
 
 const app = express();
-const port = process.env.PORT || 3001;
 
 // Initialize Supabase client
 const db = SupabaseClient.getInstance();
@@ -30,12 +47,22 @@ app.get('/api/test', (req, res) => {
 // Get word endpoint
 app.get('/api/word', async (req, res) => {
   try {
-    const word = await db.getDailyWord();
-    if (!word) {
+    const session = await db.startGame();
+    if (!session.success || !session.data) {
+      res.status(404).json({ error: 'Failed to create game session' });
+      return;
+    }
+    
+    const wordResult = await db.getDailyWord();
+    if (!wordResult.success || !wordResult.data) {
       res.status(404).json({ error: 'No word found for today' });
       return;
     }
-    res.json({ word });
+    
+    res.json({ 
+      gameId: session.data.id,
+      word: wordResult.data
+    });
   } catch (error) {
     console.error('Error fetching word:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -46,20 +73,20 @@ app.get('/api/word', async (req, res) => {
 app.get('/api/word/random', async (req, res) => {
   try {
     const session = await db.startGame();
-    if (!session) {
+    if (!session.success || !session.data) {
       res.status(404).json({ error: 'Failed to create game session' });
       return;
     }
     
-    const word = await db.getDailyWord();
-    if (!word) {
+    const wordResult = await db.getDailyWord();
+    if (!wordResult.success || !wordResult.data) {
       res.status(404).json({ error: 'No word found for today' });
       return;
     }
     
     res.json({ 
-      word,
-      gameId: session.id
+      word: wordResult.data,
+      gameId: session.data.id
     });
   } catch (error) {
     console.error('Error fetching word:', error);
@@ -77,14 +104,18 @@ app.post('/api/guess', async (req, res) => {
   }
 
   try {
-    const session = await db.getGameSession(gameId);
-    if (!session) {
+    const sessionResult = await db.getGameSession(gameId);
+    if (!sessionResult.success || !sessionResult.data) {
       res.status(404).json({ error: 'Game session not found' });
       return;
     }
 
-    const result = await db.processGuess(gameId, guess, session);
-    res.json(result);
+    const result = await db.processGuess(gameId, guess, sessionResult.data);
+    if (!result.success) {
+      res.status(400).json({ error: result.error?.message || 'Unknown error occurred' });
+      return;
+    }
+    res.json(result.data);
   } catch (error) {
     console.error('Error processing guess:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -92,6 +123,6 @@ app.post('/api/guess', async (req, res) => {
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(env.port, () => {
+  console.log(`Server running in ${env.nodeEnv} mode on port ${env.port}`);
 }); 

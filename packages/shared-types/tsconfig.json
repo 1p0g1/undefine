@@ -1,30 +1,32 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2020",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "composite": true,
-    "declaration": true,
-    "declarationMap": false,
-    "outDir": "dist",
-    "rootDir": "src",
+    "moduleResolution": "node16",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
-    "skipLibCheck": false,
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "composite": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@undefine/shared-types": ["src"]
     },
-    "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
     "emitDeclarationOnly": false,
     "jsx": "react-jsx",
     "allowImportingTsExtensions": false,
     "noEmit": false
   },
   "include": ["src/**/*"],
-  "exclude": ["src/**/__tests__/**/*", "**/*.test.ts", "**/*.spec.ts", "node_modules", "dist"]
+  "exclude": ["node_modules", "dist"]
 } 
