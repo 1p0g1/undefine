@@ -2,24 +2,23 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import './App.css'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import Confetti from './components/Confetti'
-import Leaderboard from './components/Leaderboard'
+import { Leaderboard } from './components/Leaderboard'
 import { getApiUrl } from './config.js';
 import { useLocalGameState } from './hooks/useLocalGameState';
 import { HINT_INDICES } from '@undefine/shared-types';
 import type { 
   GuessResult,
-  GameState as ImportedGameState,
   WordData,
   ClueType,
   GuessHistory,
   Message,
   HintIndex,
-  AppGameState,
   WordClues,
   GameSession,
   LeaderboardEntry,
   FormState
 } from '@undefine/shared-types';
+import { GameState } from './components/gameContext';
 import DefineBoxes from './components/DefineBoxes';
 import HintContent from './components/HintContent.js';
 import GameSummary from './components/GameSummary.js';
@@ -45,25 +44,6 @@ import { GameHeader } from './components/GameHeader';
 import { GameFooter } from './components/GameFooter';
 import { GuessInput } from './components/GuessInput';
 import { GameMessages } from './components/GameMessages';
-
-// Define local GameState interface
-interface GameState extends ImportedGameState {
-  gameId: string;
-  word: string;
-  correctWord: string;
-  fuzzyMatchPositions: number[];
-  hasWon: boolean;
-  showConfetti: boolean;
-  showLeaderboard: boolean;
-  message: Message | null;
-  guessHistory: Array<{
-    guess: string;
-    timestamp: number;
-    result: GuessResult;
-  }>;
-  remainingGuesses: number;
-  guesses: string[];
-}
 
 // Add TypeScript declarations for our window extensions
 declare global {
@@ -152,7 +132,8 @@ function App() {
     timer: 0,
     fuzzyMatchPositions: [],
     guesses: [],
-    hintLevel: 0
+    hintLevel: 0,
+    error: undefined
   });
   const [guess, setGuess] = useState<string>('');
   const [message, setMessage] = useState<Message | null>(null);
@@ -253,7 +234,8 @@ function App() {
           timer: 0,
           fuzzyMatchPositions: [],
           guesses: [],
-          hintLevel: 0
+          hintLevel: 0,
+          error: undefined
         });
       } else {
         throw new Error('Invalid game session data');
@@ -290,19 +272,16 @@ function App() {
   const handleGameState = (result: GuessResult) => {
     setGameState(prev => ({
       ...prev,
-      isGameOver: result.gameOver,
       isCorrect: result.isCorrect,
-      hasWon: result.isCorrect,
+      isGameOver: result.gameOver,
+      correctWord: result.correctWord || '',
+      fuzzyMatchPositions: result.fuzzyPositions || [],
       guessCount: prev.guessCount + 1,
       guessResults: [...prev.guessResults, result],
-      guessHistory: [...prev.guessHistory, {
-        guess: result.guess,
-        timestamp: Date.now(),
-        result
-      }],
-      fuzzyMatchPositions: result.fuzzyPositions || [],
-      correctWord: result.correctWord || prev.correctWord,
-      guesses: [...prev.guesses, result.guess]
+      remainingGuesses: prev.remainingGuesses - 1,
+      hasWon: result.isCorrect,
+      showConfetti: result.isCorrect,
+      showLeaderboard: result.gameOver
     }));
   };
 
@@ -492,6 +471,9 @@ function App() {
                   isCorrect={gameState.isCorrect}
                   correctWord={gameState.correctWord}
                   severity={gameState.isCorrect ? 'success' : gameState.isGameOver ? 'error' : 'info'}
+                  entries={leaderboardEntries}
+                  loading={leaderboardLoading}
+                  error={leaderboardError}
                 />
               )}
             </>

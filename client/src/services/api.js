@@ -3,7 +3,7 @@ import { API_CONFIG } from '../config/api';
 /**
  * Base API URL
  */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = API_CONFIG.baseUrl;
 const API_BASE_URL = `${API_URL}/api`;
 /**
  * Create query string from parameters
@@ -45,16 +45,29 @@ const handleRequest = async (url, options = {}) => {
         // Handle error responses
         if (!response.ok) {
             return {
-                error: data.error || `HTTP error! status: ${response.status}`
+                success: false,
+                error: {
+                    code: response.status.toString(),
+                    message: data.error || `HTTP error! status: ${response.status}`,
+                    details: data
+                }
             };
         }
         // Return successful response
-        return { data: data };
+        return {
+            success: true,
+            data: data
+        };
     }
     catch (error) {
         console.error('API request failed:', error);
         return {
-            error: error instanceof Error ? error.message : 'Unknown error occurred'
+            success: false,
+            error: {
+                code: 'UNKNOWN_ERROR',
+                message: error instanceof Error ? error.message : 'Unknown error occurred',
+                details: error
+            }
         };
     }
 };
@@ -133,26 +146,14 @@ export const importWords = async (file) => {
     formData.append('file', file);
     return handleRequest(`${API_BASE_URL}/admin/words/import`, {
         method: 'POST',
-        body: formData,
-        headers: {} // Let browser set content-type for FormData
+        body: formData
     });
 };
 /**
- * Search for words
+ * Search words by query string
  */
 export const searchWords = async (query) => {
-    // Return empty results with pagination info
-    return {
-        data: {
-            words: [],
-            pagination: {
-                page: 1,
-                limit: 10,
-                totalPages: 0,
-                total: 0
-            }
-        }
-    };
+    return handleRequest(`${API_BASE_URL}/admin/words/search?q=${encodeURIComponent(query)}`);
 };
 class ApiService {
     constructor() {
@@ -173,27 +174,30 @@ class ApiService {
                     ...options.headers
                 }
             });
+            const data = await response.json();
             if (!response.ok) {
                 return {
                     success: false,
                     error: {
                         code: response.status.toString(),
-                        message: response.statusText
+                        message: data.error || `HTTP error! status: ${response.status}`,
+                        details: data
                     }
                 };
             }
-            const data = await response.json();
             return {
                 success: true,
-                data
+                data: data
             };
         }
         catch (error) {
+            console.error('API request failed:', error);
             return {
                 success: false,
                 error: {
-                    code: 'NETWORK_ERROR',
-                    message: error instanceof Error ? error.message : 'Unknown error occurred'
+                    code: 'UNKNOWN_ERROR',
+                    message: error instanceof Error ? error.message : 'Unknown error occurred',
+                    details: error
                 }
             };
         }

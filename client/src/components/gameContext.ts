@@ -1,9 +1,36 @@
 import * as React from 'react';
-import type { WordData, HintIndex, GuessResult, GameState as SharedGameState } from '@undefine/shared-types';
+import type { WordData, HintIndex, GuessResult, GameState as SharedGameState, Message } from '@undefine/shared-types';
 
 // Local type - extends shared GameState with React-specific fields
-export interface GameState extends SharedGameState {
-  // Add any React-specific fields here if needed
+export interface GameState {
+  // Shared GameState properties
+  wordData: WordData | null;
+  guesses: string[];
+  isCorrect: boolean;
+  isGameOver: boolean;
+  loading: boolean;
+  error?: string;
+  timer: number;
+  hintLevel: number;
+  revealedHints: HintIndex[];
+  guessCount: number;
+  guessResults: GuessResult[];
+
+  // React-specific fields
+  gameId: string;
+  word: string;
+  correctWord: string;
+  fuzzyMatchPositions: number[];
+  hasWon: boolean;
+  showConfetti: boolean;
+  showLeaderboard: boolean;
+  message: Message | null;
+  guessHistory: Array<{
+    guess: string;
+    timestamp: number;
+    result: GuessResult;
+  }>;
+  remainingGuesses: number;
 }
 
 export interface GameAction {

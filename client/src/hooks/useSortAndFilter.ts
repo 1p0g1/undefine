@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { WordEntry } from '@shared/index.js';
+import type { WordEntry } from '@undefine/shared-types';
 import { getFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage.js';
 
 export type SortDirection = 'asc' | 'desc';

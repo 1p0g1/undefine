@@ -11,7 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@undefine/shared-types': path.resolve(__dirname, '../packages/shared-types/src')
+      '@undefine/shared-types': path.resolve(__dirname, '../packages/shared-types/dist')
     }
   },
   server: {

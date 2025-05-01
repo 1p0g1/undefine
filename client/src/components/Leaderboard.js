@@ -1,5 +1,5 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-export const Leaderboard = ({ entries, loading, error, onClose }) => {
+export const Leaderboard = ({ entries, loading, error, onClose, gameId, isGameOver, isCorrect, correctWord, severity }) => {
     if (loading) {
         return (_jsx("div", { className: "p-4", children: _jsx("div", { className: "flex justify-center items-center p-8", children: "Loading..." }) }));
     }

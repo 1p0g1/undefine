@@ -6,9 +6,24 @@ interface Props {
   loading: boolean;
   error: string | null;
   onClose: () => void;
+  gameId?: string;
+  isGameOver?: boolean;
+  isCorrect?: boolean;
+  correctWord?: string;
+  severity?: string;
 }
 
-export const Leaderboard: React.FC<Props> = ({ entries, loading, error, onClose }) => {
+export const Leaderboard: React.FC<Props> = ({ 
+  entries, 
+  loading, 
+  error, 
+  onClose,
+  gameId,
+  isGameOver,
+  isCorrect,
+  correctWord,
+  severity
+}) => {
   if (loading) {
     return (
       <div className="p-4">

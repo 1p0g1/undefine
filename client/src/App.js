@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { useNavigate } from 'react-router-dom';
 import Confetti from './components/Confetti';
-import Leaderboard from './components/Leaderboard';
+import { Leaderboard } from './components/Leaderboard';
 import { getApiUrl } from './config.js';
 import { useLocalGameState } from './hooks/useLocalGameState';
 import { HINT_INDICES } from '@undefine/shared-types';
@@ -55,7 +55,8 @@ function App() {
         timer: 0,
         fuzzyMatchPositions: [],
         guesses: [],
-        hintLevel: 0
+        hintLevel: 0,
+        error: undefined
     });
     const [guess, setGuess] = useState('');
     const [message, setMessage] = useState(null);
@@ -144,7 +145,8 @@ function App() {
                     timer: 0,
                     fuzzyMatchPositions: [],
                     guesses: [],
-                    hintLevel: 0
+                    hintLevel: 0,
+                    error: undefined
                 });
             }
             else {
@@ -178,19 +180,16 @@ function App() {
     const handleGameState = (result) => {
         setGameState(prev => ({
             ...prev,
-            isGameOver: result.gameOver,
             isCorrect: result.isCorrect,
-            hasWon: result.isCorrect,
+            isGameOver: result.gameOver,
+            correctWord: result.correctWord || '',
+            fuzzyMatchPositions: result.fuzzyPositions || [],
             guessCount: prev.guessCount + 1,
             guessResults: [...prev.guessResults, result],
-            guessHistory: [...prev.guessHistory, {
-                    guess: result.guess,
-                    timestamp: Date.now(),
-                    result
-                }],
-            fuzzyMatchPositions: result.fuzzyPositions || [],
-            correctWord: result.correctWord || prev.correctWord,
-            guesses: [...prev.guesses, result.guess]
+            remainingGuesses: prev.remainingGuesses - 1,
+            hasWon: result.isCorrect,
+            showConfetti: result.isCorrect,
+            showLeaderboard: result.gameOver
         }));
     };
     const handleInputChange = (e) => {
@@ -297,6 +296,6 @@ function App() {
         };
     }, [gameState.isGameOver]);
     // ✅ Single return with conditional rendering
-    return (_jsx("div", { className: "app", children: _jsxs(ToastProvider, { children: [_jsx(Header, {}), _jsx("main", { className: "main-content", children: gameState.loading ? (_jsx(GameLoader, { onRetry: initializeGame })) : error ? (_jsx(ErrorMessage, { message: error, onRetry: initializeGame })) : (_jsxs(_Fragment, { children: [_jsx(GameHeader, { onSettingsClick: () => setShowModal(true), onHowToPlayClick: () => { }, onStatsClick: () => { } }), _jsxs("div", { className: "game-container", children: [_jsx(DefineBoxes, { revealedHints: gameState.revealedHints, onHintReveal: handleHintReveal, isGameOver: gameState.isGameOver, isCorrect: gameState.isCorrect, guessCount: gameState.guessCount, guessResults: gameState.guessResults }), _jsx(GuessInput, { onGuess: handleGuess, disabled: gameState.isGameOver, maxLength: getInputMaxLength() }), _jsx(GameMessages, { messages: message ? [message] : [], onDismiss: (msg) => setMessage(null) }), _jsx(GameFooter, { onNewGame: initializeGame, onShare: () => { } })] }), _jsx(HintContent, { wordData: gameState.wordData ? mapWordDataToWordClues(gameState.wordData) : null, revealedHints: gameState.revealedHints, onHintReveal: handleHintReveal, isGameOver: gameState.isGameOver, isCorrect: gameState.isCorrect, guessCount: gameState.guessCount, guessResults: gameState.guessResults }), gameState.isGameOver && (_jsx(GameOverModal, { isOpen: true, onClose: () => setShowModal(false), isCorrect: gameState.isCorrect, wordData: gameState.wordData ? mapWordDataToWordClues(gameState.wordData) : null, correctWord: gameState.correctWord, guessCount: gameState.guessCount, timeTaken: timer, onPlayAgain: initializeGame })), showConfetti && _jsx(Confetti, {}), showLeaderboard && (_jsx(Leaderboard, { onClose: () => setShowLeaderboard(false), gameId: gameState.gameId, isGameOver: gameState.isGameOver, isCorrect: gameState.isCorrect, correctWord: gameState.correctWord, severity: gameState.isCorrect ? 'success' : gameState.isGameOver ? 'error' : 'info' }))] })) })] }) }));
+    return (_jsx("div", { className: "app", children: _jsxs(ToastProvider, { children: [_jsx(Header, {}), _jsx("main", { className: "main-content", children: gameState.loading ? (_jsx(GameLoader, { onRetry: initializeGame })) : error ? (_jsx(ErrorMessage, { message: error, onRetry: initializeGame })) : (_jsxs(_Fragment, { children: [_jsx(GameHeader, { onSettingsClick: () => setShowModal(true), onHowToPlayClick: () => { }, onStatsClick: () => { } }), _jsxs("div", { className: "game-container", children: [_jsx(DefineBoxes, { revealedHints: gameState.revealedHints, onHintReveal: handleHintReveal, isGameOver: gameState.isGameOver, isCorrect: gameState.isCorrect, guessCount: gameState.guessCount, guessResults: gameState.guessResults }), _jsx(GuessInput, { onGuess: handleGuess, disabled: gameState.isGameOver, maxLength: getInputMaxLength() }), _jsx(GameMessages, { messages: message ? [message] : [], onDismiss: (msg) => setMessage(null) }), _jsx(GameFooter, { onNewGame: initializeGame, onShare: () => { } })] }), _jsx(HintContent, { wordData: gameState.wordData ? mapWordDataToWordClues(gameState.wordData) : null, revealedHints: gameState.revealedHints, onHintReveal: handleHintReveal, isGameOver: gameState.isGameOver, isCorrect: gameState.isCorrect, guessCount: gameState.guessCount, guessResults: gameState.guessResults }), gameState.isGameOver && (_jsx(GameOverModal, { isOpen: true, onClose: () => setShowModal(false), isCorrect: gameState.isCorrect, wordData: gameState.wordData ? mapWordDataToWordClues(gameState.wordData) : null, correctWord: gameState.correctWord, guessCount: gameState.guessCount, timeTaken: timer, onPlayAgain: initializeGame })), showConfetti && _jsx(Confetti, {}), showLeaderboard && (_jsx(Leaderboard, { onClose: () => setShowLeaderboard(false), gameId: gameState.gameId, isGameOver: gameState.isGameOver, isCorrect: gameState.isCorrect, correctWord: gameState.correctWord, severity: gameState.isCorrect ? 'success' : gameState.isGameOver ? 'error' : 'info', entries: leaderboardEntries, loading: leaderboardLoading, error: leaderboardError }))] })) })] }) }));
 }
 export default App;

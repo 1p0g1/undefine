@@ -10,7 +10,17 @@ const initialState = {
     hintLevel: 0,
     revealedHints: [],
     guessCount: 0,
-    guessResults: []
+    guessResults: [],
+    gameId: '',
+    word: '',
+    correctWord: '',
+    fuzzyMatchPositions: [],
+    hasWon: false,
+    showConfetti: false,
+    showLeaderboard: false,
+    message: null,
+    guessHistory: [],
+    remainingGuesses: 6
 };
 export function useGameState() {
     const [state, setState] = useState(initialState);

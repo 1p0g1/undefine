@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PaginationInfo } from '../types/index.js';
+import type { PaginationInfo } from '@undefine/shared-types';
 import { getFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage.js';
 
 // Extended pagination info with next/prev page helpers
-interface ExtendedPaginationInfo extends PaginationInfo {
+interface ExtendedPaginationInfo extends Omit<PaginationInfo, 'currentPage' | 'itemsPerPage' | 'totalItems'> {
+  limit: number;
+  total: number;
   next?: { page: number; limit: number };
   prev?: { page: number; limit: number };
 }
@@ -118,7 +120,6 @@ const usePagination = ({
   
   // Create pagination info object for API responses
   const paginationInfo: ExtendedPaginationInfo = {
-    page,
     limit,
     totalPages,
     total: totalItems,

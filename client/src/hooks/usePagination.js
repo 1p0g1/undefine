@@ -68,7 +68,6 @@ const usePagination = ({ totalItems = 0, initialPage = 1, initialLimit, onPageCh
     }, [page, limit]);
     // Create pagination info object for API responses
     const paginationInfo = {
-        page,
         limit,
         totalPages,
         total: totalItems,

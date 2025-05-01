@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { GameState, WordData, HintIndex, GuessResult } from '@undefine/shared-types';
+import type { WordData, HintIndex, GuessResult } from '@undefine/shared-types';
+import type { GameState } from '../components/gameContext';
 
 const initialState: GameState = {
   wordData: null,
@@ -12,7 +13,17 @@ const initialState: GameState = {
   hintLevel: 0,
   revealedHints: [],
   guessCount: 0,
-  guessResults: []
+  guessResults: [],
+  gameId: '',
+  word: '',
+  correctWord: '',
+  fuzzyMatchPositions: [],
+  hasWon: false,
+  showConfetti: false,
+  showLeaderboard: false,
+  message: null,
+  guessHistory: [],
+  remainingGuesses: 6
 };
 
 export function useGameState() {
