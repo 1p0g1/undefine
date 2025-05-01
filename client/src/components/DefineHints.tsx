@@ -1,30 +1,18 @@
 import React from 'react';
+import type { WordClues } from '@undefine/shared-types';
+import { type HintIndex } from '@undefine/shared-types';
 import './DefineHints.css';
 
-// Define WordData interface here instead of importing it
-interface WordData {
-  id: string;
-  word: string;
-  clues: {
-    D: string;  // Definition
-    E: string;  // Etymology
-    F: string;  // First letter
-    I: string;  // In a sentence
-    N: number;  // Number of letters
-    E2: string[];  // Equivalents/synonyms
-  };
-}
-
 interface DefineHintsProps {
-  word: WordData;
-  revealedHints: number[];
+  wordData: WordClues | null;
+  revealedHints: HintIndex[];
   guessCount: number;
   onSynonymClick?: (synonym: string) => void;
   isLoading?: boolean;
 }
 
 const DefineHints: React.FC<DefineHintsProps> = ({ 
-  word, 
+  wordData, 
   revealedHints, 
   guessCount,
   onSynonymClick,
@@ -46,7 +34,7 @@ const DefineHints: React.FC<DefineHintsProps> = ({
           <div className="hint-box">
             <div className="hint-label">Definition</div>
             <blockquote className="hint-content">
-              {word.clues?.D || 'No definition available'}
+              {wordData?.D || 'No definition available'}
             </blockquote>
           </div>
         );
@@ -56,8 +44,8 @@ const DefineHints: React.FC<DefineHintsProps> = ({
           <div className="hint-box">
             <div className="hint-label">Synonyms</div>
             <div className="hint-content synonyms-list">
-              {(word.clues?.E2 ?? []).length > 0 ? (
-                (word.clues?.E2 ?? []).map((synonym: string, i: number) => (
+              {Array.isArray(wordData?.E2) && wordData.E2.length > 0 ? (
+                wordData.E2.map((synonym: string, i: number) => (
                   <span key={i} className="synonym-tag">{synonym}</span>
                 ))
               ) : (
@@ -72,7 +60,7 @@ const DefineHints: React.FC<DefineHintsProps> = ({
           <div className="hint-box">
             <div className="hint-label">First Letter</div>
             <blockquote className="hint-content">
-              {word.clues?.F || 'No first letter available'}
+              {wordData?.F || 'No first letter available'}
             </blockquote>
           </div>
         );
@@ -82,7 +70,7 @@ const DefineHints: React.FC<DefineHintsProps> = ({
           <div className="hint-box">
             <div className="hint-label">Example</div>
             <blockquote className="hint-content">
-              {word.clues?.I || 'No example available'}
+              {wordData?.I || 'No example available'}
             </blockquote>
           </div>
         );
@@ -92,7 +80,7 @@ const DefineHints: React.FC<DefineHintsProps> = ({
           <div className="hint-box">
             <div className="hint-label">Letter Count</div>
             <blockquote className="hint-content">
-              {word.clues?.N || 'No letter count available'}
+              {wordData?.N || 'No letter count available'}
             </blockquote>
           </div>
         );
@@ -102,7 +90,7 @@ const DefineHints: React.FC<DefineHintsProps> = ({
           <div className="hint-box">
             <div className="hint-label">Etymology</div>
             <blockquote className="hint-content etymology-text">
-              {word.clues?.E || 'No etymology available'}
+              {wordData?.E || 'No etymology available'}
             </blockquote>
           </div>
         );

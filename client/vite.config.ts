@@ -9,11 +9,10 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: [
-      { find: '@', replacement: path.resolve(__dirname, './src') },
-      { find: '@undefine/shared-types', replacement: path.resolve(__dirname, '../packages/shared-types/src') },
-      { find: '@undefine/shared-types/', replacement: path.resolve(__dirname, '../packages/shared-types/src/') }
-    ]
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@undefine/shared-types': path.resolve(__dirname, '../packages/shared-types/src')
+    }
   },
   server: {
     port: 5174,
@@ -40,11 +39,15 @@ export default defineConfig({
     }
   },
   build: {
-    target: 'es2022',
+    outDir: 'dist',
     sourcemap: true,
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true
+    rollupOptions: {
+      external: ['@undefine/shared-types'],
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom']
+        }
+      }
     }
   },
   define: {

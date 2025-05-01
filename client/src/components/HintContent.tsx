@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { HintIndex, GuessResult, WordClues } from '@undefine/shared-types';
+import type { HintIndex, GuessResult, WordClues, WordData } from '@undefine/shared-types';
 import { DEBUG_CONFIG } from '../config/debug.js';
 import './HintContent.css';
 

@@ -1,5 +1,6 @@
 import React from 'react';
-import { HintIndex, HINT_INDICES, GuessResult } from '@undefine/shared-types';
+import { HINT_INDICES } from '@undefine/shared-types';
+import type { HintIndex, GuessResult } from '@undefine/shared-types';
 
 interface DefineBoxesProps {
   revealedHints: HintIndex[];

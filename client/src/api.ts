@@ -1,4 +1,4 @@
-import { type Word, type GuessResult } from '@undefine/shared-types';
+import { type WordData as Word, type GuessResult } from '@undefine/shared-types';
 import { getApiUrl } from './config.js';
 
 export const fetchWord = async (): Promise<Word> => {

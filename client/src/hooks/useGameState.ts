@@ -1,14 +1,18 @@
 import { useState, useCallback } from 'react';
-import { GameState, WordData, HintIndex, GuessResult } from '../types/game.js';
+import type { GameState, WordData, HintIndex, GuessResult } from '@undefine/shared-types';
 
 const initialState: GameState = {
   wordData: null,
+  guesses: [],
+  isCorrect: false,
+  isGameOver: false,
+  loading: true,
+  error: undefined,
+  timer: 0,
+  hintLevel: 0,
   revealedHints: [],
   guessCount: 0,
-  isGameOver: false,
-  hasWon: false,
-  guessResults: [],
-  isLoading: false
+  guessResults: []
 };
 
 export function useGameState() {
@@ -18,7 +22,7 @@ export function useGameState() {
     setState({
       ...initialState,
       wordData,
-      isLoading: false
+      loading: false
     });
   }, []);
 
@@ -34,24 +38,19 @@ export function useGameState() {
     });
   }, []);
 
-  const submitGuess = useCallback((guess: string) => {
+  const submitGuess = useCallback((guess: string, result: GuessResult) => {
     setState(prev => {
       if (!prev.wordData || prev.isGameOver) {
         return prev;
       }
 
-      const isCorrect = guess.toLowerCase() === prev.wordData.word.toLowerCase();
-      const newGuessCount = prev.guessCount + 1;
-      const newGuessResult: GuessResult = isCorrect ? 'correct' : 'incorrect';
-      const newGuessResults = [...prev.guessResults, newGuessResult];
-      const isGameOver = isCorrect || newGuessCount >= 6;
-
       return {
         ...prev,
-        guessCount: newGuessCount,
-        guessResults: newGuessResults,
-        isGameOver,
-        hasWon: isCorrect
+        guesses: [...prev.guesses, guess],
+        guessCount: prev.guessCount + 1,
+        guessResults: [...prev.guessResults, result],
+        isCorrect: result.isCorrect,
+        isGameOver: result.gameOver
       };
     });
   }, []);

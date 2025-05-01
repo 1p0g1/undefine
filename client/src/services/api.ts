@@ -1,26 +1,29 @@
 // ⛔ Do not use .js extensions in TypeScript imports. See ARCHITECTURE.md
 
 import {
-  WordEntry,
-  PaginationParams,
-  PaginationInfo,
-  ApiResponse,
-  FormState
-} from '../types/index.js';
-import {
-  WordResponse,
-  LeaderboardResponse,
-  GameSessionResponse,
-  UserStatsResponse,
-  ErrorResponse,
-  DailyWord
-} from '../types/index.js';
+  type WordData,
+  type PaginationParams,
+  type PaginationInfo,
+  type ApiResponse,
+  type FormState,
+  type WordResponse,
+  type LeaderboardResponse,
+  type GameSessionResponse,
+  type UserStatsResponse,
+  type ErrorResponse,
+  type DailyWord,
+  type GuessResult,
+  type UserStats,
+  type GameSession,
+  type LeaderboardEntry
+} from '@undefine/shared-types';
+import { API_CONFIG } from '../config/api';
 
 /**
  * Response type for paginated words
  */
 interface WordsResponse {
-  words: WordEntry[];
+  words: WordData[];
   pagination: PaginationInfo;
 }
 
@@ -102,15 +105,15 @@ export const getWords = async (params: Partial<PaginationParams> = { page: 1, li
 /**
  * Get a single word by its name
  */
-export const getWord = async (word: string): Promise<ApiResponse<{ word: WordEntry }>> => {
-  return handleRequest<{ word: WordEntry }>(`${API_BASE_URL}/admin/words/${word}`);
+export const getWord = async (word: string): Promise<ApiResponse<WordResponse>> => {
+  return handleRequest<WordResponse>(`${API_BASE_URL}/admin/words/${word}`);
 };
 
 /**
  * Create a new word
  */
-export const createWord = async (wordData: FormState): Promise<ApiResponse<{ word: WordEntry }>> => {
-  return handleRequest<{ word: WordEntry }>(`${API_BASE_URL}/admin/words`, {
+export const createWord = async (wordData: FormState): Promise<ApiResponse<WordResponse>> => {
+  return handleRequest<WordResponse>(`${API_BASE_URL}/admin/words`, {
     method: 'POST',
     body: JSON.stringify(wordData)
   });
@@ -122,8 +125,8 @@ export const createWord = async (wordData: FormState): Promise<ApiResponse<{ wor
 export const updateWord = async (
   originalWord: string,
   wordData: FormState
-): Promise<ApiResponse<{ word: WordEntry }>> => {
-  return handleRequest<{ word: WordEntry }>(`${API_BASE_URL}/admin/words/${originalWord}`, {
+): Promise<ApiResponse<WordResponse>> => {
+  return handleRequest<WordResponse>(`${API_BASE_URL}/admin/words/${originalWord}`, {
     method: 'PUT',
     body: JSON.stringify(wordData)
   });
@@ -132,8 +135,8 @@ export const updateWord = async (
 /**
  * Delete a word
  */
-export const deleteWord = async (word: string): Promise<ApiResponse<{ word: WordEntry }>> => {
-  return handleRequest<{ word: WordEntry }>(`${API_BASE_URL}/admin/words/${word}`, {
+export const deleteWord = async (word: string): Promise<ApiResponse<WordResponse>> => {
+  return handleRequest<WordResponse>(`${API_BASE_URL}/admin/words/${word}`, {
     method: 'DELETE'
   });
 };
@@ -153,7 +156,7 @@ export const bulkDeleteWords = async (words: string[]): Promise<ApiResponse<{ de
  */
 export const bulkUpdateWords = async (
   words: string[],
-  updates: Partial<WordEntry>
+  updates: Partial<WordData>
 ): Promise<ApiResponse<{ updatedCount: number }>> => {
   return handleRequest<{ updatedCount: number }>(`${API_BASE_URL}/admin/words/bulk-update`, {
     method: 'POST',
@@ -204,6 +207,91 @@ export const searchWords = async (query: string): Promise<ApiResponse<WordsRespo
       }
     }
   };
+};
+
+interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: ApiError;
+}
+
+class ApiService {
+  private baseUrl: string;
+
+  constructor() {
+    this.baseUrl = API_CONFIG.baseUrl;
+  }
+
+  private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: {
+            code: response.status.toString(),
+            message: response.statusText
+          }
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error occurred'
+        }
+      };
+    }
+  }
+
+  async getTodaysWord(): Promise<ApiResponse<WordData>> {
+    return this.fetch<WordData>(`${API_CONFIG.endpoints.words}/today`);
+  }
+
+  async submitGuess(wordId: string, guess: string): Promise<ApiResponse<GuessResult>> {
+    return this.fetch<GuessResult>(`${API_CONFIG.endpoints.guesses}`, {
+      method: 'POST',
+      body: JSON.stringify({ wordId, guess })
+    });
+  }
+
+  async getUserStats(userId: string): Promise<ApiResponse<UserStats>> {
+    return this.fetch<UserStats>(`${API_CONFIG.endpoints.stats}/${userId}`);
+  }
+
+  async getLeaderboard(): Promise<ApiResponse<LeaderboardEntry[]>> {
+    return this.fetch<LeaderboardEntry[]>(`${API_CONFIG.endpoints.leaderboard}`);
+  }
+
+  async createGameSession(): Promise<ApiResponse<GameSession>> {
+    return this.fetch<GameSession>(`${API_CONFIG.endpoints.guesses}/session`, {
+      method: 'POST'
+    });
+  }
+}
+
+export const useApi = () => {
+  return new ApiService();
 };
 
 export default {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import './Leaderboard.css';
 import { getApiUrl } from './config';
-import type { LeaderboardEntry } from './types';
+import type { LeaderboardEntry } from '@undefine/shared-types';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -20,7 +20,7 @@ const LeaderboardContent = memo(({ entries, formatTime }: {
 }) => (
   <div className="leaderboard-list">
     {entries.map((entry, index) => (
-      <div key={entry.id ?? `entry-${index}`} className="leaderboard-entry">
+      <div key={`${entry.username}-${index}`} className="leaderboard-entry">
         <span className="rank">#{index + 1}</span>
         <span className="username">{entry.username}</span>
         <span className="score">{entry.guessesUsed} guesses</span>

@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import './App.css'
-import { Routes, Route } from 'react-router-dom'
-import Confetti from './components/Confetti.js'
-import Leaderboard from './Leaderboard.js'
+import { Routes, Route, useNavigate } from 'react-router-dom'
+import Confetti from './components/Confetti'
+import Leaderboard from './components/Leaderboard'
 import { getApiUrl } from './config.js';
-import { useLocalGameState } from './hooks/useLocalGameState.js';
-import { 
+import { useLocalGameState } from './hooks/useLocalGameState';
+import { HINT_INDICES } from '@undefine/shared-types';
+import type { 
   GuessResult,
   GameState as ImportedGameState,
   WordData,
@@ -13,30 +14,55 @@ import {
   GuessHistory,
   Message,
   HintIndex,
-  HINT_INDICES,
-  AppGameState
+  AppGameState,
+  WordClues,
+  GameSession,
+  LeaderboardEntry,
+  FormState
 } from '@undefine/shared-types';
-import DefineBoxes from './components/DefineBoxes.js';
+import DefineBoxes from './components/DefineBoxes';
 import HintContent from './components/HintContent.js';
 import GameSummary from './components/GameSummary.js';
-import { ToastProvider, useToast } from './components/Toast.js';
+import { ToastProvider, useToast } from './components/Toast';
 import LoadingSpinner from './components/LoadingSpinner.js';
-import ErrorMessage from './components/ErrorMessage.js';
+import ErrorMessage from './components/ErrorMessage';
 import Timer from './components/Timer.js';
 import GameOverModal from './components/GameOverModal.js';
 import GameLoader from './components/GameLoader.js';
 import Settings from './components/Settings.js';
-import Header from './components/Header.js';
+import Header from './components/Header';
 import { formatTime } from './utils/time.js';
+import { mapWordDataToWordClues } from './utils/validation.js';
+import { useGameSession } from './hooks/useGameSession';
+import { useGameApi } from './services/gameApi';
+import { SettingsModal } from './components/SettingsModal';
+import { useAuth } from './hooks/useAuth';
+import { useGameState } from './hooks/useGameState';
+import { useLeaderboard } from './hooks/useLeaderboard';
+import { useWordData } from './hooks/useWordData';
+import { useGameGuess } from './hooks/useGameGuess';
+import { GameHeader } from './components/GameHeader';
+import { GameFooter } from './components/GameFooter';
+import { GuessInput } from './components/GuessInput';
+import { GameMessages } from './components/GameMessages';
 
 // Define local GameState interface
-interface GameState extends AppGameState {
+interface GameState extends ImportedGameState {
   gameId: string;
   word: string;
-  loading: boolean;
-  timer?: number;
-  fuzzyMatchPositions?: number[];
-  correctWord?: string;
+  correctWord: string;
+  fuzzyMatchPositions: number[];
+  hasWon: boolean;
+  showConfetti: boolean;
+  showLeaderboard: boolean;
+  message: Message | null;
+  guessHistory: Array<{
+    guess: string;
+    timestamp: number;
+    result: GuessResult;
+  }>;
+  remainingGuesses: number;
+  guesses: string[];
 }
 
 // Add TypeScript declarations for our window extensions
@@ -103,10 +129,13 @@ const normalize = (text: string | null | undefined): string => {
 };
 
 function App() {
-  // ✅ All useState hooks
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const toast = useToast();
   const [gameState, setGameState] = useState<GameState>({
     gameId: '',
     word: '',
+    correctWord: '',
     guessCount: 0,
     isGameOver: false,
     isCorrect: false,
@@ -121,9 +150,10 @@ function App() {
     guessHistory: [],
     guessResults: [],
     timer: 0,
-    fuzzyMatchPositions: []
+    fuzzyMatchPositions: [],
+    guesses: [],
+    hintLevel: 0
   });
-  const [wordData, setWordData] = useState<WordData | null>(null);
   const [guess, setGuess] = useState<string>('');
   const [message, setMessage] = useState<Message | null>(null);
   const [timer, setTimer] = useState<number>(0);
@@ -134,7 +164,7 @@ function App() {
   const [fuzzyCount, setFuzzyCount] = useState<number>(0);
   const [leaderboardRank, setLeaderboardRank] = useState<number | null>(null);
   const [guessHistory, setGuessHistory] = useState<GuessHistory[]>([]);
-  const [guessResults, setGuessResults] = useState<('correct' | 'incorrect' | null)[]>([null, null, null, null, null, null]);
+  const [guessResults, setGuessResults] = useState<GuessResult[]>([]);
   const [fuzzyMatchPositions, setFuzzyMatchPositions] = useState<number[]>([]);
 
   // ✅ useRef hooks
@@ -142,7 +172,11 @@ function App() {
 
   // ✅ Custom hooks
   const { state: localGameState, updateGameStats, hasPlayedToday } = useLocalGameState();
-  const toast = useToast();
+  const { session } = useGameSession();
+  const { state: gameStateHook } = useGameState();
+  const { entries: leaderboardEntries, loading: leaderboardLoading, error: leaderboardError } = useLeaderboard();
+  const { wordData: wordDataFromHook, loading: wordDataLoading, error: wordDataError } = useWordData(gameState.gameId);
+  const { submitGuess, isSubmitting, error: guessError } = useGameGuess();
 
   // Add state for modal visibility
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -189,18 +223,26 @@ function App() {
           difficulty: data.word.difficulty,
           created_at: data.word.created_at,
           updated_at: data.word.updated_at,
-          clues: data.word.clues
+          clues: {
+            D: data.word.definition,
+            E: data.word.etymology,
+            F: data.word.first_letter,
+            I: data.word.in_a_sentence,
+            N: data.word.number_of_letters,
+            E2: data.word.equivalents
+          }
         };
 
         setGameState({
           gameId: data.gameId,
           word: data.word.word,
+          correctWord: data.word.word,
           guessCount: 0,
           isGameOver: false,
           isCorrect: false,
           remainingGuesses: 6,
           loading: false,
-          wordData: wordData.clues,
+          wordData,
           revealedHints: [],
           hasWon: false,
           showConfetti: false,
@@ -209,9 +251,10 @@ function App() {
           guessHistory: [],
           guessResults: [],
           timer: 0,
-          fuzzyMatchPositions: []
+          fuzzyMatchPositions: [],
+          guesses: [],
+          hintLevel: 0
         });
-        setWordData(wordData);
       } else {
         throw new Error('Invalid game session data');
       }
@@ -232,7 +275,10 @@ function App() {
       gameState.gameId.length > 0 &&
       gameState.word.length > 0 &&
       typeof gameState.isGameOver === 'boolean' &&
-      gameState.remainingGuesses >= 0;
+      gameState.remainingGuesses >= 0 &&
+      Array.isArray(gameState.guessHistory) &&
+      Array.isArray(gameState.guessResults) &&
+      Array.isArray(gameState.revealedHints);
 
     if (!isValid) {
       console.warn('Invalid game state detected:', gameState);
@@ -254,8 +300,9 @@ function App() {
         timestamp: Date.now(),
         result
       }],
-      fuzzyMatchPositions: result.fuzzyPositions,
-      correctWord: result.correctWord
+      fuzzyMatchPositions: result.fuzzyPositions || [],
+      correctWord: result.correctWord || prev.correctWord,
+      guesses: [...prev.guesses, result.guess]
     }));
   };
 
@@ -263,8 +310,8 @@ function App() {
     const value = e.target.value;
     const cleanValue = normalize(value);
     
-    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F) {
-      if (cleanValue.length === 0 || cleanValue[0] === normalize(wordData.clues.F)) {
+    if (revealedHints.includes(HINT_INDICES.F) && wordDataFromHook?.clues.F) {
+      if (cleanValue.length === 0 || cleanValue[0] === normalize(wordDataFromHook.clues.F)) {
         setGuess(cleanValue);
       }
     } else {
@@ -273,7 +320,7 @@ function App() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F) {
+    if (revealedHints.includes(HINT_INDICES.F) && wordDataFromHook?.clues.F) {
       if (e.key === 'Backspace' || e.key === 'Delete') {
         const target = e.target as HTMLInputElement;
         if (target.selectionStart === 0 || target.selectionStart === 1) {
@@ -286,32 +333,32 @@ function App() {
   const isGuessValid = () => {
     if (!guess.trim() || gameState.isGameOver) return false;
     
-    if (revealedHints.includes(HINT_INDICES.N) && wordData?.clues.N) {
-      return guess.length === wordData.clues.N;
+    if (revealedHints.includes(HINT_INDICES.N) && wordDataFromHook?.clues.N) {
+      return guess.length === wordDataFromHook.clues.N;
     }
     
     return true;
   };
 
   const handleGuess = async (guess: string) => {
-    if (!wordData) {
+    if (!wordDataFromHook) {
       console.error('No word data available');
       return;
     }
 
     const result: GuessResult = {
-      isCorrect: guess.toLowerCase() === wordData.word.toLowerCase(),
+      isCorrect: guess.toLowerCase() === wordDataFromHook.word.toLowerCase(),
       guess,
       isFuzzy: false,
       fuzzyPositions: [],
-      gameOver: false
+      gameOver: false,
+      correctWord: wordDataFromHook.word
     };
 
     if (result.isCorrect) {
       result.gameOver = true;
     } else if (gameState.guessCount >= MAX_GUESSES - 1) {
       result.gameOver = true;
-      result.correctWord = wordData.word;
     }
 
     handleGameState(result);
@@ -319,9 +366,9 @@ function App() {
   };
 
   const handleInputFocus = () => {
-    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F && inputRef.current) {
+    if (revealedHints.includes(HINT_INDICES.F) && wordDataFromHook?.clues.F && inputRef.current) {
       if (guess.length === 0) {
-        setGuess(wordData.clues.F);
+        setGuess(wordDataFromHook.clues.F);
       }
       const pos = guess.length;
       inputRef.current.setSelectionRange(pos, pos);
@@ -329,15 +376,15 @@ function App() {
   };
 
   const getInputPlaceholder = () => {
-    if (revealedHints.includes(HINT_INDICES.F) && wordData?.clues.F) {
-      return `${wordData.clues.F}_______`;
+    if (revealedHints.includes(HINT_INDICES.F) && wordDataFromHook?.clues.F) {
+      return `${wordDataFromHook.clues.F}_______`;
     }
     return "Enter your guess...";
   };
 
   const getInputMaxLength = () => {
-    if (revealedHints.includes(HINT_INDICES.N) && wordData?.clues.N) {
-      return wordData.clues.N;
+    if (revealedHints.includes(HINT_INDICES.N) && wordDataFromHook?.clues.N) {
+      return wordDataFromHook.clues.N;
     }
     return undefined;
   };
@@ -377,19 +424,22 @@ function App() {
 
   // ✅ Single return with conditional rendering
   return (
-    <div className="app-container">
-      <Header />
-      <Routes>
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/" element={
-          <>
-            {gameState.loading ? (
-              <LoadingSpinner />
-            ) : error ? (
-              <ErrorMessage message={error} onRetry={initializeGame} />
-            ) : (
+    <div className="app">
+      <ToastProvider>
+        <Header />
+        <main className="main-content">
+          {gameState.loading ? (
+            <GameLoader onRetry={initializeGame} />
+          ) : error ? (
+            <ErrorMessage message={error} onRetry={initializeGame} />
+          ) : (
+            <>
+              <GameHeader
+                onSettingsClick={() => setShowModal(true)}
+                onHowToPlayClick={() => {}}
+                onStatsClick={() => {}}
+              />
               <div className="game-container">
-                <Timer time={formatTime(timer)} />
                 <DefineBoxes
                   revealedHints={gameState.revealedHints}
                   onHintReveal={handleHintReveal}
@@ -398,40 +448,56 @@ function App() {
                   guessCount={gameState.guessCount}
                   guessResults={gameState.guessResults}
                 />
-                <HintContent
-                  wordData={gameState.wordData}
-                  revealedHints={gameState.revealedHints}
-                  onHintReveal={handleHintReveal}
-                  isGameOver={gameState.isGameOver}
-                  isCorrect={gameState.isCorrect}
-                  guessCount={gameState.guessCount}
-                  guessResults={gameState.guessResults}
+                <GuessInput
+                  onGuess={handleGuess}
+                  disabled={gameState.isGameOver}
+                  maxLength={getInputMaxLength()}
                 />
+                <GameMessages
+                  messages={message ? [message] : []}
+                  onDismiss={(msg) => setMessage(null)}
+                />
+                <GameFooter
+                  onNewGame={initializeGame}
+                  onShare={() => {}}
+                />
+              </div>
+              <HintContent
+                wordData={gameState.wordData ? mapWordDataToWordClues(gameState.wordData) : null}
+                revealedHints={gameState.revealedHints}
+                onHintReveal={handleHintReveal}
+                isGameOver={gameState.isGameOver}
+                isCorrect={gameState.isCorrect}
+                guessCount={gameState.guessCount}
+                guessResults={gameState.guessResults}
+              />
+              {gameState.isGameOver && (
                 <GameOverModal
-                  isOpen={gameState.isGameOver}
+                  isOpen={true}
                   onClose={() => setShowModal(false)}
                   isCorrect={gameState.isCorrect}
-                  wordData={wordData!}
+                  wordData={gameState.wordData ? mapWordDataToWordClues(gameState.wordData) : null}
+                  correctWord={gameState.correctWord}
                   guessCount={gameState.guessCount}
                   timeTaken={timer}
                   onPlayAgain={initializeGame}
                 />
-              </div>
-            )}
-          </>
-        } />
-        <Route path="/leaderboard" element={
-          showLeaderboard && (
-            <Leaderboard
-              gameId={gameState.gameId}
-              isGameOver={gameState.isGameOver}
-              isCorrect={gameState.isCorrect}
-              correctWord={gameState.word}
-              onClose={() => setShowLeaderboard(false)}
-            />
-          )
-        } />
-      </Routes>
+              )}
+              {showConfetti && <Confetti />}
+              {showLeaderboard && (
+                <Leaderboard
+                  onClose={() => setShowLeaderboard(false)}
+                  gameId={gameState.gameId}
+                  isGameOver={gameState.isGameOver}
+                  isCorrect={gameState.isCorrect}
+                  correctWord={gameState.correctWord}
+                  severity={gameState.isCorrect ? 'success' : gameState.isGameOver ? 'error' : 'info'}
+                />
+              )}
+            </>
+          )}
+        </main>
+      </ToastProvider>
     </div>
   );
 }

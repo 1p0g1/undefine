@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { ClientGuessResult } from '../types/index.js';
+import { type GuessResult } from '@undefine/shared-types';
 
 export function useGameGuess() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submitGuess = async (gameId: string, guess: string): Promise<ClientGuessResult | null> => {
+  const submitGuess = async (gameId: string, guess: string): Promise<GuessResult | null> => {
     setIsSubmitting(true);
     setError(null);
     

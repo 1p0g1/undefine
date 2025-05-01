@@ -1,8 +1,9 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import Leaderboard from './Leaderboard.js';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { Leaderboard } from './Leaderboard';
+import type { LeaderboardEntry } from '@undefine/shared-types';
 
 // Mock fetch
 const mockFetch = vi.fn();
@@ -13,6 +14,29 @@ describe('Leaderboard', () => {
     // Reset all mocks before each test
     vi.clearAllMocks();
   });
+
+  const mockEntries: LeaderboardEntry[] = [
+    {
+      username: 'player1',
+      score: 100,
+      rank: 1,
+      wordId: 'word1',
+      word: 'test',
+      timeTaken: 60000,
+      guessesUsed: 3
+    },
+    {
+      username: 'player2',
+      score: 90,
+      rank: 2,
+      wordId: 'word2',
+      word: 'test2',
+      timeTaken: 70000,
+      guessesUsed: 4
+    }
+  ];
+
+  const mockOnClose = () => {};
 
   it('renders the leaderboard interface', () => {
     render(<Leaderboard />);
@@ -116,22 +140,33 @@ describe('Leaderboard', () => {
     });
   });
 
-  it('handles loading state', () => {
-    render(<Leaderboard />);
-
-    // Check for loading indicator
+  it('renders loading state', () => {
+    render(<Leaderboard entries={[]} loading={true} error={null} onClose={mockOnClose} />);
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
-  it('handles error state', async () => {
-    // Mock a failed fetch
-    mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
+  it('renders error state', () => {
+    const error = 'Failed to load leaderboard';
+    render(<Leaderboard entries={[]} loading={false} error={error} onClose={mockOnClose} />);
+    expect(screen.getByText(error)).toBeInTheDocument();
+  });
 
-    render(<Leaderboard />);
+  it('renders empty state', () => {
+    render(<Leaderboard entries={[]} loading={false} error={null} onClose={mockOnClose} />);
+    expect(screen.getByText(/no entries found/i)).toBeInTheDocument();
+  });
 
-    // Wait for error message
-    await waitFor(() => {
-      expect(screen.getByText(/error/i)).toBeInTheDocument();
-    });
+  it('renders leaderboard entries', () => {
+    render(<Leaderboard entries={mockEntries} loading={false} error={null} onClose={mockOnClose} />);
+    expect(screen.getByText('player1')).toBeInTheDocument();
+    expect(screen.getByText('player2')).toBeInTheDocument();
+  });
+
+  it('calls onClose when close button is clicked', () => {
+    const onClose = vi.fn();
+    render(<Leaderboard entries={mockEntries} loading={false} error={null} onClose={onClose} />);
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    fireEvent.click(closeButton);
+    expect(onClose).toHaveBeenCalled();
   });
 }); 

@@ -1,12 +1,13 @@
 import React from 'react';
 import './GameOverModal.css';
-import { WordData } from '@undefine/shared-types';
+import type { WordClues } from '@undefine/shared-types';
 
 interface GameOverModalProps {
   isOpen: boolean;
   onClose: () => void;
   isCorrect: boolean;
-  wordData: WordData;
+  wordData: WordClues | null;
+  correctWord: string;
   guessCount: number;
   timeTaken: number;
   onPlayAgain: () => void;
@@ -17,6 +18,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({
   onClose,
   isCorrect,
   wordData,
+  correctWord,
   guessCount,
   timeTaken,
   onPlayAgain
@@ -30,7 +32,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({
         <p>
           {isCorrect
             ? `You won in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}!`
-            : `The word was: ${wordData.word}`}
+            : `The word was: ${correctWord}`}
         </p>
         <p>Time taken: {timeTaken} seconds</p>
         <div className="modal-buttons">

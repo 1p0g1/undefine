@@ -1,4 +1,10 @@
-import { FormState, ValidationError } from '../types/index.js';
+import { type FormState } from '../types/index.js';
+import type { WordData, WordClues } from '@undefine/shared-types';
+
+interface ValidationError {
+  field: string;
+  message: string;
+}
 
 // Word form specific type
 interface WordFormData {
@@ -147,4 +153,15 @@ export const getFieldErrorMessage = (errors: ValidationError[], fieldName: strin
  */
 export const hasFieldError = (errors: ValidationError[], fieldName: string): boolean => {
   return errors.some(err => err.field === fieldName);
-}; 
+};
+
+export function mapWordDataToWordClues(wordData: WordData): WordClues {
+  return {
+    D: wordData.definition,
+    E: wordData.etymology,
+    F: wordData.first_letter,
+    I: wordData.in_a_sentence,
+    N: wordData.number_of_letters,
+    E2: wordData.equivalents
+  };
+} 

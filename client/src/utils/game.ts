@@ -1,0 +1,3 @@
+import type { GameState, WordData, HintIndex, GuessResult } from '@undefine/shared-types';
+
+// ... existing code ... 

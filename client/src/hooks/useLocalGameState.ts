@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
+import { type UserStats } from '@undefine/shared-types';
 
-interface LocalGameState {
+interface LocalGameState extends Omit<UserStats, 'username' | 'averageGuesses' | 'averageTime' | 'lastPlayedAt'> {
   nickname: string | null;
-  currentStreak: number;
-  longestStreak: number;
-  gamesPlayed: number;
-  gamesWon: number;
   lastPlayedDate: string | null;
 }
 

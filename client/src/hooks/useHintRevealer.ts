@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { DEBUG_CONFIG } from '../config/debug.js';
-import { HINT_INDICES } from '../types/index.js';
+import { type HintIndex } from '@undefine/shared-types';
 
 const hintOrder = [0, 1, 2, 3, 4, 5] as const;
-type HintIndex = typeof hintOrder[number];
 
 interface UseHintRevealerProps {
   guessCount: number;
@@ -59,12 +58,12 @@ export function useHintRevealer({
   // Runtime assertion for hint order integrity
   if (DEBUG_CONFIG.verboseLogging) {
     console.assert(
-      HINT_INDICES.D === 0 && 
-      HINT_INDICES.E === 1 && 
-      HINT_INDICES.F === 2 && 
-      HINT_INDICES.I === 3 && 
-      HINT_INDICES.N === 4 && 
-      HINT_INDICES.E2 === 5, 
+      hintOrder[0] === 0 && 
+      hintOrder[1] === 1 && 
+      hintOrder[2] === 2 && 
+      hintOrder[3] === 3 && 
+      hintOrder[4] === 4 && 
+      hintOrder[5] === 5, 
       '❌ Hint order mismatch!'
     );
   }

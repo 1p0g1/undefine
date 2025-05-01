@@ -1,49 +1,37 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "skipLibCheck": false,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-
-    /* Bundler mode */
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "noEmit": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "composite": true,
-    "declaration": true,
-    "outDir": "./dist-types",
+    "noEmit": true,
     "jsx": "react-jsx",
-    "allowJs": true,
-    
-    /* Linting */
     "strict": true,
-    "noImplicitAny": false,
-    "typeRoots": ["./types", "./node_modules/@types"],
-    
-    /* Path aliases */
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": false,
+    "skipLibCheck": true,
+    "types": [
+      "vite/client",
+      "vitest",
+      "vitest/globals",
+      "jest",
+      "@testing-library/jest-dom",
+      "node"
+    ],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@undefine/shared-types": ["../packages/shared-types/dist/types"],
-      "@undefine/shared-types/*": ["../packages/shared-types/dist/types/*"]
-    },
-    
-    /* Source maps */
-    "sourceMap": true,
-    "declarationMap": true,
-    "forceConsistentCasingInFileNames": true
+      "@undefine/shared-types": ["../packages/shared-types/src"]
+    }
   },
-  "include": ["src", "types", "vite.config.ts"],
-  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test", "node_modules"],
+  "include": ["src"],
   "references": [
-    { "path": "./tsconfig.node.json" }
-  ],
-  "ts-node": {
-    "transpileOnly": true
-  }
+    { "path": "../packages/shared-types" }
+  ]
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GameSession } from '../types/index.js';
+import { type GameSession } from '@undefine/shared-types';
 
 export function useGameSession() {
   const [session, setSession] = useState<GameSession | null>(null);

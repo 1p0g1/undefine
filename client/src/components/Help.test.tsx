@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Help from './Help';
+import { Help } from './Help';
 
 // Mock fetch
 const mockFetch = vi.fn();
@@ -214,5 +214,21 @@ describe('Help', () => {
     await waitFor(() => {
       expect(screen.getByText(/internal server error/i)).toBeInTheDocument();
     });
+  });
+
+  it('renders help content', () => {
+    render(<Help onClose={() => {}} />);
+    expect(screen.getByText('How to Play')).toBeInTheDocument();
+    expect(screen.getByText('Game Rules')).toBeInTheDocument();
+    expect(screen.getByText('Clue Types')).toBeInTheDocument();
+    expect(screen.getByText('Scoring')).toBeInTheDocument();
+  });
+
+  it('calls onClose when close button is clicked', () => {
+    const onClose = vi.fn();
+    render(<Help onClose={onClose} />);
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    fireEvent.click(closeButton);
+    expect(onClose).toHaveBeenCalled();
   });
 }); 

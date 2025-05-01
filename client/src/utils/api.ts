@@ -1,0 +1,3 @@
+import type { WordData, GuessResult, UserStats, GameSession, LeaderboardEntry } from '@undefine/shared-types';
+
+// ... existing code ... 

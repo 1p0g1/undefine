@@ -1,120 +1,54 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import Stats from './Stats.js';
-
-// Mock fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Stats } from './Stats';
 
 describe('Stats', () => {
-  beforeEach(() => {
-    // Reset all mocks before each test
-    vi.clearAllMocks();
+  const mockStats = {
+    gamesPlayed: 10,
+    gamesWon: 8,
+    averageGuesses: 3.5,
+    averageTime: 60000, // 60 seconds
+    currentStreak: 5,
+    longestStreak: 7
+  };
+
+  const defaultProps = {
+    ...mockStats,
+    onClose: () => {}
+  };
+
+  it('renders statistics correctly', () => {
+    render(<Stats {...defaultProps} />);
+    expect(screen.getByText('Statistics')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument(); // gamesPlayed
+    expect(screen.getByText('80%')).toBeInTheDocument(); // winRate
+    expect(screen.getByText('3.5')).toBeInTheDocument(); // averageGuesses
+    expect(screen.getByText('60s')).toBeInTheDocument(); // averageTime
+    expect(screen.getByText('5')).toBeInTheDocument(); // currentStreak
+    expect(screen.getByText('7')).toBeInTheDocument(); // longestStreak
   });
 
-  it('renders the stats interface', () => {
-    render(<Stats />);
-
-    // Check for essential UI elements
-    expect(screen.getByText(/stats/i)).toBeInTheDocument();
-    expect(screen.getByText(/daily metrics/i)).toBeInTheDocument();
-    expect(screen.getByText(/top streaks/i)).toBeInTheDocument();
+  it('calls onClose when close button is clicked', () => {
+    const onClose = vi.fn();
+    render(<Stats {...mockStats} onClose={onClose} />);
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    fireEvent.click(closeButton);
+    expect(onClose).toHaveBeenCalled();
   });
 
-  it('displays daily metrics', async () => {
-    // Mock the daily stats data
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({
-        totalPlayers: 100,
-        averageScore: 85,
-        totalGames: 500,
-        winRate: 0.75,
-        topStreaks: [
-          { username: 'user1', streak: 10 },
-          { username: 'user2', streak: 8 },
-          { username: 'user3', streak: 5 }
-        ]
-      })
-    });
-
-    render(<Stats />);
-
-    // Wait for the data to load
-    await waitFor(() => {
-      expect(screen.getByText('100')).toBeInTheDocument(); // total players
-      expect(screen.getByText('85')).toBeInTheDocument(); // average score
-      expect(screen.getByText('500')).toBeInTheDocument(); // total games
-      expect(screen.getByText('75%')).toBeInTheDocument(); // win rate
-    });
-  });
-
-  it('displays top streaks', async () => {
-    // Mock the daily stats data
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({
-        totalPlayers: 100,
-        averageScore: 85,
-        totalGames: 500,
-        winRate: 0.75,
-        topStreaks: [
-          { username: 'user1', streak: 10 },
-          { username: 'user2', streak: 8 },
-          { username: 'user3', streak: 5 }
-        ]
-      })
-    });
-
-    render(<Stats />);
-
-    // Wait for the data to load
-    await waitFor(() => {
-      expect(screen.getByText('user1')).toBeInTheDocument();
-      expect(screen.getByText('10')).toBeInTheDocument();
-      expect(screen.getByText('user2')).toBeInTheDocument();
-      expect(screen.getByText('8')).toBeInTheDocument();
-      expect(screen.getByText('user3')).toBeInTheDocument();
-      expect(screen.getByText('5')).toBeInTheDocument();
-    });
-  });
-
-  it('handles loading state', () => {
-    render(<Stats />);
-
-    // Check for loading indicator
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
-  });
-
-  it('handles error state', async () => {
-    // Mock a failed fetch
-    mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
-
-    render(<Stats />);
-
-    // Wait for error message
-    await waitFor(() => {
-      expect(screen.getByText(/error/i)).toBeInTheDocument();
-    });
-  });
-
-  it('displays empty state when no data is available', async () => {
-    // Mock empty data
-    mockFetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({
-        totalPlayers: 0,
-        averageScore: 0,
-        totalGames: 0,
-        winRate: 0,
-        topStreaks: []
-      })
-    });
-
-    render(<Stats />);
-
-    // Wait for empty state message
-    await waitFor(() => {
-      expect(screen.getByText(/no data available/i)).toBeInTheDocument();
-    });
+  it('handles zero games played', () => {
+    const emptyStats = {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      averageGuesses: 0,
+      averageTime: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      onClose: () => {}
+    };
+    render(<Stats {...emptyStats} />);
+    expect(screen.getByText('0%')).toBeInTheDocument(); // winRate
   });
 }); 

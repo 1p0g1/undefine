@@ -1,10 +1,6 @@
-export interface LeaderboardEntry {
-  id: string;
-  username: string;
-  wordId: string;
-  word: string;
-  timeTaken: number;
-  guessesUsed: number;
+import { type LeaderboardEntry as BaseLeaderboardEntry } from '@undefine/shared-types';
+
+export interface LeaderboardEntry extends BaseLeaderboardEntry {
   fuzzyMatches: number;
   hintsUsed: number;
   createdAt: string;

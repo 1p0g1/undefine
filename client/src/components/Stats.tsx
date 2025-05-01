@@ -1,37 +1,63 @@
-import { type UserStats } from '@undefine/shared-types';
+import React from 'react';
 
-interface StatsProps {
-  stats: UserStats;
+interface Props {
+  gamesPlayed: number;
+  gamesWon: number;
+  averageGuesses: number;
+  averageTime: number;
+  currentStreak: number;
+  longestStreak: number;
+  onClose: () => void;
 }
 
-export const Stats = ({ stats }: StatsProps) => {
+export const Stats: React.FC<Props> = ({
+  gamesPlayed,
+  gamesWon,
+  averageGuesses,
+  averageTime,
+  currentStreak,
+  longestStreak,
+  onClose
+}) => {
+  const winRate = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
+  const avgTimeInSeconds = Math.round(averageTime / 1000);
+
   return (
-    <div className="stats">
-      <h2>Your Stats</h2>
-      <div className="stats-grid">
-        <div className="stat">
-          <h3>Total Games</h3>
-          <p>{stats.gamesPlayed}</p>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Statistics</h2>
+        <button onClick={onClose}>Close</button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-gray-100 rounded">
+          <h3 className="font-semibold">Games Played</h3>
+          <p className="text-2xl">{gamesPlayed}</p>
         </div>
-        <div className="stat">
-          <h3>Games Won</h3>
-          <p>{stats.gamesWon}</p>
+
+        <div className="p-4 bg-gray-100 rounded">
+          <h3 className="font-semibold">Win Rate</h3>
+          <p className="text-2xl">{winRate}%</p>
         </div>
-        <div className="stat">
-          <h3>Average Guesses</h3>
-          <p>{stats.averageGuesses.toFixed(1)}</p>
+
+        <div className="p-4 bg-gray-100 rounded">
+          <h3 className="font-semibold">Current Streak</h3>
+          <p className="text-2xl">{currentStreak}</p>
         </div>
-        <div className="stat">
-          <h3>Average Time</h3>
-          <p>{Math.round(stats.averageTime / 1000)}s</p>
+
+        <div className="p-4 bg-gray-100 rounded">
+          <h3 className="font-semibold">Longest Streak</h3>
+          <p className="text-2xl">{longestStreak}</p>
         </div>
-        <div className="stat">
-          <h3>Current Streak</h3>
-          <p>{stats.currentStreak}</p>
+
+        <div className="p-4 bg-gray-100 rounded">
+          <h3 className="font-semibold">Average Guesses</h3>
+          <p className="text-2xl">{averageGuesses.toFixed(1)}</p>
         </div>
-        <div className="stat">
-          <h3>Longest Streak</h3>
-          <p>{stats.longestStreak}</p>
+
+        <div className="p-4 bg-gray-100 rounded">
+          <h3 className="font-semibold">Average Time</h3>
+          <p className="text-2xl">{avgTimeInSeconds}s</p>
         </div>
       </div>
     </div>
