@@ -155,13 +155,13 @@ npm install
 
 3. Set up environment variables:
 ```bash
-cp .env.example .env.development
+cp .env.example .env
 ```
 
 Required environment variables:
 ```env
 SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 PORT=3001
 NODE_ENV=development
 ```

@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "node16",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -14,18 +14,9 @@
     "composite": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@undefine/shared-types": ["src"]
-    },
-    "resolveJsonModule": true,
-    "emitDeclarationOnly": false,
-    "jsx": "react-jsx",
-    "allowImportingTsExtensions": false,
-    "noEmit": false
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true,
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

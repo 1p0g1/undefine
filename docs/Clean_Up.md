@@ -1245,3 +1245,336 @@ Package names in the monorepo were incorrectly using the @reversedefine scope, c
    npm run lint
    ```
 
+## Build and Typecheck Fixes
+
+### Problems Encountered
+1. Shared types package (@undefine/shared-types) was not properly built before server/client builds
+2. Missing type declarations for React and other packages
+3. Incorrect path references in tsconfig.json
+4. Workspace configuration issues in root package.json
+
+### Solutions Applied
+1. Fixed workspace configuration in root package.json to correctly reference packages/* and client
+2. Updated client tsconfig.json paths to reference shared-types dist directory instead of src
+3. Built shared-types package before client/server builds
+4. Installed missing type packages:
+   - @types/react
+   - @types/react-dom
+   - @types/cors
+   - @types/compression
+   - @types/morgan
+   - @types/node-fetch
+   - @types/testing-library__react
+
+### Build Notes
+- Shared-types must be rebuilt before app build
+- Use `npm run build:types` to build shared-types package
+- Always run typecheck after building shared-types
+- Use --legacy-peer-deps when installing packages to handle dependency conflicts
+
+## 🔧 TypeScript Monorepo Architecture Improvements
+
+### Problems Encountered
+1. Missing essential @types packages for dependencies
+2. Shared-types package not properly building before server/client builds
+3. Inconsistent tsconfig settings across packages
+4. No verification of build outputs
+5. No prebuild checks for missing type definitions
+
+### Solutions Applied
+1. Created `scripts/check-types.js` to verify all required @types packages are installed
+2. Updated root package.json to include prebuild script that checks for missing types
+3. Enhanced shared-types package.json build script to verify dist/index.d.ts generation
+4. Updated tsconfig files to enforce required settings:
+   - declaration: true
+   - skipLibCheck: false
+   - forceConsistentCasingInFileNames: true
+   - strict: true
+   - moduleResolution: NodeNext
+   - module: NodeNext
+5. Enhanced CI verification script to check tsconfig settings
+
+### Build Process Improvements
+1. Added prebuild script to check for missing @types packages
+2. Ensured shared-types package builds first and verifies output
+3. Added comprehensive build verification steps
+4. Improved error messages for build failures
+
+### Future Considerations
+1. Consider using tsup or rollup for simpler builds
+2. Add build performance metrics
+3. Implement build caching strategy
+4. Add automated deployment rollback
+
+# Clean Up Tasks and Solutions
+
+## TypeScript Build Issues
+
+### Problems
+- Missing essential `@types` packages
+- Issues with `shared-types` package build
+  - Declaration files were not being generated correctly
+  - Build script was checking for files in the wrong location
+  - Declaration map files were causing issues with type generation
+
+### Solutions
+- Created `check-types.js` script to verify and install required `@types` packages
+- Updated `shared-types` package configuration:
+  - Fixed `declarationDir` setting in `tsconfig.prod.json`
+  - Disabled `declarationMap` to ensure proper `.d.ts` file generation
+  - Updated build script to check for files in the correct location
+- Improved build verification process
+
+### Build Process Improvements
+- Added prebuild scripts for type checking
+- Enhanced build verification steps
+- Fixed declaration file generation in `shared-types` package
+
+### Future Considerations
+- Consider using `tsup` or `rollup` for simpler builds
+- Implement build caching strategies
+- Add automated tests for type generation
+- Consider implementing incremental builds for better performance
+
+## Next Steps
+1. Verify client builds with updated type definitions
+2. Test type imports in dependent packages
+3. Consider adding automated type checking in CI pipeline
+
+## 🔒 Shared Types Configuration (2024-04-27)
+
+### ✅ Package Structure
+- Enforced `packages/shared-types` as the official types package
+- Removed references to legacy `shared/` directory
+- Configured proper type declaration output to `dist/index.d.ts`
+
+### 🔧 Key Changes
+1. **Package Configuration**
+   - Updated `package.json` to use correct main and types fields
+   - Added proper exports configuration
+   - Added build verification script
+
+2. **TypeScript Configuration**
+   - Updated `tsconfig.prod.json` for correct type emission
+   - Removed redundant `declarationDir` setting
+   - Ensured proper module resolution
+
+3. **Build Process**
+   - Added pre-build type verification
+   - Created verification script in `scripts/verify-types.sh`
+   - Added type build checks to CI process
+
+4. **Path Resolution**
+   - Updated root tsconfig.json paths
+   - Pointed to built types in dist/
+   - Removed references to src/ directory
+
+### 🔍 Verification Steps
+1. Clean build:
+   ```bash
+   npm run clean
+   ```
+2. Build types:
+   ```bash
+   npm run build:types
+   ```
+3. Verify types:
+   ```bash
+   npm run verify:types
+   ```
+
+### 📝 Type Import Pattern
+Use the following import pattern in your code:
+```typescript
+import { type Word } from '@undefine/shared-types';
+```
+
+### ⚠️ Important Notes
+- Always build shared-types before client/server
+- Use `npm run verify:types` to check type output
+- Never import directly from src/ directory
+- Keep type definitions framework-agnostic
+
+## 🔄 Shared Types Export Fixes (2024-04-22)
+
+### ✅ Changes Made
+1. **Explicit Type Exports**
+   - Added explicit type exports for all core types
+   - Organized exports by category (core, app, db, leaderboard)
+   - Ensured all types needed by client are properly exported
+
+2. **Type Categories**
+   - Core types: GameState, ClueType, GuessResult, WordClues, etc.
+   - Application types: GameWord, UserStats, GameSession, etc.
+   - Database types: DBWord, DBUserStats, DBGameSession, etc.
+   - Leaderboard types: ExtendedLeaderboardEntry, LeaderboardState, etc.
+   - Game utilities: HintIndex, HINT_INDICES
+
+3. **Import Structure**
+   - Client now imports directly from '@undefine/shared-types'
+   - No more /index.js path references
+   - Proper type exports for all components
+
+### 🔍 Verification Steps
+1. Build shared-types package:
+   ```bash
+   cd packages/shared-types
+   npm run build
+   ```
+2. Verify dist/index.d.ts contains all exports
+3. Run client build with zero type errors
+4. Check all component imports resolve correctly
+
+### 📋 Type Export Structure
+```typescript
+// Core types
+export type { GameState, ClueType, GuessResult } from './types/core.js';
+
+// Application types
+export type { GameWord, UserStats, GameSession } from './types/app.js';
+
+// Database types
+export type { DBWord, DBUserStats, DBGameSession } from './types/db.js';
+
+// Game utilities
+export type { HintIndex } from './utils/game.js';
+export { HINT_INDICES } from './utils/game.js';
+```
+
+### ✅ Benefits
+- Clear type organization
+- No duplicate type exports
+- Proper type resolution in client
+- Better build-time type checking
+- Simplified import paths
+
+## Dead References Removed
+
+- [client/src/App.tsx]: Removed dead import `AppGameState` due to missing source file
+- [client/src/App.tsx]: Removed dead import `HINT_INDICES` due to missing source file
+- [client/src/components/DefineHints.tsx]: Removed dead import `WordData` due to incorrect usage
+- [client/src/hooks/useGameSession.ts]: Removed dead import `GameSession` due to incomplete implementation
+- [client/src/types/index.ts]: Removed dead import `Word` due to duplicate definition
+- [client/src/types/game.ts]: Removed dead import `WordData` due to incorrect usage
+
+## Types Directory Cleanup (2024-03-19)
+
+### Changes Made
+- Deleted `client/src/types` directory as most types were duplicates from `@undefine/shared-types`
+- Moved React-specific game context types to `client/src/components/gameContext.ts`
+- Moved `vite-env.d.ts` to `client/src/vite-env.d.ts`
+- Updated imports in `Leaderboard.tsx` to use types directly from `@undefine/shared-types`
+- Fixed type compatibility issues with `LeaderboardEntry` type
+
+### Files Removed
+- `client/src/types/index.ts` - All types now imported directly from `@undefine/shared-types`
+- `client/src/types/game.ts` - React-specific types moved to `components/gameContext.ts`
+- `client/src/types/vite-env.d.ts` - Moved to src directory
+
+### Files Created/Modified
+- Created `client/src/components/gameContext.ts` for React-specific game context types
+- Modified `client/src/Leaderboard.tsx` to use types from `@undefine/shared-types`
+- Created `client/src/vite-env.d.ts` for Vite environment type definitions
+
+### Impact
+- Reduced type duplication
+- Improved type consistency by using shared types directly
+- Better organization of React-specific types
+- Cleaner import paths
+- Removed unnecessary proxy type files
+
+## Emergency Recovery (April 28 – Run Now, Polish Later)
+✅ Task Checklist (Follow in Order)
+
+### 1. Bare Boot Phase
+- [ ] Resolve import errors to allow the app to compile and render the homepage.
+- [ ] Temporarily use any or minimal types if needed.
+- [ ] Map WordData to WordClues immediately after fetching.
+- [ ] Patch the frontend components to expect WordClues not WordData.
+- [ ] Do NOT focus on perfect typing yet; goal is no fatal crashes.
+
+**Goal:**
+App runs without crashing. Homepage displays without type or runtime errors.
+
+### 2. Playable Core Phase
+- [ ] Validate that a user can start a new game.
+- [ ] Validate that guessing works (guess submission and results).
+- [ ] Validate that hints reveal correctly when requested.
+- [ ] Patch bugs with hotfixes or temporary casts (e.g., as unknown as CorrectType).
+
+**Goal:**
+User can play a full round from start to finish without fatal errors.
+
+### 3. Minimum Quality Phase
+- [ ] Start replacing obvious any types where low-risk.
+- [ ] Use TODO comments to mark places needing more careful fixing later.
+- [ ] Allow light linter fixes but only auto-fixable ones.
+- [ ] Ensure:
+  - Correct word selection.
+  - Guess tracking works correctly.
+  - Win/lose logic triggers correctly.
+  - Streak/tracking persists properly (if previously working).
+
+**Goal:**
+We have a rough, ugly but functional alpha.
+
+### 🚨 Working Principles
+- Prioritise running over type safety.
+- Prioritise user experience (no crashes).
+- Document temporary hotfixes using // TODO: comments.
+- Update Clean_Up.md after major steps are completed.
+
+### 📚 Notes for Context:
+- Use mappers.ts for all WordData → WordClues conversions.
+- Allow using minimal dummy typings in non-critical areas.
+- Final goal today is a working deployed alpha, not type perfection.
+
+## 🔍 Post-Recovery Sanity Check (April 28)
+
+### Environment & Types Verification
+- [x] Replaced all `process.env` with `import.meta.env` (Vite-compliant)
+  - Confirmed in `client/src/config/api.ts`
+  - Using `VITE_API_URL` for API configuration
+  - Default fallback to `http://localhost:3001`
+
+- [x] Type imports verified from `@undefine/shared-types`:
+  - `WordData`
+  - `WordClues`
+  - `GuessResult`
+  - All other shared types
+
+### Build & Runtime Verification
+- [x] Shared-types package rebuilt:
+  ```bash
+  cd packages/shared-types
+  npm run build
+  ```
+  - Confirmed `dist/index.d.ts` exists and is current
+
+- [x] Development servers operational:
+  - Client: `cd client && npm run dev` → http://localhost:5174
+  - Server: `cd server && npm run dev` → http://localhost:3001
+
+### UI & API Health Check
+- [x] UI Components:
+  - Homepage renders without errors
+  - No blank screens
+  - No red error messages in console
+  - Game interface is functional
+
+- [x] API Connectivity:
+  - Backend running on port 3001
+  - No "Failed to fetch" errors
+  - Word API endpoint responding
+
+### 🚨 Troubleshooting Note
+If you encounter "GET http://localhost:3001/api/word" failures:
+1. Verify backend is running:
+   ```bash
+   cd server
+   npm run dev
+   ```
+2. Check console for specific error messages
+3. Verify API_CONFIG in client matches server ports
+4. Ensure no port conflicts with other services
+

@@ -1,8 +1,8 @@
 // All test inputs are defined inline — no external mock imports.
 import { describe, it, expect } from 'vitest';
 import { mapDBWordToGameWord } from '../mappers.js';
-import { DBWord } from '../../types/db.js';
-import { GameWord } from '../../types/app.js';
+import type { DBWord } from '../../types/db.js';
+import type { GameWord } from '../../types/app.js';
 
 describe('mapDBWordToGameWord', () => {
   it('should map a valid DBWord to GameWord', () => {

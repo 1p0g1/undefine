@@ -8,8 +8,18 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
+    "build:types": "cd packages/shared-types && npm run build",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "clean": "npm run clean --workspaces"
+    "clean": "npm run clean --workspaces",
+    "start": "cd server && npm start"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/testing-library__jest-dom": "^5.14.9",
+    "@types/uuid": "^10.0.0"
   }
 }
