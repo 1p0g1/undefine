@@ -9,8 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "test": "vitest",
-    "postinstall": "npm install @types/react @types/react-dom"
+    "test": "vitest"
   },
   "dependencies": {
     "@undefine/shared-types": "file:../packages/shared-types",

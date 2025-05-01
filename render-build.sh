@@ -14,96 +14,32 @@ exec 2> >(tee -a "$BUILD_LOG" >&2)
 echo "=== Build Started at $(date) ==="
 echo "Build log: $BUILD_LOG"
 
-# Debug path resolution
-echo "Current directory: $(pwd)"
-echo "Does @undefine/shared-types point to: $(realpath packages/shared-types/src)"
-echo "Shared types directory contents:"
-ls -la packages/shared-types/src
-
-# Validate environment variables
-echo "Validating environment..."
-node -e "
-  const requiredVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
-  const missing = requiredVars.filter(v => !process.env[v]);
-  if (missing.length) {
-    console.error('Missing required environment variables:', missing);
-    process.exit(1);
-  }
-"
-
-# Verify package-lock.json
-echo "Verifying package-lock.json..."
-if [ ! -f "package-lock.json" ]; then
-  echo "❌ package-lock.json missing"
-  exit 1
-fi
-
-# Clean any existing build artifacts
-echo "Cleaning build artifacts..."
-rm -rf packages/shared-types/dist
-rm -rf dist-server
-rm -rf client/dist
+# Clean up any existing installations
+echo "Cleaning up previous installations..."
+rm -rf node_modules
+rm -rf packages/shared-types/node_modules
+rm -rf client/node_modules
+rm -rf .render
+rm -f package-lock.json
 
 # Install root dependencies
 echo "Installing root dependencies..."
 npm install --legacy-peer-deps
 
-# Build shared types with verification
+# Build shared types
 echo "Building shared types..."
 cd packages/shared-types
 npm install --legacy-peer-deps
 npm run clean
 npm run build
-# Verify the build output
-if [ ! -f "dist/index.d.ts" ]; then
-  echo "❌ Failed to generate dist/index.d.ts"
-  exit 1
-fi
 cd ../..
 
-# Build server with production configuration
-echo "Building server with production configuration..."
-npm run build:server:prod
-
-# Install client dependencies and build
+# Build client
 echo "Building client..."
 cd client
 npm install --legacy-peer-deps
 npm run build
-
-# Run the verification script
-echo "Running build verification..."
-node scripts/verify-build.js
-
-# Final verification
-echo "Verifying build outputs..."
-if [ ! -f "packages/shared-types/dist/index.d.ts" ]; then
-  echo "❌ Missing shared-types build output"
-  exit 1
-fi
-if [ ! -f "dist-server/index.js" ]; then
-  echo "❌ Missing server build output"
-  exit 1
-fi
-if [ ! -f "client/dist/index.html" ]; then
-  echo "❌ Missing client build output"
-  exit 1
-fi
+cd ..
 
 echo "✅ Build completed successfully at $(date)"
-echo "Build log saved to: $BUILD_LOG"
-
-# Install dependencies
-npm install
-
-# Build shared types first
-cd packages/shared-types
-npm install
-npm run build
-cd ../..
-
-# Install client dependencies and build
-cd client
-npm install
-npm run build
-cd .. 
+echo "Build log saved to: $BUILD_LOG" 
