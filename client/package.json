@@ -13,7 +13,7 @@
     "postinstall": "npm install @types/react @types/react-dom"
   },
   "dependencies": {
-    "@undefine/shared-types": "workspace:*",
+    "@undefine/shared-types": "file:../packages/shared-types",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0",

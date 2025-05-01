@@ -91,4 +91,19 @@ if [ ! -f "client/dist/index.html" ]; then
 fi
 
 echo "✅ Build completed successfully at $(date)"
-echo "Build log saved to: $BUILD_LOG" 
+echo "Build log saved to: $BUILD_LOG"
+
+# Install dependencies
+npm install
+
+# Build shared types first
+cd packages/shared-types
+npm install
+npm run build
+cd ../..
+
+# Install client dependencies and build
+cd client
+npm install
+npm run build
+cd .. 

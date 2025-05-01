@@ -2,24 +2,24 @@
   "name": "undefine",
   "private": true,
   "workspaces": [
-    "packages/*",
     "client",
-    "server"
+    "server",
+    "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "prebuild": "npm run build:types",
     "build:types": "cd packages/shared-types && npm run build",
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspace client",
     "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces",
+    "typecheck": "tsc --build --force",
     "clean": "npm run clean --workspaces",
-    "start": "cd server && npm start"
+    "lint": "npm run lint --workspaces",
+    "install:all": "npm install && npm install --workspaces"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0",
     "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@types/react-router-dom": "^5.3.3",
-    "@types/testing-library__jest-dom": "^5.14.9",
-    "@types/uuid": "^10.0.0"
+    "@types/react-dom": "^18.2.0"
   }
 }
