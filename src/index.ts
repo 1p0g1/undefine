@@ -193,4 +193,13 @@ process.on('unhandledRejection', (error) => {
 });
 
 // Start server
-startServer(); 
+startServer();
+
+// Export all types from core
+export * from './types/core';
+
+// Export game utilities and types
+export * from './utils/game';
+
+// Export word utilities and types
+export * from './utils/word'; 

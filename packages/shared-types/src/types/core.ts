@@ -36,7 +36,7 @@ export interface Word {
 }
 
 // Clue types
-export type ClueType = 'D' | 'E' | 'F' | 'I' | 'N' | 'E2';
+export type ClueType = string | number;
 
 export type ClueStatus = {
   [key in ClueType]: 'neutral' | 'grey' | 'correct' | 'incorrect';
@@ -47,23 +47,20 @@ export type HintIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
 // Guess result type
 export interface GuessResult {
+  word: string;
   isCorrect: boolean;
-  guess: string;
-  isFuzzy: boolean;
-  fuzzyPositions: number[];
-  gameOver: boolean;
-  correctWord?: string;
+  clues: WordClues;
 }
 
 // Word clues type
-export interface WordClues {
+export type WordClues = {
   D: string; // Definition
   E: string | null; // Etymology
   F: string; // First letter
   I: string | null; // Example sentence (I for "In a sentence")
   N: number; // Number of letters
   E2: string | null; // Equivalents/Synonyms
-}
+};
 
 // Word data type
 export interface WordData {

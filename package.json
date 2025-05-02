@@ -1,25 +1,42 @@
 {
   "name": "undefine",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
+    "packages/*",
     "client",
-    "server",
-    "packages/*"
+    "server"
+  ],
+  "type": "module",
+  "main": "./dist/lib/index.js",
+  "module": "./dist/lib/index.js",
+  "types": "./dist/lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/index.d.ts",
+      "import": "./dist/lib/index.js",
+      "require": "./dist/lib/index.js",
+      "default": "./dist/lib/index.js"
+    }
+  },
+  "files": [
+    "dist"
   ],
   "scripts": {
-    "prebuild": "npm run build:types",
-    "build:types": "cd packages/shared-types && npm run build",
-    "build": "npm run build --workspaces",
-    "dev": "npm run dev --workspace client",
-    "test": "npm run test --workspaces",
-    "typecheck": "tsc --build --force",
-    "clean": "npm run clean --workspaces",
-    "lint": "npm run lint --workspaces",
-    "install:all": "npm install && npm install --workspaces"
+    "prebuild": "npm run clean",
+    "build": "tsc --build tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "zod": "^3.24.3",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/uuid": "^9.0.8",
     "typescript": "^5.3.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0"
+    "vitest": "^3.1.2"
   }
 }
